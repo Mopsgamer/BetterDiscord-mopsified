@@ -28,6 +28,8 @@ import type {Release} from "github";
 import type {BdWebAddon} from "betterdiscordweb";
 import {Logo} from "@ui/logo";
 import {RefreshCcwIcon} from "lucide-react";
+import type {AddonType} from "./addonmanager";
+import {managerFromType} from "./addonmanagerfrom";
 
 const getJSON = (url: string) => {
     return new Promise(resolve => {
@@ -243,13 +245,13 @@ export class CoreUpdater {
 
 export class AddonUpdater {
     manager: typeof PluginManager | typeof ThemeManager;
-    type: "plugin" | "theme";
+    addonType: AddonType;
     cache: Record<string, {name: string; version: string; id: number;}> | Record<string, never>;
     pending: string[];
 
-    constructor(type: "plugin" | "theme") {
-        this.manager = type === "plugin" ? PluginManager : ThemeManager;
-        this.type = type;
+    constructor(addonType: AddonType) {
+        this.manager = managerFromType(addonType);
+        this.addonType = addonType;
         this.cache = {};
         this.pending = [];
     }
@@ -258,12 +260,12 @@ export class AddonUpdater {
         await this.updateCache();
         if (SettingsStore.get("addons", "checkForUpdates")) this.checkAll();
 
-        Events.on(`${this.type}-loaded`, addon => {
+        Events.on(`${this.addonType}-loaded`, addon => {
             if (!SettingsStore.get("addons", "checkForUpdates")) return;
             this.checkForUpdate(addon.filename, addon.version);
         });
 
-        Events.on(`${this.type}-unloaded`, addon => {
+        Events.on(`${this.addonType}-unloaded`, addon => {
             const index = this.pending.indexOf(addon.filename);
             if (index >= 0) this.pending.splice(index, 1);
         });
@@ -272,7 +274,7 @@ export class AddonUpdater {
     async updateCache() {
         this.cache = {};
         this.pending.length = 0;
-        const addonData = (await getJSON(Web.store[(this.type + "s") as keyof typeof Web.store] as string)) as BdWebAddon[];
+        const addonData = (await getJSON(Web.store[(this.addonType + "s") as keyof typeof Web.store] as string)) as BdWebAddon[];
         addonData.reduce(reducer, this.cache as Record<string, never>);
     }
 
@@ -333,10 +335,10 @@ export class AddonUpdater {
         });
 
         Notifications.show({
-            id: `addon-updates-${this.type}`,
+            id: `addon-updates-${this.addonType}`,
             title: t("Updater.addonUpdaterNotificationTitle"),
             content: [
-                t("Updater.addonUpdatesAvailable", {count: this.pending.length, context: this.type}),
+                t("Updater.addonUpdatesAvailable", {count: this.pending.length, context: this.addonType}),
                 React.createElement("ul", {className: "bd-notification-updates-list"},
                     addonDetails.map(addon =>
                         React.createElement("li", {}, [

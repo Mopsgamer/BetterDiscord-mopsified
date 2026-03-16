@@ -15,7 +15,7 @@ import Modals from "@ui/modals";
 import {CircleDollarSignIcon, CircleHelpIcon, PlugIcon, GithubIcon, GlobeIcon, HeartHandshakeIcon, PaletteIcon, PencilIcon, SettingsIcon, ShieldAlertIcon, Trash2Icon} from "lucide-react";
 import {getByKeys} from "@webpack";
 import type {MouseEvent, ReactNode} from "react";
-import type {default as AddonManager, Addon} from "@modules/addonmanager";
+import type {default as AddonManager, Addon, AddonType} from "@modules/addonmanager";
 import type {Theme} from "@modules/thememanager";
 import type {Plugin} from "@modules/pluginmanager";
 
@@ -89,7 +89,7 @@ function buildLink(type: keyof typeof LinkIcons, url?: string) {
 export interface AddonCardProps {
     addon: Addon;
     enabled: boolean;
-    type: "plugin" | "theme";
+    type: AddonType;
     disabled?: boolean;
     onChange(addon: Plugin | Theme): void;
     hasSettings: boolean;

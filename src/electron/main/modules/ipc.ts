@@ -3,6 +3,7 @@ import {ipcMain as ipc, BrowserWindow, app, dialog, systemPreferences, shell, ty
 
 import * as IPCEvents from "@common/constants/ipcevents";
 import Editor from "./editor";
+import type {AddonType} from "@modules/addonmanager";
 
 const getPath = (event: IpcMainEvent, pathReq: string) => {
     let returnPath;
@@ -161,7 +162,7 @@ const openDialog = (event: IpcMainInvokeEvent, options: Partial<DialogOptions> =
 const registerPreload = (_: IpcMainEvent, path: string) => {
     app.commandLine.appendSwitch("preload", path);
 };
-const openEditor = (_: IpcMainInvokeEvent, type: "plugin" | "theme", filename: string) => {
+const openEditor = (_: IpcMainInvokeEvent, type: AddonType, filename: string) => {
     Editor.open(type, filename);
 };
 

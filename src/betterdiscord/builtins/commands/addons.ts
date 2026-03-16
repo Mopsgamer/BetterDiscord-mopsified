@@ -1,12 +1,14 @@
 import {t} from "@common/i18n";
+import type {AddonType} from "@modules/addonmanager";
+import {managerFromType} from "@modules/addonmanagerfrom";
 import {OptionTypes} from "@modules/commandmanager";
 import DiscordModules from "@modules/discordmodules";
-import Plugins, {type Plugin} from "@modules/pluginmanager";
-import Themes, {type Theme} from "@modules/thememanager";
+import type {Plugin} from "@modules/pluginmanager";
+import type {Theme} from "@modules/thememanager";
 
 
-export default (type: "plugin" | "theme") => {
-    const manager = type === "plugin" ? Plugins : Themes;
+export default (type: AddonType) => {
+    const manager = managerFromType(type);
 
     return {
         id: `${type}s`,
