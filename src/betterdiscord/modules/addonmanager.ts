@@ -200,7 +200,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         JsonStore.set(this.pluralPrefix as Files, this.enablement);
     }
 
-    private watchQueue = new Set<string>();
+    private watchTimers = new Map<string, Timer>();
     watcher?: fs.FSWatcher;
     watchAddons(): void {
         if (this.watcher) {
@@ -218,30 +218,27 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
                 return;
             }
 
-            this.watchQueue.add(filename);
+            // 1. CLEAR existing timer for this specific file
+            if (this.watchTimers.has(filename)) {
+                clearTimeout(this.watchTimers.get(filename)!);
+            }
 
-            // Use a small timeout to let the OS finish writing the file
-            setTimeout(async () => {
+            // 2. START a new timer (Debounce)
+            const timer: Timer = setTimeout(async () => {
                 try {
-                    const absolutePath = path.resolve(addonFolder, filename);
                     let addon = this.addonList.find(a => a.filename === filename);
 
                     if (!addon) {
-                        Logger.error(this.name, `No addon cache found: ${filename}.`);
-                        const required = await this.requireAddon(filename);
-                        if (required.kind === "not-loaded") {
-                            Logger.stacktrace(this.name, `Failed to create new cache: ${filename}.`, required.error);
-                            return;
-                        }
-                        addon = required.addon as A;
-                        const addonInit = await this.initializeAddon(addon);
-                        if (addonInit.kind === "not-loaded") {
+                        const loaded = await this.loadAddon(filename);
+                        if (loaded.kind === "not-loaded") {
                             Logger.error(this.name, `Failed to instantiate ${filename}.`);
                             return;
                         }
-                        addon = addonInit.addon as A;
+                        addon = loaded.addon as A;
+                        return;
                     }
 
+                    const absolutePath = path.resolve(addonFolder, filename);
                     let stats: fs.Stats;
                     try {
                         stats = await fs.promises.stat(absolutePath);
@@ -260,9 +257,10 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
                     if (eventType == "change") await this.reloadAddon(addon, true);
                 }
                 finally {
-                    this.watchQueue.delete(filename);
+                    this.watchTimers.delete(filename);
                 }
-            }, 50);
+            }, 1000);
+            this.watchTimers.set(filename, timer);
         });
     }
 
@@ -388,7 +386,6 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
             if (partialAddon) {
                 partialAddon.partial = true;
                 this.enablement[partialAddon.id] = false;
-                this.trigger("loaded", partialAddon);
             }
             return required;
         }
@@ -398,7 +395,6 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         if (inited.kind === "not-loaded") {
             this.enablement[addon.id] = false;
             addon.partial = true;
-            this.trigger("loaded", addon);
             return inited;
         }
 
@@ -419,6 +415,15 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
     }
 
     async unloadAddon(addon: A, shouldToast = true, isReload = false): Promise<boolean> {
+        if (typeof addon === "string") {
+            // NOTE: Currently, 'reload' is the only public consumer of the 'unloadAddon' logic.
+            const err = "'BdApi.Plugins.reload(string)' is deprecated, use 'BdApi.Plugins.reload(BdApi.Plugins.get(id))'.";
+            Logger.warn(this.name, err);
+            addon = this.getAddon(addon) as A;
+            if (!addon) {
+                return false;
+            }
+        }
         // console.log("watcher", "unloadAddon", idOrFileOrAddon, addon);
         if (!addon) return false;
         if (this.enablement[addon.id]) {
@@ -432,7 +437,19 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         return true;
     }
 
-    async reloadAddon(addon: A, shouldToast = true): Promise<AddonStateLoad | AddonStateStarted<A>> {
+    async reloadAddon(addon: A, shouldToast = true): Promise<AddonStateNotLoaded | AddonStateLoad | AddonStateStarted<A>> {
+        if (typeof addon === "string") {
+            const err = "'BdApi.Plugins.reload(string)' is deprecated, use 'BdApi.Plugins.reload(BdApi.Plugins.get(id))'.";
+            return {
+                kind: "not-loaded",
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon: {filename: String(addon)},
+                    message: t("Addons.methodError", {method: "reload(string)"}),
+                    cause: new Error(err),
+                }),
+            };
+        }
         const didUnload = await this.unloadAddon(addon, shouldToast, true);
         if (!didUnload) {
             return {
