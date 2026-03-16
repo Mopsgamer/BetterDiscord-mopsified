@@ -200,6 +200,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         JsonStore.set(this.pluralPrefix as Files, this.enablement);
     }
 
+    private watchQueue = new Set<string>();
     watcher?: fs.FSWatcher;
     watchAddons(): void {
         if (this.watcher) {
@@ -210,7 +211,6 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         Logger.log(this.name, `Starting to watch ${this.prefix} addons.`);
 
         const addonFolder = this.addonFolder();
-
         this.watcher = fs.watch(addonFolder, {persistent: false}, (eventType, filename) => {
             if (!eventType || !filename) return;
 
@@ -218,31 +218,51 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
                 return;
             }
 
-            const absolutePath = path.resolve(addonFolder, filename);
-            const addon = this.addonList.find(a => a.filename === filename);
+            this.watchQueue.add(filename);
 
-            if (!addon) {
-                Logger.err(this.name, `No addon cache found: ${filename}.`);
-                return;
-            }
+            // Use a small timeout to let the OS finish writing the file
+            setTimeout(async () => {
+                try {
+                    const absolutePath = path.resolve(addonFolder, filename);
+                    let addon = this.addonList.find(a => a.filename === filename);
 
-            // previously we were waiting 100 ms here
-            let stats: fs.Stats;
-            try {
-                stats = fs.statSync(absolutePath);
-            }
-            catch (err) {
-                if ((err as SystemError).code !== "ENOENT" && !(err as SystemError)?.message.startsWith("ENOENT")) return;
-                this.fileStats.delete(filename);
-                this.unloadAddon(addon, true);
-                return;
-            }
-            if (!stats.isFile()) return;
-            if (this.fileStats.get(filename)?.mtimeMs === stats.mtimeMs) return;
-            if (this.fileStats.set(filename, stats)) return;
+                    if (!addon) {
+                        Logger.error(this.name, `No addon cache found: ${filename}.`);
+                        const required = await this.requireAddon(filename);
+                        if (required.kind === "not-loaded") {
+                            Logger.stacktrace(this.name, `Failed to create new cache: ${filename}.`, required.error);
+                            return;
+                        }
+                        addon = required.addon as A;
+                        const addonInit = await this.initializeAddon(addon);
+                        if (addonInit.kind === "not-loaded") {
+                            Logger.error(this.name, `Failed to instantiate ${filename}.`);
+                            return;
+                        }
+                        addon = addonInit.addon as A;
+                    }
 
-            if (eventType == "rename") this.loadAddon(filename, true);
-            if (eventType == "change") this.reloadAddon(addon, true);
+                    let stats: fs.Stats;
+                    try {
+                        stats = await fs.promises.stat(absolutePath);
+                    }
+                    catch (err) {
+                        if ((err as SystemError).code !== "ENOENT" && !(err as SystemError)?.message.startsWith("ENOENT")) return;
+                        this.fileStats.delete(filename);
+                        await this.unloadAddon(addon, true);
+                        return;
+                    }
+                    if (!stats.isFile()) return;
+                    if (this.fileStats.get(filename)?.mtimeMs === stats.mtimeMs) return;
+                    if (this.fileStats.set(filename, stats)) return;
+
+                    if (eventType == "rename") await this.loadAddon(filename, true);
+                    if (eventType == "change") await this.reloadAddon(addon, true);
+                }
+                finally {
+                    this.watchQueue.delete(filename);
+                }
+            }, 50);
         });
     }
 
