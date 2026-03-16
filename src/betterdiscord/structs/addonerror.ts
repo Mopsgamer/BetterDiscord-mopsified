@@ -10,6 +10,7 @@ export interface AddonErrorOptions<T extends Error> {
     cause?: T;
 }
 export default class AddonError<T extends Error = Error> extends Error {
+    name = "AddonError";
     addon: {
         name?: string;
         filename: string;
