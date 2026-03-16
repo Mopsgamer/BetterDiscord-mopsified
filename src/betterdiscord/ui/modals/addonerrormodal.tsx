@@ -44,7 +44,7 @@ function AddonError({err, index}: {err: AddonErrorType; index: number;}) {
                 {err.addonType == "plugin" ? <PlugIcon /> : <PaletteIcon />}
             </div>
             <div className="bd-addon-error-header-inner">
-                <Text tag="h3" size={Text.Sizes.SIZE_16} color={Text.Colors.HEADER_PRIMARY} strong={true}>{err.name}</Text>
+                <Text tag="h3" size={Text.Sizes.SIZE_16} color={Text.Colors.HEADER_PRIMARY} strong={true}>{err.addon.name}</Text>
                 <div className="bd-addon-error-details">
                     <InfoIcon className="bd-addon-error-details-icon" size="16px" />
                     <Text color={Text.Colors.HEADER_SECONDARY} size={Text.Sizes.SIZE_12}>{err.message}</Text>

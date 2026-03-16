@@ -97,14 +97,16 @@ export default new class PluginManager extends AddonManager<Plugin> {
         };
 
         try {
-            const isValid = typeof (addon.exports) === "function";
+            const isFunc = typeof addon.exports === "function";
+            const isObj = typeof addon.exports === "object";
+            const isValid = isFunc || isObj;
             if (!isValid) {
                 return {
                     kind: "not-loaded",
                     error: new AddonError({
                         addonType: this.prefix,
                         addon,
-                        message: "Plugins should be either a function or a class"
+                        message: "Plugins should be either a function, object or a class"
                     }),
                 };
             };
@@ -112,7 +114,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
             const PluginClass = addon.exports;
             const meta = Object.assign({}, addon);
             delete meta.exports;
-            const thePlugin = PluginClass.prototype ? new PluginClass(meta) : addon.exports(meta);
+            const thePlugin = isObj ? addon.exports : PluginClass.prototype ? new PluginClass(meta) : addon.exports(meta);
             if (!thePlugin.start || !thePlugin.stop) {
                 return {
                     kind: "not-loaded",
@@ -181,8 +183,8 @@ export default new class PluginManager extends AddonManager<Plugin> {
         if (module.exports.default) {
             module.exports = module.exports.default;
         }
-        if (typeof module.exports !== "function") {
-            module.exports = addon.name;
+        if (typeof module.exports !== "function" && typeof module.exports !== "object") {
+            module.exports = null;
         }
         addon.exports = module.exports;
         delete addon.fileContent;
@@ -259,6 +261,22 @@ export default new class PluginManager extends AddonManager<Plugin> {
     getAddon(idOrFile: string) {return this.getPlugin(idOrFile);}
 
     async startPlugin(plugin: Plugin): Promise<AddonStateStart<Plugin>> {
+        if (typeof plugin === "string") {
+            const err = "'BdApi.Plugins.start(string)' is deprecated, use 'BdApi.Plugins.start(BdApi.Plugins.get(id))'.";
+            Logger.warn(this.name, err);
+            plugin = this.getPlugin(plugin) as Plugin;
+            if (!plugin) {
+                return {
+                    kind: "not-started",
+                    error: new AddonError({
+                        addonType: this.prefix,
+                        addon: {filename: String(plugin)},
+                        message: t("Addons.methodError", {method: "start(string)"}),
+                        cause: new Error(err),
+                    }),
+                };
+            }
+        }
         const instance = plugin.instance;
         try {
             instance.start();
@@ -273,7 +291,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
                 error: new AddonError({
                     addonType: this.prefix,
                     addon: plugin,
-                    message: t("Addons.methodError", {method: "start()"}),
+                    message: t("Addons.methodError", {method: "start(name)"}),
                     cause: err as Error,
                 }),
             };
@@ -288,6 +306,22 @@ export default new class PluginManager extends AddonManager<Plugin> {
     }
 
     async stopPlugin(plugin: Plugin): Promise<AddonStateStop> {
+        if (typeof plugin === "string") {
+            const err = "'BdApi.Plugins.stop(string)' is deprecated, use 'BdApi.Plugins.stop(BdApi.Plugins.get(id))'.";
+            Logger.warn(this.name, err);
+            plugin = this.getPlugin(plugin) as Plugin;
+            if (!plugin) {
+                return {
+                    kind: "not-stopped",
+                    error: new AddonError({
+                        addonType: this.prefix,
+                        addon: {filename: String(plugin)},
+                        message: t("Addons.methodError", {method: "stop(string)"}),
+                        cause: new Error(err),
+                    }),
+                };
+            }
+        }
         const instance = plugin.instance;
         try {
             instance.stop();
