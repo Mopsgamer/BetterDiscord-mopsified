@@ -20,15 +20,14 @@ export type PluginMeta = AddonMeta;
 export interface Plugin extends Addon, PluginMeta {
     exports: any;
     instance: {
-        load?(): void;
-        start(): void;
-        stop(): void;
-        observer?(m: MutationRecord): void;
-        getSettingsPanel?(): any;
-        onSwitch?(): void;
+        load?(): void | Promise<void>;
+        start(): void | Promise<void>;
+        stop(): void | Promise<void>;
+        observer?(m: MutationRecord): void | Promise<void>;
+        getSettingsPanel?(): any | Promise<any>;
+        onSwitch?(): void | Promise<void>;
     };
 }
-
 export default new class PluginManager extends AddonManager<Plugin> {
     addonList: Plugin[] = [];
     observer: MutationObserver;
@@ -81,7 +80,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
         return Config.get("pluginsPath");
     }
 
-    validateFileBase(base: string): boolean {
+    validateFilename(base: string): boolean {
         return base.endsWith(".plugin.js") || base.endsWith(".plugin.mjs") || base.endsWith(".plugin.ts") || base.endsWith(".plugin.mts");
     }
 
@@ -89,7 +88,11 @@ export default new class PluginManager extends AddonManager<Plugin> {
         if (!addon.exports || !addon.name) {
             return {
                 kind: "not-loaded",
-                error: new AddonError(addon.name || addon.filename, addon.filename, "Plugin had no exports or @name property", {message: "Plugin had no exports or no @name property. @name property is required for all addons.", stack: ""}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon,
+                    message: "Plugin had no exports or @name property",
+                }),
             };
         };
 
@@ -98,7 +101,11 @@ export default new class PluginManager extends AddonManager<Plugin> {
             if (!isValid) {
                 return {
                     kind: "not-loaded",
-                    error: new AddonError(addon.name || addon.filename, addon.filename, "Plugin not a valid format.", {message: "Plugins should be either a function or a class", stack: ""}, this.prefix),
+                    error: new AddonError({
+                        addonType: this.prefix,
+                        addon,
+                        message: "Plugins should be either a function or a class"
+                    }),
                 };
             };
 
@@ -109,7 +116,11 @@ export default new class PluginManager extends AddonManager<Plugin> {
             if (!thePlugin.start || !thePlugin.stop) {
                 return {
                     kind: "not-loaded",
-                    error: new AddonError(addon.name || addon.filename, addon.filename, "Missing start or stop function.", {message: "Plugins must have both a start and stop function.", stack: ""}, this.prefix),
+                    error: new AddonError({
+                        addonType: this.prefix,
+                        addon,
+                        message: "Plugins must have both a start and stop function."
+                    }),
                 };
             };
 
@@ -121,24 +132,38 @@ export default new class PluginManager extends AddonManager<Plugin> {
             if (!addon.name || !addon.author || !addon.description || !addon.version) {
                 return {
                     kind: "not-loaded",
-                    error: new AddonError(addon.name || addon.filename, addon.filename, "Plugin is missing name, author, description, or version", {message: "Plugin must provide name, author, description, and version.", stack: ""}, this.prefix),
+                    error: new AddonError({
+                        addonType: this.prefix,
+                        addon,
+                        message: "Plugin must provide name, author, description, and version.",
+                    }),
                 };
             };
             try {
-                if (typeof (addon.instance.load) == "function") addon.instance.load();
+                if (typeof (addon.instance.load) == "function") await addon.instance.load();
             }
             catch (error) {
                 this.enablement[addon.id] = false;
                 return {
                     kind: "not-loaded",
-                    error: new AddonError(addon.name, addon.filename, t("Addons.methodError", {method: "load()"}), {message: (error as Error).message, stack: (error as Error).stack}, this.prefix),
+                    error: new AddonError({
+                        addonType: this.prefix,
+                        addon,
+                        message: t("Addons.methodError", {method: "load()"}),
+                        cause: error as Error,
+                    }),
                 };
             }
         }
         catch (error) {
             return {
                 kind: "not-loaded",
-                error: new AddonError(addon.name, addon.filename, t("Addons.methodError", {method: "Plugin constructor()"}), {message: (error as Error).message, stack: (error as Error).stack}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon,
+                    message: t("Addons.methodError", {method: "constructor()"}),
+                    cause: error as Error,
+                }),
             };
         }
         return {
@@ -175,7 +200,12 @@ export default new class PluginManager extends AddonManager<Plugin> {
         catch (err) {
             return {
                 kind: "not-loaded",
-                error: new AddonError(addon.name || addon.filename, addon.filename, t("Addons.compileError"), {message: (err as Error).message, stack: (err as Error).stack}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon,
+                    message: t("Addons.compileError"),
+                    cause: err as Error,
+                }),
             };
         }
     }
@@ -202,13 +232,12 @@ export default new class PluginManager extends AddonManager<Plugin> {
         catch (err) {
             return {
                 kind: "not-loaded",
-                error: new AddonError(
-                    addon.name || addon.filename,
-                    addon.filename,
-                    t("Addons.compileError"),
-                    {message: (err as Error).message, stack: (err as Error).stack},
-                    this.prefix
-                ),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon,
+                    message: t("Addons.compileError"),
+                    cause: err as Error,
+                }),
             };
         }
     }
@@ -241,7 +270,12 @@ export default new class PluginManager extends AddonManager<Plugin> {
             Logger.stacktrace(this.name, `${plugin.name} v${plugin.version} could not be started.`, err as Error);
             return {
                 kind: "not-started",
-                error: new AddonError(plugin.name, plugin.filename, t("Addons.methodError", {method: "start()"}), {message: (err as Error).message, stack: (err as Error).stack}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon: plugin,
+                    message: t("Addons.methodError", {method: "start()"}),
+                    cause: err as Error,
+                }),
             };
         }
         this.trigger("started", plugin.id);
@@ -264,7 +298,12 @@ export default new class PluginManager extends AddonManager<Plugin> {
             Logger.stacktrace(this.name, `${plugin.name} v${plugin.version} could not be started.`, err as Error);
             return {
                 kind: "not-stopped",
-                error: new AddonError(plugin.name, plugin.filename, t("Addons.enabled", {method: "stop()"}), {message: (err as Error).message, stack: (err as Error).stack}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon: plugin,
+                    message: t("Addons.enabled", {method: "stop()"}),
+                    cause: err as Error,
+                }),
             };
         }
         this.trigger("stopped", plugin.id);

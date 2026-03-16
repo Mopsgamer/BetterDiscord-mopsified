@@ -43,7 +43,7 @@ export default new class ThemeManager extends AddonManager<Theme> {
         );
     }
 
-    validateFileBase(base: string): boolean {
+    validateFilename(base: string): boolean {
         return base.endsWith(".theme.css");
     }
 
@@ -74,7 +74,11 @@ export default new class ThemeManager extends AddonManager<Theme> {
         if (!addon.name || !addon.author || !addon.description || !addon.version) {
             return {
                 kind: "not-loaded",
-                error: new AddonError(addon.name || addon.filename, addon.filename, "Addon is missing name, author, description, or version", {message: "Addon must provide name, author, description, and version.", stack: ""}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon,
+                    message: "Addon must provide name, author, description, and version.",
+                }),
             };
         }
         return {

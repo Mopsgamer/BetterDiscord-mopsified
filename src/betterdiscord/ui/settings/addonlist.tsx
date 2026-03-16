@@ -19,7 +19,7 @@ import Settings from "@stores/settings";
 import Text from "@ui/base/text";
 import {CheckIcon, ChevronRightIcon, FolderIcon, LayoutGridIcon, StoreIcon, StretchHorizontalIcon, XIcon} from "lucide-react";
 import {useStateFromStores} from "@ui/hooks";
-import {type Addon} from "@modules/addonmanager";
+import {type Addon, type AddonType} from "@modules/addonmanager";
 import type AddonManager from "@modules/addonmanager"; // eslint-disable-line no-duplicate-imports
 import type {Plugin} from "@modules/pluginmanager";
 import type {ChangeEvent, MouseEvent, ReactNode} from "react";
@@ -44,7 +44,7 @@ function openFolder(folder: string) {
     ipc.openPath(folder);
 }
 
-function Blankslate({type, folder}: {type: "plugin" | "theme"; folder: string;}) {
+function Blankslate({type, folder}: {type: AddonType; folder: string;}) {
     // TODO: doggy update context type as needed
     const {toggleStore} = React.useContext(addonContext) as {title: string; toggleStore(): void;};
     const storeEnabled = Settings.get("settings", "store", "bdAddonStore");
@@ -206,7 +206,7 @@ export default function AddonList({store}: {store: AddonManager<Plugin | Theme>;
             const hasSettings = (addon as Plugin).instance && typeof ((addon as Plugin).instance.getSettingsPanel) === "function";
             const getSettings = hasSettings && (addon as Plugin).instance.getSettingsPanel!.bind((addon as Plugin).instance);
             return <ErrorBoundary id={addon.id} name="AddonCard">
-                <AddonCard store={store} disabled={addon.partial} type={store.prefix as "plugin" | "theme"} editAddon={() => triggerEdit(addon)} deleteAddon={() => triggerDelete(addon)} key={addon.id} addon={addon} onChange={onChange} enabled={addonState[addon.id]} hasSettings={hasSettings} getSettingsPanel={getSettings ? getSettings : undefined} />
+                <AddonCard store={store} disabled={addon.partial} type={store.prefix as AddonType} editAddon={() => triggerEdit(addon)} deleteAddon={() => triggerDelete(addon)} key={addon.id} addon={addon} onChange={onChange} enabled={addonState[addon.id]} hasSettings={hasSettings} getSettingsPanel={getSettings ? getSettings : undefined} />
             </ErrorBoundary>;
         });
     }, [store, addonList, addonState, onChange, triggerDelete, triggerEdit, query, ascending, sort]);
@@ -243,7 +243,7 @@ export default function AddonList({store}: {store: AddonManager<Plugin | Theme>;
             </div>
         </div>,
         <StoreCard />,
-        !hasAddonsInstalled && <Blankslate type={store.prefix as "plugin" | "theme"} folder={store.addonFolder()} />,
+        !hasAddonsInstalled && <Blankslate type={store.prefix as AddonType} folder={store.addonFolder()} />,
         isSearching && !hasResults && hasAddonsInstalled && <NoResults />,
         hasAddonsInstalled && <div key="addonList" className={"bd-addon-list" + (view == "grid" ? " bd-grid-view" : "")}>{renderedCards}</div>
     ];

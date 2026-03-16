@@ -140,18 +140,20 @@ export type AddonStateStart<A extends Plugin | Theme> = AddonStateStarted<A> | A
 export type AddonStateStop = AddonStateStopped | AddonStateNotStopped;
 export type AddonState<A extends Plugin | Theme> = AddonStateStart<A> | AddonStateLoad | AddonStateStop;
 
+export type AddonType = "plugin" | "theme";
+
 export default abstract class AddonManager<A extends Plugin | Theme> extends Store {
 
     protected abstract name: string;
 
     abstract addonFolder(): string;
-    abstract validateFileBase(base: string): boolean;
+    abstract validateFilename(base: string): boolean;
     abstract initializeAddon(addon: A): Promise<AddonStateLoad>;
     abstract startAddon(addon: A): Promise<AddonStateStart<A>>;
     abstract stopAddon(addon: A): Promise<AddonStateStop>;
 
     constructor(
-        public prefix: string,
+        public prefix: AddonType,
         public language: string,
         public order: number,
     ) {
@@ -209,18 +211,18 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
 
         const addonFolder = this.addonFolder();
 
-        this.watcher = fs.watch(addonFolder, {persistent: false}, (eventType, filebase) => {
-            if (!eventType || !filebase) return;
+        this.watcher = fs.watch(addonFolder, {persistent: false}, (eventType, filename) => {
+            if (!eventType || !filename) return;
 
-            if (!this.validateFileBase(filebase)) {
+            if (!this.validateFilename(filename)) {
                 return;
             }
 
-            const absolutePath = path.resolve(addonFolder, filebase);
-            const addon = this.addonList.find(a => a.filename === filebase);
+            const absolutePath = path.resolve(addonFolder, filename);
+            const addon = this.addonList.find(a => a.filename === filename);
 
             if (!addon) {
-                Logger.err(this.name, `No addon cache found: ${filebase}.`);
+                Logger.err(this.name, `No addon cache found: ${filename}.`);
                 return;
             }
 
@@ -231,15 +233,15 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
             }
             catch (err) {
                 if ((err as SystemError).code !== "ENOENT" && !(err as SystemError)?.message.startsWith("ENOENT")) return;
-                this.fileStats.delete(filebase);
+                this.fileStats.delete(filename);
                 this.unloadAddon(addon, true);
                 return;
             }
             if (!stats.isFile()) return;
-            if (this.fileStats.get(filebase)?.mtimeMs === stats.mtimeMs) return;
-            if (this.fileStats.set(filebase, stats)) return;
+            if (this.fileStats.get(filename)?.mtimeMs === stats.mtimeMs) return;
+            if (this.fileStats.set(filename, stats)) return;
 
-            if (eventType == "rename") this.loadAddon(filebase, true);
+            if (eventType == "rename") this.loadAddon(filename, true);
             if (eventType == "change") this.reloadAddon(addon, true);
         });
     }
@@ -258,7 +260,12 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         if (!hasMetaComment) {
             return {
                 kind: "not-loaded",
-                error: new AddonError(filename, filename, t("Addons.metaNotFound"), {message: "", stack: fileContent}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon: {filename},
+                    message: t("Addons.metaNotFound"),
+                    cause: new TypeError(fileContent),
+                }),
             };
         };
         const metaInfo = this.parseJSDoc(fileContent);
@@ -317,8 +324,8 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         let fileContent = await fs.promises.readFile(filerel, "utf8");
         fileContent = stripBOM(fileContent);
         const stats = fs.statSync(filerel);
-        const base = path.basename(filerel);
-        const extract = this.extractMeta(fileContent, base);
+        const filename = path.basename(filerel);
+        const extract = this.extractMeta(fileContent, filename);
         if (extract.kind === "not-loaded") {
             return {
                 kind: "not-loaded",
@@ -330,9 +337,9 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         if (!addon.version) addon.version = "???";
         if (!addon.description) addon.description = t("Addons.noDescription");
         // if (!addon.name || !addon.author || !addon.description || !addon.version) return new AddonError(addon.name || path.basename(filename), filename, "Addon is missing name, author, description, or version", {message: "Addon must provide name, author, description, and version.", stack: ""}, this.prefix);
-        addon.id = addon.name || base;
-        addon.slug = base.replace(/.\w+.\w+$/, "").replace(/ /g, "-");
-        addon.filename = base;
+        addon.id = addon.name || filename;
+        addon.slug = filename.replace(/.\w+.\w+$/, "").replace(/ /g, "-");
+        addon.filename = filename;
         addon.added = stats.atimeMs;
         addon.modified = stats.mtimeMs;
         addon.size = stats.size;
@@ -340,7 +347,11 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         if (this.addonList.find(c => c.id == addon.id)) {
             return {
                 kind: "not-loaded",
-                error: new AddonError(addon.name!, filerel, t("Addons.alreadyExists", {context: this.prefix, name: addon.name}), {}, this.prefix)
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon: addon as Plugin | Theme,
+                    message: t("Addons.alreadyExists", {context: this.prefix, name: addon.name}),
+                }),
             };
         }
         this.addonList.push(addon as A);
@@ -406,7 +417,11 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         if (!didUnload) {
             return {
                 kind: "not-loaded",
-                error: new AddonError(addon.name, addon.filename, "Failed to unload while reloading", {}, this.prefix)
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon,
+                    message: "Failed to unload while reloading",
+                }),
             };
         }
         return this.loadAddon(addon.filename, shouldToast);
@@ -427,16 +442,14 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
     }
 
     async enableAddon(addon: A): Promise<AddonStateStart<A>> {
-        if (addon.partial) {
+        if (addon.partial || this.enablement[addon.id]) {
             return {
                 kind: "not-started",
-                error: new AddonError(addon.name, addon.filename, t("Addons.couldNotEnable", {name: addon.id}), {}, this.prefix),
-            };
-        }
-        if (this.enablement[addon.id]) {
-            return {
-                kind: "not-started",
-                error: new AddonError(addon.name, addon.filename, t("Addons.couldNotEnable", {name: addon.id}), {}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon,
+                    message: t("Addons.couldNotEnable", {name: addon.id}),
+                }),
             };
         }
         this.enablement[addon.id] = true;
@@ -463,16 +476,14 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
     }
 
     async disableAddon(addon: A): Promise<AddonStateStop> {
-        if (addon.partial) {
+        if (addon.partial || !this.enablement[addon.id]) {
             return {
                 kind: "not-stopped",
-                error: new AddonError(addon.name, addon.filename, t("Addons.couldNotDisable", {name: addon.id}), {}, this.prefix),
-            };
-        }
-        if (!this.enablement[addon.id]) {
-            return {
-                kind: "not-stopped",
-                error: new AddonError(addon.name, addon.filename, t("Addons.couldNotDisable", {name: addon.id}), {}, this.prefix),
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon,
+                    message: t("Addons.couldNotDisable", {name: addon.id}),
+                }),
             };
         }
         this.enablement[addon.id] = false;
@@ -506,7 +517,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         const addonFolder = this.addonFolder();
         const files = await fs.promises.readdir(addonFolder);
         const removed = this.addonList.filter(a => !files.includes(a.filename));
-        const added = files.filter(f => !this.addonList.find(a => a.filename == f) && this.validateFileBase(f) && fs.statSync(path.resolve(addonFolder, f)).isFile());
+        const added = files.filter(f => !this.addonList.find(a => a.filename == f) && this.validateFilename(f) && fs.statSync(path.resolve(addonFolder, f)).isFile());
         return {added, removed};
     }
 
@@ -533,7 +544,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         const resolved: Resolved[] = [];
 
         for (const filename of files) {
-            if (!this.validateFileBase(filename)) continue;
+            if (!this.validateFilename(filename)) continue;
             const absolute = path.resolve(addonFolder, filename);
             const stats = await fs.promises.stat(absolute);
             const content = await fs.promises.readFile(absolute, "utf8");
