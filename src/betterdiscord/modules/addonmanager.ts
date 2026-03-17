@@ -218,14 +218,13 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
                 return;
             }
 
-            // 1. CLEAR existing timer for this specific file
             if (this.watchTimers.has(filename)) {
                 clearTimeout(this.watchTimers.get(filename)!);
             }
 
-            // 2. START a new timer (Debounce)
             const timer: Timer = setTimeout(async () => {
                 try {
+                    Logger.info("AddonManager~watcher", eventType, filename);
                     let addon = this.addonList.find(a => a.filename === filename);
 
                     if (!addon) {
