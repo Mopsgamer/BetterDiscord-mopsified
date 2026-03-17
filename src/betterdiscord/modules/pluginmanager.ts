@@ -82,7 +82,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
     }
 
     validateFilename(base: string): boolean {
-        return base.endsWith(".plugin.js") || base.endsWith(".plugin.mjs") || base.endsWith(".plugin.ts") || base.endsWith(".plugin.mts");
+        return base.endsWith(".plugin.js") || base.endsWith(".plugin.mjs") || base.endsWith(".plugin.ts") || base.endsWith(".plugin.mts") || base.endsWith(".plugin.tsx") || base.endsWith(".plugin.jsx");
     }
 
     async initializeAddon(addon: Plugin): Promise<AddonStateLoad> {
@@ -251,8 +251,14 @@ export default new class PluginManager extends AddonManager<Plugin> {
         if (filename.endsWith(".plugin.mjs")) {
             return this.requireESMAddon(requireResult, ["imports"]);
         }
-        else if (filename.endsWith(".plugin.ts") || filename.endsWith(".plugin.mts")) {
+        else if (filename.endsWith(".plugin.jsx")) {
             return this.requireESMAddon(requireResult, ["imports", "jsx"]);
+        }
+        else if (filename.endsWith(".plugin.ts") || filename.endsWith(".plugin.mts")) {
+            return this.requireESMAddon(requireResult, ["imports", "typescript"]);
+        }
+        else if (filename.endsWith(".plugin.tsx")) {
+            return this.requireESMAddon(requireResult, ["imports", "jsx", "typescript"]);
         }
         return this.requireIIFEAddon(requireResult);
     }
