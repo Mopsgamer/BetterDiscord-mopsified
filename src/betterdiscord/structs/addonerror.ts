@@ -9,14 +9,13 @@ export interface AddonErrorOptions<T extends Error> {
     message: string;
     cause?: T;
 }
-export default class AddonError<T extends Error = Error> extends Error {
-    name = "AddonError";
+export default class AddonError<T extends Error | SyntaxError = Error | SyntaxError> extends Error {
+    override name = "AddonError";
     addon: {
         name?: string;
         filename: string;
     };
     addonType: AddonType;
-    cause?: T;
     constructor(options: AddonErrorOptions<T>) {
         super(options.message, {cause: options.cause});
         const {addon} = options;

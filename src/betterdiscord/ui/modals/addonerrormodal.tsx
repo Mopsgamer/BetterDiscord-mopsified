@@ -13,22 +13,37 @@ import ModalRoot from "./root";
 import Footer from "./footer";
 import {ChevronRightIcon, PlugIcon, InfoIcon, PaletteIcon} from "lucide-react";
 import clsx from "clsx";
-import type AddonErrorType from "@structs/addonerror";
+import AddonErrorType from "@structs/addonerror";
 import DiscordModules from "@modules/discordmodules";
 import type {Plugin} from "@modules/pluginmanager";
 import type {AddonState} from "@modules/addonmanager";
 import type {Theme} from "@modules/thememanager";
+import Logger from "@common/logger";
 
 const Parser = DiscordModules.SimpleMarkdownWrapper.defaultRules;
 const {useState, useCallback, useMemo} = React;
 
+function getFullStack(err: Error): string {
+    if (err instanceof AddonErrorType && err.cause instanceof SyntaxError && "loc" in err.cause) {
+        // const loc = err.cause.loc as Record<"line" | "column", number>;
+        return err.cause.message;
+    }
+    let stack = err.stack || `${err.name}: ${err.message}`;
+
+    if (err.cause instanceof Error) {
+        stack += `\n\nCaused by: ${getFullStack(err.cause)}`;
+    }
+
+    return stack;
+}
 
 function AddonError({err, index}: {err: AddonErrorType; index: number;}) {
     const [expanded, setExpanded] = useState(false);
     const toggle = useCallback(() => setExpanded(!expanded), [expanded]);
 
     function renderErrorBody() {
-        const stack = err?.cause?.stack ?? err.stack;
+        const stack = getFullStack(err);
+        Logger.error("AddonError", err, stack);
         if (!expanded || !stack) return null;
         return <div className="bd-addon-error-body">
             <Divider />
