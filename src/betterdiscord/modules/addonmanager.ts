@@ -245,15 +245,24 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
                     catch (err) {
                         if ((err as SystemError).code !== "ENOENT" && !(err as SystemError)?.message.startsWith("ENOENT")) return;
                         this.fileStats.delete(filename);
+                        Logger.info("AddonManager~watcher", "unload", eventType, filename);
                         await this.unloadAddon(addon, true);
                         return;
                     }
                     if (!stats.isFile()) return;
                     if (this.fileStats.get(filename)?.mtimeMs === stats.mtimeMs) return;
-                    if (this.fileStats.set(filename, stats)) return;
+                    this.fileStats.set(filename, stats);
 
-                    if (eventType == "rename") await this.loadAddon(filename, true);
-                    if (eventType == "change") await this.reloadAddon(addon, true);
+                    if (eventType == "rename") {
+                        Logger.info("AddonManager~watcher", "load new", eventType, filename);
+                        const oldAddon = this.getAddon(addon.id)!;
+                        await this.loadAddon(filename, true);
+                        await this.unloadAddon(oldAddon, true);
+                    }
+                    else if (eventType == "change") {
+                        Logger.info("AddonManager~watcher", "reload", eventType, filename);
+                        await this.reloadAddon(addon, true);
+                    };
                 }
                 finally {
                     this.watchTimers.delete(filename);
