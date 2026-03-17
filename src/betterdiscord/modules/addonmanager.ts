@@ -231,7 +231,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
                     if (!addon) {
                         const loaded = await this.loadAddon(filename);
                         if (loaded.kind === "not-loaded") {
-                            Logger.error(this.name, `Failed to instantiate ${filename}.`);
+                            Logger.error(this.name, `Failed to instantiate ${filename}.`, loaded.error);
                             return;
                         }
                         addon = loaded.addon as A;
@@ -347,7 +347,12 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         if (extract.kind === "not-loaded") {
             return {
                 kind: "not-loaded",
-                error: extract.error,
+                error: new AddonError({
+                    addonType: this.prefix,
+                    addon: {filename},
+                    message: "Failed to parse addon's meta",
+                    cause: extract.error
+                }),
             };
         }
         const addon = extract.meta as Partial<Plugin | Theme>;

@@ -14,6 +14,7 @@ import {t} from "@common/i18n";
 import Events from "./emitter";
 
 import Modals from "@ui/modals";
+import type {RawSourceMap} from "sucrase/dist/types/computeSourceMap";
 
 
 export type PluginMeta = AddonMeta;
@@ -174,12 +175,18 @@ export default new class PluginManager extends AddonManager<Plugin> {
         };
     }
 
-    private async runIIFE(addon: Plugin): Promise<void> {
+    private async runIIFE(addon: Plugin, sourceMap?: RawSourceMap): Promise<void> {
         const module = {filename: addon.filename, exports: {} as any};
+        let extension = `\n//# sourceURL=betterdiscord://plugins/${addon.filename}`;
+        if (sourceMap) {
+            const mapBase64 = Buffer.from(JSON.stringify(sourceMap)).toString("base64");
+            extension += `\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,${mapBase64}`;
+        }
+        addon.fileContent += extension;
         vm.compileFunction(addon.fileContent!, ["require", "module", "exports", "__filename", "__dirname"], {filename: path.basename(addon.filename)});
-        addon.fileContent += `\n//# sourceURL=betterdiscord://plugins/${addon.filename}`;
         const wrappedPlugin = new Function("require", "module", "exports", "__filename", "__dirname", addon.fileContent!); // eslint-disable-line no-new-func
-        await wrappedPlugin(window.require, module, module.exports, module.filename, this.addonFolder);
+        await wrappedPlugin(window.require, module, module.exports, module.filename, this.addonFolder());
+
         if (module.exports.default) {
             module.exports = module.exports.default;
         }
@@ -212,19 +219,13 @@ export default new class PluginManager extends AddonManager<Plugin> {
         }
     }
 
-    private async requireESMAddon(loaded: AddonStateLoaded, ts: boolean): Promise<AddonStateLoad> {
+    private async requireESMAddon(loaded: AddonStateLoaded, transforms: sucrase.Transform[]): Promise<AddonStateLoad> {
         const addon = loaded.addon as Plugin;
 
         try {
-            const transforms: sucrase.Transform[] = ["imports"];
-            if (ts) {
-                transforms.push("typescript");
-            }
             const transformed = sucrase.transform(addon.fileContent!, {transforms});
             addon.fileContent = transformed.code;
-            addon.fileContent += `\n//# sourceURL=betterdiscord://plugins/${addon.filename}`;
-
-            await this.runIIFE(addon);
+            await this.runIIFE(addon, transformed.sourceMap);
 
             return {
                 kind: "loaded",
@@ -248,10 +249,10 @@ export default new class PluginManager extends AddonManager<Plugin> {
         const requireResult = await super.requireAddon(path.resolve(this.addonFolder(), filename));
         if (requireResult.kind === "not-loaded") return requireResult;
         if (filename.endsWith(".plugin.mjs")) {
-            return this.requireESMAddon(requireResult, false);
+            return this.requireESMAddon(requireResult, ["imports"]);
         }
         else if (filename.endsWith(".plugin.ts") || filename.endsWith(".plugin.mts")) {
-            return this.requireESMAddon(requireResult, true);
+            return this.requireESMAddon(requireResult, ["imports", "jsx"]);
         }
         return this.requireIIFEAddon(requireResult);
     }
