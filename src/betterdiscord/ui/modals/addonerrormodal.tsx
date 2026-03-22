@@ -41,9 +41,13 @@ function AddonError({err, index}: {err: AddonErrorType; index: number;}) {
     const [expanded, setExpanded] = useState(false);
     const toggle = useCallback(() => setExpanded(!expanded), [expanded]);
 
+    const stack = useMemo(() => {
+        const fullStack = getFullStack(err);
+        Logger.error("AddonError", err, fullStack);
+        return fullStack;
+    }, [err]);
+
     function renderErrorBody() {
-        const stack = getFullStack(err);
-        Logger.error("AddonError", err, stack);
         if (!expanded || !stack) return null;
         return <div className="bd-addon-error-body">
             <Divider />

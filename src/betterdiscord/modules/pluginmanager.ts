@@ -249,7 +249,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
         const requireResult = await super.requireAddon(path.resolve(this.addonFolder(), filename));
         if (requireResult.kind === "not-loaded") return requireResult;
         const plugin = requireResult.addon as Plugin;
-        const usesESM = plugin.use.includes("esm");
+        const usesESM = plugin.use && plugin.use.includes("esm");
         if (filename.endsWith(".plugin.mjs") || usesESM) {
             return this.requireESMAddon(requireResult);
         }
