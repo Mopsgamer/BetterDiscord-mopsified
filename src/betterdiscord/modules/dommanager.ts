@@ -223,6 +223,25 @@ export default class DOMManager {
     }
 }
 
+const map = document.createElement("script");
+map.type = "importmap";
+
+const lazyApiScript = `
+  const handler = {
+    get: (target, prop) => {
+      return globalThis.BdApi ? globalThis.BdApi[prop] : undefined;
+    }
+  };
+  export default new Proxy({}, handler);
+`;
+
+map.textContent = JSON.stringify({
+    imports: {"bd:api": `data:text/javascript;base64,${btoa(lazyApiScript)}`}
+});
+
+document.head.prepend(map);
+Logger.info("Importmap", "Import map injected successfully.");
+
 DOMManager.createElement("bd-head", {target: document.body});
 DOMManager.createElement("bd-body", {target: document.body});
 DOMManager.createElement("bd-scripts", {target: DOMManager.bdHead});
