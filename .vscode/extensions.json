@@ -1,12 +1,10 @@
 {
     "recommendations": [
-        "dbaeumer.vscode-eslint",
         "quicktype.quicktype",
         "eamodio.gitlens",
         "gruntfuggly.todo-tree",
         "oven.bun-vscode",
         "mylesmurphy.prettify-ts",
-        "stylelint.vscode-stylelint",
         "seunlanlege.action-buttons"
     ]
 }
