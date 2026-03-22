@@ -1,5 +1,4 @@
 import vm from "vm";
-import * as sucrase from "sucrase";
 import path from "path";
 
 import Logger from "@common/logger";
@@ -14,7 +13,6 @@ import {t} from "@common/i18n";
 import Events from "./emitter";
 
 import Modals from "@ui/modals";
-import type {RawSourceMap} from "sucrase/dist/types/computeSourceMap";
 
 
 export type PluginMeta = AddonMeta;
@@ -175,13 +173,9 @@ export default new class PluginManager extends AddonManager<Plugin> {
         };
     }
 
-    private async runIIFE(addon: Plugin, sourceMap?: RawSourceMap): Promise<void> {
+    private async runIIFE(addon: Plugin): Promise<void> {
         const module = {filename: addon.filename, exports: {} as any};
-        let extension = `\n//# sourceURL=betterdiscord://plugins/${addon.filename}`;
-        if (sourceMap) {
-            const mapBase64 = Buffer.from(JSON.stringify(sourceMap)).toString("base64");
-            extension += `\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,${mapBase64}`;
-        }
+        const extension = `\n//# sourceURL=betterdiscord://plugins/${addon.filename}`;
         addon.fileContent += extension;
         vm.compileFunction(addon.fileContent!, ["require", "module", "exports", "__filename", "__dirname"], {filename: path.basename(addon.filename)});
         const wrappedPlugin = new Function("require", "module", "exports", "__filename", "__dirname", addon.fileContent!); // eslint-disable-line no-new-func
@@ -219,13 +213,16 @@ export default new class PluginManager extends AddonManager<Plugin> {
         }
     }
 
-    private async requireESMAddon(loaded: AddonStateLoaded, transforms: sucrase.Transform[]): Promise<AddonStateLoad> {
+    private async requireESMAddon(loaded: AddonStateLoaded): Promise<AddonStateLoad> {
         const addon = loaded.addon as Plugin;
 
         try {
-            const transformed = sucrase.transform(addon.fileContent!, {transforms});
-            addon.fileContent = transformed.code;
-            await this.runIIFE(addon, transformed.sourceMap);
+            const blob = new Blob([addon.fileContent!], {type: "application/javascript"});
+            const url = URL.createObjectURL(blob);
+            addon.exports = await import(url);
+            if (addon.exports.default) {
+                addon.exports = addon.exports.default;
+            }
 
             return {
                 kind: "loaded",
@@ -249,16 +246,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
         const requireResult = await super.requireAddon(path.resolve(this.addonFolder(), filename));
         if (requireResult.kind === "not-loaded") return requireResult;
         if (filename.endsWith(".plugin.mjs")) {
-            return this.requireESMAddon(requireResult, ["imports"]);
-        }
-        else if (filename.endsWith(".plugin.jsx")) {
-            return this.requireESMAddon(requireResult, ["imports", "jsx"]);
-        }
-        else if (filename.endsWith(".plugin.ts") || filename.endsWith(".plugin.mts")) {
-            return this.requireESMAddon(requireResult, ["imports", "typescript"]);
-        }
-        else if (filename.endsWith(".plugin.tsx")) {
-            return this.requireESMAddon(requireResult, ["imports", "jsx", "typescript"]);
+            return this.requireESMAddon(requireResult);
         }
         return this.requireIIFEAddon(requireResult);
     }
