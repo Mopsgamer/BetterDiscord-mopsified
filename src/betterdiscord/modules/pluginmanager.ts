@@ -15,7 +15,10 @@ import Events from "./emitter";
 import Modals from "@ui/modals";
 
 
-export type PluginMeta = AddonMeta;
+export interface PluginMeta extends AddonMeta {
+    use: string[];
+};
+
 export interface Plugin extends Addon, PluginMeta {
     exports: any;
     instance: {
@@ -245,7 +248,9 @@ export default new class PluginManager extends AddonManager<Plugin> {
     async requireAddon(filename: string): Promise<AddonStateLoad> {
         const requireResult = await super.requireAddon(path.resolve(this.addonFolder(), filename));
         if (requireResult.kind === "not-loaded") return requireResult;
-        if (filename.endsWith(".plugin.mjs")) {
+        const plugin = requireResult.addon as Plugin;
+        const usesESM = plugin.use.includes("esm");
+        if (filename.endsWith(".plugin.mjs") || usesESM) {
             return this.requireESMAddon(requireResult);
         }
         return this.requireIIFEAddon(requireResult);
