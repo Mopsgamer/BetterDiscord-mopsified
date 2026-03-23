@@ -198,6 +198,63 @@ export default class BetterDiscord {
                 }
             });
         }
+
+        electron.protocol.handle("bd", async (request) => {
+            const url = new URL(request.url);
+            const {host, pathname, searchParams: params} = url;
+            const callerName = params.get("id") || "";
+
+            let prop = "", script = "";
+            const access = (host + pathname).replace(/\/$/, "");
+
+            switch (access) {
+                case "api": prop = ""; break;
+                case "patcher": prop = "Patcher"; break;
+                case "data": prop = "Data"; break;
+                case "dom": prop = "DOM"; break;
+                case "logger": prop = "Logger"; break;
+                case "commands": prop = "Commands"; break;
+                case "commands/types": prop = "Commands.Types"; break;
+                case "commands/types/command": prop = "Commands.Types.CommandType"; break;
+                case "commands/types/input": prop = "Commands.Types.InputTypes"; break;
+                case "commands/types/message-embed": prop = "Commands.Types.MessageEmbedTypes"; break;
+                case "commands/types/option": prop = "Commands.Types.OptionTypes"; break;
+                case "net": prop = "Net"; break;
+                case "ui": prop = "UI"; break;
+                case "addons/themes": prop = "Themes"; break;
+                case "addons/plugins": prop = "Plugins"; break;
+                case "utils": prop = "Utils"; break;
+                case "react-utils": prop = "ReactUtils"; break;
+                case "context-menu": prop = "ContextMenu"; break;
+                case "context-menu/item": prop = "ContextMenu.Item"; break;
+                case "context-menu/group": prop = "ContextMenu.Group"; break;
+                case "components": prop = "Components"; break;
+                case "webpack": prop = "Webpack"; break;
+                case "webpack/filters": prop = "Webpack.Filters"; break;
+                case "webpack/stores": prop = "Webpack.Stores"; break;
+                case "react": prop = "React"; break;
+                case "react-dom": case "react-dom/client": prop = "ReactDOM"; break;
+                case "lodash": prop = `Webpack.getByKeys("debounce", "throttle")`; break;
+                case "moment": prop = `Webpack.getByKeys("isMoment")`; break;
+                case "highlight.js": prop = `Webpack.getByKeys("highlight", "highlightAll")`; break;
+                default:
+                    return new Response("Invalid BD Module", {status: 404});
+            }
+
+            if (!script) {
+                prop &&= "." + prop;
+                script = `
+                    const target = ${callerName ? `(new BdApi("${callerName}"))` : "BdApi"}${prop};
+                    export default target;`;
+            }
+
+            return new Response(script, {
+                headers: {
+                    "Content-Type": "text/javascript",
+                    "Cache-Control": "no-store, no-cache, must-revalidate",
+                }
+            });
+        });
     }
 
     static disableMediaKeys() {
