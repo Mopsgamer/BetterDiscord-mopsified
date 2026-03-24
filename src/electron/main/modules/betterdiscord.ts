@@ -207,6 +207,34 @@ export default class BetterDiscord {
             let prop = "", script = "";
             const access = (host + pathname).replace(/\/$/, "");
 
+            interface PluginMatch extends RegExpMatchArray {
+                groups: {
+                    plugin: string;
+                };
+            }
+
+            const match = access.match(/addons\/plugins\/(?<plugin>\w+.plugin.m?js)/) as PluginMatch | null;
+
+            if (match) {
+                const filename = match.groups.plugin;
+
+                function validateFilename(base: string): boolean {
+                    return base.endsWith(".plugin.js") || base.endsWith(".plugin.mjs");
+                }
+
+                if (!validateFilename(filename)) {
+                    return new Response("Invalid BD Plugin File", {status: 404});
+                }
+
+                script = await fs.promises.readFile(path.resolve(path.join(bdFolder, "plugins"), filename), "utf8");
+
+                return new Response(script, {
+                    headers: {
+                        "Content-Type": "text/javascript",
+                    }
+                });
+            }
+
             switch (access) {
                 case "api": prop = ""; break;
                 case "patcher": prop = "Patcher"; break;
@@ -251,7 +279,6 @@ export default class BetterDiscord {
             return new Response(script, {
                 headers: {
                     "Content-Type": "text/javascript",
-                    "Cache-Control": "no-store, no-cache, must-revalidate",
                 }
             });
         });

@@ -72,7 +72,7 @@ function getDiscord_desktop_core(discordDir: string) {
 
     return coreWrap
         ? path.join(modulesPath, coreWrap, "discord_desktop_core")
-        : path.join(discordDir, "modules", "discord_desktop_core");
+        : path.join(modulesPath, "discord_desktop_core");
 }
 
 doSanityChecks(bdPath);
@@ -136,11 +136,11 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
     fs.rmSync(tempUnpackPath, {recursive: true, force: true});
 
     // index.js
-    const indexJs = path.join(discordDir, "index.js");
+    const indexJs = path.join(discord_desktop_core, "index.js");
     if (fs.existsSync(indexJs)) fs.unlinkSync(indexJs);
 
     const injectionCode = process.env.WSL_DISTRO_NAME
-        ? (copyFiles(bdPath, path.join(discordDir, "betterdiscord")), `require("./betterdiscord");\nmodule.exports = require("./core.asar");`)
+        ? (copyFiles(bdPath, path.join(discord_desktop_core, "betterdiscord")), `require("./betterdiscord");\nmodule.exports = require("./core.asar");`)
         : `require("${bdPath.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}");\nmodule.exports = require("./core.asar");`;
 
     fs.writeFileSync(indexJs, injectionCode);

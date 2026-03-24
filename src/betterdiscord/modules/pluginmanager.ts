@@ -68,7 +68,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
     }
 
     validateFilename(base: string): boolean {
-        return base.endsWith(".plugin.js") || base.endsWith(".plugin.mjs") || base.endsWith(".plugin.ts") || base.endsWith(".plugin.mts") || base.endsWith(".plugin.tsx") || base.endsWith(".plugin.jsx");
+        return base.endsWith(".plugin.js") || base.endsWith(".plugin.mjs");
     }
 
     async initializeAddon(addon: Plugin): Promise<AddonStateLoad> {
@@ -205,9 +205,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
         const addon = loaded.addon as Plugin;
 
         try {
-            const blob = new Blob([addon.fileContent!], {type: "application/javascript"});
-            const url = URL.createObjectURL(blob);
-            addon.exports = await import(url);
+            addon.exports = await import("bd:addons/plugins/" + addon.filename + "?t=" + Date.now());
             if (addon.exports.default) {
                 addon.exports = addon.exports.default;
             }
@@ -370,6 +368,9 @@ export default new class PluginManager extends AddonManager<Plugin> {
                 continue;
             }
             const {instance} = plugin;
+            if (!instance) {
+                continue;
+            }
             const {observer} = instance;
             try {
                 if (typeof observer === "function") {

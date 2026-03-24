@@ -15,10 +15,10 @@ import {ChevronRightIcon, PlugIcon, InfoIcon, PaletteIcon} from "lucide-react";
 import clsx from "clsx";
 import AddonErrorType from "@structs/addonerror";
 import DiscordModules from "@modules/discordmodules";
-import type {Plugin} from "@modules/pluginmanager";
-import type {AddonState} from "@modules/addonmanager";
-import type {Theme} from "@modules/thememanager";
 import Logger from "@common/logger";
+import type {AddonState} from "@modules/addonstate";
+import type {Plugin} from "@modules/plugin";
+import type {Theme} from "@modules/theme";
 
 const Parser = DiscordModules.SimpleMarkdownWrapper.defaultRules;
 const {useState, useCallback, useMemo} = React;
@@ -43,7 +43,7 @@ function AddonError({err, index}: {err: AddonErrorType; index: number;}) {
 
     const stack = useMemo(() => {
         const fullStack = getFullStack(err);
-        Logger.error("AddonError", err, fullStack);
+        Logger.error("AddonError", err);
         return fullStack;
     }, [err]);
 
