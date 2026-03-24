@@ -8,30 +8,15 @@ import Toasts from "@stores/toasts";
 
 import AddonError from "@structs/addonerror";
 
-import AddonManager, {type Addon, type AddonMeta, type AddonStateLoad, type AddonStateLoaded, type AddonStateStart, type AddonStateStop} from "./addonmanager";
+import AddonManager from "./addonmanager";
 import {t} from "@common/i18n";
 import Events from "./emitter";
 
 import Modals from "@ui/modals";
+import type {Plugin} from "./plugin";
+import type {AddonStateLoad, AddonStateLoaded, AddonStateStart, AddonStateStop} from "./addonstate";
 
-
-export interface PluginMeta extends AddonMeta {
-    use: string[];
-};
-
-export interface Plugin extends Addon, PluginMeta {
-    exports: any;
-    instance: {
-        load?(): void | Promise<void>;
-        start(): void | Promise<void>;
-        stop(): void | Promise<void>;
-        observer?(m: MutationRecord): void | Promise<void>;
-        getSettingsPanel?(): any | Promise<any>;
-        onSwitch?(): void | Promise<void>;
-    };
-}
 export default new class PluginManager extends AddonManager<Plugin> {
-    addonList: Plugin[] = [];
     observer: MutationObserver;
     name = "PluginManager";
 
@@ -74,7 +59,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
     async reloadPlugin(plugin: Plugin) {
         const reload = await this.reloadAddon(plugin);
         if (reload.kind === "not-loaded") Modals.showAddonErrors({plugins: [reload]});
-        return typeof (plugin) == "string" ? this.addonList.find(c => c.id == plugin || c.filename == plugin) : plugin;
+        return typeof (plugin) == "string" ? this.getAddon(plugin) : plugin;
     }
 
     /* Overrides */
@@ -348,7 +333,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
     }
 
     getPlugin(idOrFile: string) {
-        const addon = this.addonList.find(c => c.id == idOrFile || c.filename == idOrFile);
+        const addon = super.getAddon(idOrFile);
         if (!addon) return;
         return addon;
     }
@@ -362,28 +347,36 @@ export default new class PluginManager extends AddonManager<Plugin> {
     }
 
     onSwitch() {
-        for (let i = 0; i < this.addonList.length; i++) {
-            if (!this.enablement[this.addonList[i].id]) continue;
-            const plugin = this.addonList[i].instance;
+        for (const id in this.enablement) {
+            const plugin = this.getAddon(id);
+            if (!plugin) {
+                continue;
+            }
+            const {instance} = plugin;
+            const {onSwitch} = instance;
             try {
-                if (typeof plugin?.onSwitch === "function") {
-                    plugin.onSwitch();
+                if (typeof onSwitch === "function") {
+                    onSwitch();
                 }
             }
-            catch (err) {Logger.stacktrace(this.name, `Unable to fire onSwitch for ${this.addonList[i].name} v${this.addonList[i].version}`, err as Error);}
+            catch (err) {Logger.stacktrace(this.name, `Unable to fire onSwitch for ${plugin.name} v${plugin.version}`, err as Error);}
         }
     }
 
     onMutation(mutation: MutationRecord) {
-        for (let i = 0; i < this.addonList.length; i++) {
-            if (!this.enablement[this.addonList[i].id]) continue;
-            const plugin = this.addonList[i].instance;
+        for (const id in this.enablement) {
+            const plugin = this.getAddon(id);
+            if (!plugin) {
+                continue;
+            }
+            const {instance} = plugin;
+            const {observer} = instance;
             try {
-                if (typeof plugin?.observer === "function") {
-                    plugin.observer(mutation);
+                if (typeof observer === "function") {
+                    observer(mutation);
                 }
             }
-            catch (err) {Logger.stacktrace(this.name, `Unable to fire observer for ${this.addonList[i].name} v${this.addonList[i].version}`, err as Error);}
+            catch (err) {Logger.stacktrace(this.name, `Unable to fire observer for ${plugin.name} v${plugin.version}`, err as Error);}
         }
     }
 };

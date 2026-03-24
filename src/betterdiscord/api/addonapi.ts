@@ -1,12 +1,14 @@
-import type {default as AddonManager, AddonStateLoad, AddonStateStart, AddonStateStarted, AddonStateStop} from "@modules/addonmanager";
-import type {default as PluginManager, Plugin} from "@modules/pluginmanager";
-import type {default as ThemeManager, Theme} from "@modules/thememanager";
+import type {AddonAny} from "@modules/addon";
+import type {default as AddonManager} from "@modules/addonmanager";
+import type {AddonStateLoad, AddonStateStart, AddonStateStarted, AddonStateStop} from "@modules/addonstate";
+import type {default as PluginManager} from "@modules/pluginmanager";
+import type {default as ThemeManager} from "@modules/thememanager";
 
 /**
  * `AddonAPI` is a utility class for working with plugins and themes. Instances are accessible through the {@link BdApi}.
  * @name AddonAPI
  */
-class AddonAPI<A extends Theme | Plugin> {
+class AddonAPI<A extends AddonAny> {
     #manager: AddonManager<A>;
 
     constructor(manager: typeof PluginManager | typeof ThemeManager) {this.#manager = manager as unknown as AddonManager<A>;}
@@ -65,7 +67,7 @@ class AddonAPI<A extends Theme | Plugin> {
      * Gets all addons of this type.
      * @returns {A[]} Array of all addon instances
      */
-    getAll(): A[] {return [...this.#manager.addonList];}
+    getAll(): A[] {return Object.values(this.#manager.cacheByName);}
 }
 
 Object.freeze(AddonAPI);

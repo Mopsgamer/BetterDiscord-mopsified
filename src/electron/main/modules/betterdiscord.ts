@@ -5,6 +5,7 @@ import {spawn} from "child_process";
 
 import ReactDevTools from "./reactdevtools";
 import * as IPCEvents from "@common/constants/ipcevents";
+import type {BrowserWindowType} from "./browserwindow";
 
 // Build info file only exists for non-linux (for current injection)
 const appPath = electron.app.getAppPath();
@@ -120,7 +121,7 @@ export default class BetterDiscord {
         if (!success) return; // TODO: cut a fatal log
     }
 
-    static setup(browserWindow: BrowserWindow) {
+    static setup(browserWindow: BrowserWindowType) {
 
         // Setup some useful vars to avoid blocking IPC calls
         try {
@@ -131,7 +132,6 @@ export default class BetterDiscord {
             process.env.DISCORD_RELEASE_CHANNEL = "stable";
         }
 
-        // @ts-expect-error adding new property, don't want to override object
         process.env.BD_DISCORD_PRELOAD = browserWindow.__originalPreload;
         process.env.DISCORD_APP_PATH = appPath;
         process.env.DISCORD_USER_DATA = electron.app.getPath("userData");

@@ -15,9 +15,8 @@ import Modals from "@ui/modals";
 import {CircleDollarSignIcon, CircleHelpIcon, PlugIcon, GithubIcon, GlobeIcon, HeartHandshakeIcon, PaletteIcon, PencilIcon, SettingsIcon, ShieldAlertIcon, Trash2Icon} from "lucide-react";
 import {getByKeys} from "@webpack";
 import type {MouseEvent, ReactNode} from "react";
-import type {default as AddonManager, Addon, AddonType} from "@modules/addonmanager";
-import type {Theme} from "@modules/thememanager";
-import type {Plugin} from "@modules/pluginmanager";
+import type {default as AddonManager} from "@modules/addonmanager";
+import type {AddonAny, AddonType} from "@modules/addon";
 
 const {useCallback, useMemo} = React;
 
@@ -87,22 +86,22 @@ function buildLink(type: keyof typeof LinkIcons, url?: string) {
 }
 
 export interface AddonCardProps {
-    addon: Addon;
+    addon: AddonAny;
     enabled: boolean;
     type: AddonType;
     disabled?: boolean;
-    onChange(addon: Plugin | Theme): void;
+    onChange(addon: AddonAny): void;
     hasSettings: boolean;
     editAddon(): void;
     deleteAddon(): void;
     getSettingsPanel?(): HTMLElement | ReactNode;
-    store: AddonManager<Plugin | Theme>;
+    store: AddonManager;
 }
 
 export default function AddonCard({addon, enabled, type, disabled, onChange: parentChange, hasSettings, editAddon, deleteAddon, getSettingsPanel}: AddonCardProps) {
 
     const onChange = useCallback(() => {
-        if (parentChange) parentChange(addon as Plugin | Theme);
+        if (parentChange) parentChange(addon as AddonAny);
     }, [addon.id, parentChange]);
 
     const showSettings = useCallback(() => {

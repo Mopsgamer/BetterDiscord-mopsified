@@ -9,14 +9,14 @@ import Events from "@modules/emitter";
 import Button from "@ui/base/button";
 import {FlowerStar} from "./addonshared";
 import {CircleHelpIcon, EyeIcon, GithubIcon, GlobeIcon, Trash2Icon} from "lucide-react";
-import type {AddonStore} from "@modules/addonstore";
+import type {Addon} from "@modules/addonstore";
 
 const {useCallback, useMemo, useState, useEffect, useContext, createContext} = React;
 
 // TODO: let doggy fix these
 export const TagContext = createContext();
 
-function formatNumberWithSuffix(value) {
+function formatNumberWithSuffix(value: any) {
     value = Number(value);
     if (value === 0) return "0";
 
@@ -30,7 +30,7 @@ function formatNumberWithSuffix(value) {
     return `${formattedValue}${suffixes[index]}`;
 }
 
-export default function AddonCard({addonStore, isEmbed}: {addonStore: AddonStore, isEmbed: boolean;}) {
+export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isEmbed: boolean;}) {
     const [isInstalled, setInstalled] = useState(() => addonStore.isInstalled());
     const [disabled, setDisabled] = useState(false);
     const [downloadCount, setDownloads] = useState(addonStore.downloads);
@@ -59,7 +59,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: AddonStore
         setDisabled(false);
     }, [addonStore]);
 
-    const acceptInvite = useCallback(() => addonStore.guild.join(), [addonStore]);
+    const acceptInvite = useCallback(() => addonStore.guild!.join(), [addonStore]);
     const openSourceCode = useCallback(() => addonStore.openSourceCode(), [addonStore]);
     const openAddonPage = useCallback(() => addonStore.openAddonPage(), [addonStore]);
     const openAddonPreview = useCallback(() => addonStore.openPreview(), [addonStore]);
@@ -104,7 +104,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: AddonStore
             <div className="bd-addon-store-card-splash">
                 <div className="bd-addon-store-card-preview">
                     <img
-                        src={addonStore.thumbnail}
+                        src={addonStore.thumbnail ?? undefined}
                         onError={(event) => {
                             // Fallback to blank thumbnail
                             event.currentTarget.src = Web.resources.thumbnail();

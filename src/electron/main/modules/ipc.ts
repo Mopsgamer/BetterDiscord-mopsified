@@ -5,7 +5,7 @@ import * as IPCEvents from "@common/constants/ipcevents";
 import Editor from "./editor";
 import BetterDiscord from "./betterdiscord";
 
-import type {AddonType} from "@modules/addonmanager";
+import type {AddonType} from "@modules/addon";
 
 const getPath = (event: IpcMainEvent, pathReq: string) => {
     let returnPath;

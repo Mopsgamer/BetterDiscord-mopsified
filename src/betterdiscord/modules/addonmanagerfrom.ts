@@ -1,4 +1,4 @@
-import type {AddonType} from "./addonmanager";
+import type {AddonType} from "./addon";
 import pluginmanager from "./pluginmanager";
 import thememanager from "./thememanager";
 

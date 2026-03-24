@@ -19,11 +19,10 @@ import Settings from "@stores/settings";
 import Text from "@ui/base/text";
 import {CheckIcon, ChevronRightIcon, FolderIcon, LayoutGridIcon, StoreIcon, StretchHorizontalIcon, XIcon} from "lucide-react";
 import {useStateFromStores} from "@ui/hooks";
-import {type Addon, type AddonType} from "@modules/addonmanager";
-import type AddonManager from "@modules/addonmanager"; // eslint-disable-line no-duplicate-imports
-import type {Plugin} from "@modules/pluginmanager";
+import type AddonManager from "@modules/addonmanager";
 import type {ChangeEvent, MouseEvent, ReactNode} from "react";
-import type {Theme} from "@modules/thememanager";
+import type {AddonAny, AddonType} from "@modules/addon";
+import type {Plugin} from "@modules/plugin";
 
 
 
@@ -66,7 +65,7 @@ function makeControlButton(title: string, children: ReactNode, action: () => voi
     </DiscordModules.Tooltip>;
 }
 
-function confirmDelete(addon: Addon) {
+function confirmDelete(addon: AddonAny) {
     return new Promise(resolve => {
         Modals.showConfirmationModal(t("Modals.confirmAction"), t("Addons.confirmDelete", {name: addon.name}), {
             danger: true,
@@ -99,7 +98,7 @@ function confirmEnable(action: () => void, type: string) {
 
 function StoreCard() {
     // TODO: doggy update context type as needed
-    const {toggleStore, store} = React.useContext(addonContext) as {toggleStore(): void; store: AddonManager<Plugin | Theme>;};
+    const {toggleStore, store} = React.useContext(addonContext) as {toggleStore(): void; store: AddonManager;};
 
     if (!Settings.get("settings", "store", "bdAddonStore")) return;
 
@@ -127,17 +126,17 @@ function StoreCard() {
  * @param {import("@modules/addonmanager").default} props.store
  * @returns
  */
-export default function AddonList({store}: {store: AddonManager<Plugin | Theme>;}) {
+export default function AddonList({store}: {store: AddonManager;}) {
     const [query, setQuery] = useState("");
     const [sort, setSort] = useState<ReturnType<typeof buildSortOptions>[number]["value"]>(getState.bind(null, store.prefix, "sort", "name"));
     const [ascending, setAscending] = useState(getState.bind(null, store.prefix, "ascending", true));
     const [view, setView] = useState<ViewTypes>(getState.bind(null, store.prefix, "view", "list"));
 
 
-    const addonList = useStateFromStores(store, () => store.addonList.concat(), [store], true);
-    const addonState = useStateFromStores(store, () => Object.assign({}, store.enablement), [store], true);
+    const cacheByName = useStateFromStores(store, () => ({...store.cacheByName}), [store], true);
+    const addonState = useStateFromStores(store, () => ({...store.enablement}), [store], true);
 
-    const onChange = useCallback((addon: Plugin | Theme) => {
+    const onChange = useCallback((addon: AddonAny) => {
         store.toggleAddon(addon);
     }, [store]);
 
@@ -168,17 +167,17 @@ export default function AddonList({store}: {store: AddonManager<Plugin | Theme>;
     }, [store.prefix]);
 
     const search = useCallback((e: ChangeEvent<HTMLInputElement>) => setQuery(e.currentTarget.value.toLocaleLowerCase()), []);
-    const triggerEdit = useCallback((addon: Plugin | Theme) => {
+    const triggerEdit = useCallback((addon: AddonAny) => {
         store.editAddon?.(addon);
     }, [store]);
-    const triggerDelete = useCallback(async (addon: Plugin | Theme) => {
+    const triggerDelete = useCallback(async (addon: AddonAny) => {
         const shouldDelete = await confirmDelete(addon);
         if (!shouldDelete) return;
         await store?.deleteAddon?.(addon);
-    }, [addonList, store]);
+    }, [store]);
 
     const renderedCards = useMemo(() => {
-        let sorted = addonList.sort((a, b) => {
+        let sorted = Object.values(cacheByName).sort((a, b) => {
             const sortByEnabled = sort === "isEnabled";
             const first = sortByEnabled ? addonState[a.id] : a[sort];
             const second = sortByEnabled ? addonState[b.id] : b[sort];
@@ -209,9 +208,9 @@ export default function AddonList({store}: {store: AddonManager<Plugin | Theme>;
                 <AddonCard store={store} disabled={addon.partial} type={store.prefix as AddonType} editAddon={() => triggerEdit(addon)} deleteAddon={() => triggerDelete(addon)} key={addon.id} addon={addon} onChange={onChange} enabled={addonState[addon.id]} hasSettings={hasSettings} getSettingsPanel={getSettings ? getSettings : undefined} />
             </ErrorBoundary>;
         });
-    }, [store, addonList, addonState, onChange, triggerDelete, triggerEdit, query, ascending, sort]);
+    }, [store, cacheByName, addonState, onChange, triggerDelete, triggerEdit, query, ascending, sort]);
 
-    const hasAddonsInstalled = addonList.length !== 0;
+    const hasAddonsInstalled = Object.keys(cacheByName).length > 0;
     const isSearching = !!query;
     const hasResults = renderedCards.length !== 0;
 

@@ -12,14 +12,15 @@ import Toasts from "@stores/toasts";
 import React from "./react";
 import {t} from "@common/i18n";
 import ipc from "./ipc";
-import type {Theme} from "./thememanager";
-import type {Plugin} from "./pluginmanager";
 
 import AddonEditor from "@ui/misc/addoneditor";
 import FloatingWindows from "@ui/floatingwindows";
 import Store from "@stores/base";
 import type {SystemError} from "bun";
 import RemoteAPI from "@polyfill/remote";
+import type {AddonMeta} from "./addonmeta";
+import type {AddonMetaLoad, AddonState, AddonStateLoad, AddonStateNotLoaded, AddonStateStart, AddonStateStarted, AddonStateStop} from "./addonstate";
+import type {AddonAny, AddonType} from "./addon";
 
 
 // const SWITCH_ANIMATION_TIME = 250;
@@ -36,113 +37,7 @@ const stripBOM = function (fileContent: string) {
     return fileContent;
 };
 
-// This is a temporary type, no one should rely on this externally
-export interface Addon extends AddonMeta {
-    added: number;
-    donate?: string;
-    fileContent?: string;
-    filename: string;
-    format: string;
-    id: string;
-    modified: number;
-    partial?: boolean;
-    patreon?: string;
-    size: number;
-    slug: string;
-}
-
-export interface AddonMeta {
-    /**
-     * The name of the addon. It typically does not contain spaces, but it is allowed.
-     */
-    name: string;
-    author: string;
-    /**
-     * A basic description of what the addon does.
-     */
-    description: string;
-    /**
-     * Version representing the current update level. Semantic versioning recommended.
-     */
-    version: string;
-    /**
-     * A Discord invite code, useful for directing users to a support server.
-     */
-    invite?: string;
-    /**
-     * Discord snowflake ID of the developer. This allows users to get in touch.
-     */
-    authorId?: string;
-    /**
-     * Link to use for the author's name on the addon pages.
-     */
-    authorLink?: string;
-    /**
-     * Link to donate to the developer.
-     */
-    donate?: string;
-    /**
-     * Link to the Patreon of the developer.
-     */
-    patreon?: string;
-    /**
-     * Developer's (or addon's) website link.
-     */
-    website?: string;
-    /**
-     * Link to the source on GitHub of the addon.
-     */
-    source?: string;
-};
-
-export type AddonMetaLoaded = {
-    kind: "loaded";
-    meta: AddonMeta;
-};
-export type AddonMetaNotLoaded = {
-    kind: "not-loaded";
-    error: AddonError;
-};
-export type AddonMetaLoad = AddonMetaLoaded | AddonMetaNotLoaded;
-
-export type AddonStateLoaded = {
-    kind: "loaded";
-    addon: Plugin | Theme;
-};
-
-export type AddonStateNotLoaded = {
-    kind: "not-loaded";
-    error: AddonError;
-};
-
-export type AddonStateStarted<A extends Plugin | Theme> = {
-    kind: "started";
-    addon: A;
-};
-
-export type AddonStateNotStarted = {
-    kind: "not-started";
-    error: AddonError;
-};
-
-export type AddonStateStopped = {
-    kind: "stopped";
-};
-
-export type AddonStateNotStopped = {
-    kind: "not-stopped";
-    error: AddonError;
-};
-
-export type AddonStateError = AddonStateNotLoaded | AddonStateNotStarted | AddonStateNotStopped;
-export type AddonStateLoad = AddonStateLoaded | AddonStateNotLoaded;
-export type AddonStateStart<A extends Plugin | Theme> = AddonStateStarted<A> | AddonStateNotStarted;
-export type AddonStateStop = AddonStateStopped | AddonStateNotStopped;
-export type AddonState<A extends Plugin | Theme> = AddonStateStart<A> | AddonStateLoad | AddonStateStop;
-
-export type AddonType = "plugin" | "theme";
-
-export default abstract class AddonManager<A extends Plugin | Theme> extends Store {
+export default abstract class AddonManager<A extends AddonAny = AddonAny> extends Store {
 
     protected abstract name: string;
 
@@ -161,6 +56,9 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         this.pluralPrefix = prefix + "s";
     }
 
+    cacheByName: Record<string, A> = Object.create(null);
+    cacheByFilename: Record<string, A> = Object.create(null);
+
     /**
      * Stats for each relative addon file path.
      *
@@ -169,7 +67,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
      */
     protected fileStats: Map<string, fs.Stats> = new Map();
 
-    public enablement: Record<string, boolean> = {};
+    public enablement: Record<string, boolean> = Object.create(null);
 
     readonly pluralPrefix: string;
 
@@ -177,11 +75,8 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         super.emitChange();
         return Events.emit(`${this.prefix}-${event}`, ...args);
     };
-
-    addonList: A[] = [];
-
     async initialize(): Promise<Array<AddonState<A>>> {
-        Settings.registerAddonPanel(this as unknown as AddonManager<Plugin> | AddonManager<Theme>);
+        Settings.registerAddonPanel(this);
 
         const states = await this.loadAllAddons();
         if (states.length > 0) {
@@ -225,7 +120,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
             const timer: Timer = setTimeout(async () => {
                 try {
                     Logger.info("AddonManager~watcher", eventType, filename);
-                    let addon = this.addonList.find(a => a.filename === filename);
+                    let addon = this.cacheByFilename[filename];
 
                     if (!addon) {
                         const loaded = await this.loadAddon(filename);
@@ -363,7 +258,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
                 }),
             };
         }
-        const addon = extract.meta as Partial<Plugin | Theme>;
+        const addon = extract.meta as Partial<AddonAny>;
         if (!addon.author) addon.author = t("Addons.unknownAuthor");
         if (!addon.version) addon.version = "???";
         if (!addon.description) addon.description = t("Addons.noDescription");
@@ -375,27 +270,28 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
         addon.modified = stats.mtimeMs;
         addon.size = stats.size;
         addon.fileContent = fileContent;
-        if (this.addonList.find(c => c.id == addon.id)) {
+        if (this.getAddon(addon.id)) {
             return {
                 kind: "not-loaded",
                 error: new AddonError({
                     addonType: this.prefix,
-                    addon: addon as Plugin | Theme,
+                    addon: addon as AddonAny,
                     message: t("Addons.alreadyExists", {context: this.prefix, name: addon.name}),
                 }),
             };
         }
-        this.addonList.push(addon as A);
+        this.cacheByFilename[addon.filename] = addon as A;
+        if (addon.name) this.cacheByName[addon.name] = addon as A;
         return {
             kind: "loaded",
-            addon: addon as Plugin | Theme,
+            addon: addon as AddonAny,
         };
     }
 
     async loadAddon(filename: string, shouldToast = false): Promise<AddonStateLoad | AddonStateStarted<A>> {
         const required = await this.requireAddon(path.resolve(this.addonFolder(), filename));
         if (required.kind === "not-loaded") {
-            const partialAddon = this.addonList.find(c => c.filename == filename);
+            const partialAddon = this.cacheByFilename[filename];
             if (partialAddon) {
                 partialAddon.partial = true;
                 this.enablement[partialAddon.id] = false;
@@ -444,7 +340,8 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
             else await this.disableAddon(addon);
         }
 
-        this.addonList.splice(this.addonList.indexOf(addon), 1);
+        delete this.cacheByFilename[addon.filename];
+        delete this.cacheByName[addon.name];
         this.trigger("unloaded", addon);
         if (shouldToast) Toasts.success(t("Addons.wasUnloaded", {name: addon.name}));
         return true;
@@ -488,7 +385,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
     }
 
     getAddon(idOrFile: string): A | undefined {
-        return this.addonList.find(c => c.id == idOrFile || c.filename == idOrFile);
+        return this.cacheByFilename[idOrFile] || this.cacheByName[idOrFile];
     }
 
     async enableAddon(addon: A): Promise<AddonStateStart<A>> {
@@ -515,11 +412,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
     async enableAllAddons(): Promise<Array<AddonStateStart<A>>> {
         const originalSetting = Settings.get("settings", "general", "showToasts");
         Settings.set("settings", "general", "showToasts", false);
-        const results: Array<AddonStateStart<A>> = [];
-        for (let a = 0; a < this.addonList.length; a++) {
-            const result = await this.enableAddon(this.addonList[a]);
-            results.push(result);
-        }
+        const results: Array<AddonStateStart<A>> = await Promise.all(Object.values(this.cacheByName).map(this.enableAddon.bind(this)));
         Settings.set("settings", "general", "showToasts", originalSetting);
         this.trigger("batch");
         return results;
@@ -548,11 +441,7 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
     async disableAllAddons(): Promise<AddonStateStop[]> {
         const originalSetting = Settings.get("settings", "general", "showToasts");
         Settings.set("settings", "general", "showToasts", false);
-        const results: AddonStateStop[] = [];
-        for (let a = 0; a < this.addonList.length; a++) {
-            const result = await this.disableAddon(this.addonList[a]);
-            results.push(result);
-        }
+        const results: AddonStateStop[] = await Promise.all(Object.values(this.cacheByName).map(this.disableAddon.bind(this)));
         Settings.set("settings", "general", "showToasts", originalSetting);
         this.trigger("batch");
         return results;
@@ -565,16 +454,30 @@ export default abstract class AddonManager<A extends Plugin | Theme> extends Sto
 
     async loadNewAddons(): Promise<{added: string[]; removed: A[];}> {
         const addonFolder = this.addonFolder();
-        const files = await fs.promises.readdir(addonFolder);
-        const removed = this.addonList.filter(a => !files.includes(a.filename));
-        const added = files.filter(f => !this.addonList.find(a => a.filename == f) && this.validateFilename(f) && fs.statSync(path.resolve(addonFolder, f)).isFile());
+        const actual = new Set((await fs.promises.readdir(addonFolder)));
+        const known = new Set(Object.keys(this.cacheByFilename));
+        const removed = Array.from(known.difference(actual)).map(f => this.cacheByFilename[f]);
+        const potentialAdded = actual.difference(known);
+
+        const added: string[] = [];
+        for (const f of potentialAdded) {
+            const fullPath = path.resolve(addonFolder, f);
+            if (this.validateFilename(f)) {
+                const stats = await fs.promises.stat(fullPath);
+                if (stats.isFile()) {
+                    added.push(f);
+                }
+            }
+        }
         return {added, removed};
     }
 
     async updateList(): Promise<void> {
         const results = await this.loadNewAddons();
-        for (const filename of results.added) await this.loadAddon(filename);
-        for (const name of results.removed) await this.unloadAddon(name);
+        await Promise.all([
+            ...results.added.map(filename => this.loadAddon(filename)),
+            ...results.removed.map(addon => this.unloadAddon(addon)),
+        ]);
     }
 
     async loadAllAddons(): Promise<Array<AddonState<A>>> {

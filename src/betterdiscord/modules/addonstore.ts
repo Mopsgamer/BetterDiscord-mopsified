@@ -8,21 +8,22 @@ import Toasts from "@stores/toasts";
 import JsonStore from "@stores/json";
 import {t} from "@common/i18n";
 import React from "@modules/react";
-import PluginManager, {type Plugin} from "@modules/pluginmanager";
-import ThemeManager, {type Theme} from "@modules/thememanager";
+import PluginManager from "@modules/pluginmanager";
+import ThemeManager from "@modules/thememanager";
 import Modals from "@ui/modals";
 import InstallModal from "@ui/modals/installmodal";
 import Settings from "@stores/settings";
 import Web from "@data/web";
 import AddonManager from "./addonmanager";
 import type {BdWebGuild, BdWebAddon} from "../types/betterdiscordweb";
+import type {AddonAny, AddonSome} from "./addon";
 
 
 /**
- * @param {Addon} addon
+ * @param {AddonAny} addon
  * @returns {Promise<boolean>}
  */
-function showConfirmDelete(addon: import("./addonmanager").Addon) {
+function showConfirmDelete(addon: AddonAny) {
     return new Promise(resolve => {
         Modals.showConfirmationModal(t("Modals.confirmAction"), t("Addons.confirmDelete", {name: addon.name}), {
             danger: true,
@@ -363,7 +364,7 @@ export class Addon {
      * @param {boolean} shouldSkipConfirm Should skip the confirm to delete the addon
      */
     async delete(shouldSkipConfirm = false): Promise<void> {
-        const foundAddon = this.manager.addonList.find(a => a.filename == this.filename);
+        const foundAddon = this.manager.cacheByFilename[this.filename];
 
         if (!foundAddon) return;
 
@@ -372,7 +373,7 @@ export class Addon {
             if (!shouldDelete) return;
         }
 
-        await this.manager.deleteAddon(foundAddon as Plugin & Theme);
+        await this.manager.deleteAddon(foundAddon as AddonSome);
     }
 
     /** @public */

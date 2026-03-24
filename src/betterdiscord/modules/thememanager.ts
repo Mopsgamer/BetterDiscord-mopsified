@@ -3,17 +3,13 @@ import Toasts from "@stores/toasts";
 
 import AddonError from "@structs/addonerror";
 
-import AddonManager, {type Addon, type AddonStateLoad, type AddonStateStart, type AddonStateStop} from "./addonmanager";
+import AddonManager from "./addonmanager";
 import DOMManager from "./dommanager";
 import {t} from "@common/i18n";
 
 import Modals from "@ui/modals";
-
-
-export interface Theme extends Addon {
-    css: string;
-    properties?: Record<string, Record<string, string | boolean>>;
-}
+import type {Theme} from "./theme";
+import type {AddonStateLoad, AddonStateStart, AddonStateStop} from "./addonstate";
 
 const propertyRegex = /@property\s+--([A-Za-z0-9-_]+)\s*\{(.+?)\}/gs;
 

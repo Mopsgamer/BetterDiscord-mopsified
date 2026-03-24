@@ -1,10 +1,8 @@
 import {t} from "@common/i18n";
-import type {AddonType} from "@modules/addonmanager";
+import type {AddonSome, AddonType} from "@modules/addon";
 import {managerFromType} from "@modules/addonmanagerfrom";
 import {OptionTypes} from "@modules/commandmanager";
 import DiscordModules from "@modules/discordmodules";
-import type {Plugin} from "@modules/pluginmanager";
-import type {Theme} from "@modules/thememanager";
 
 
 export default (type: AddonType) => {
@@ -33,17 +31,14 @@ export default (type: AddonType) => {
                 description: `Name of the ${type}`,
                 required: true,
                 get choices() {
-                    return manager.addonList.map(p => ({
-                        name: p.name,
-                        value: p.id
-                    }));
+                    return Object.entries(manager.cacheByName).map(([name, {id: value}]) => ({name, value}));
                 }
             }
         ],
-        execute: async (data, {channel}) => {
-            const action = data.find(o => o.name === "action").value;
-            const addonId = data.find(o => o.name === "name").value;
-            const addon = manager.getAddon(addonId)! as Plugin & Theme;
+        execute: async (data: Array<{name: "name", value: string;} | {name: "action", value: "enable";}>, {channel}: {channel: {id: string;};}) => {
+            const action = data.find(o => o.name === "action")!.value;
+            const addonId = data.find(o => o.name === "name")!.value;
+            const addon = manager.getAddon(addonId)! as AddonSome;
             const isEnabled = manager.isEnabled(addon.id);
 
             if (action === "enable") {

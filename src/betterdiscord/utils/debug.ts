@@ -48,13 +48,13 @@ export function getDiscordInfo(string = true) {
 
 export function getAddonCounts(manager: typeof PluginManager | typeof ThemeManager) {
     return {
-        total: manager.addonList.length,
-        enabled: manager.addonList.filter(a => manager.isEnabled(a.id)).length
+        total: Object.keys(manager.cacheByName).length,
+        enabled: Object.keys(manager.enablement).length
     };
 }
 
 export function getAddonList(manager: typeof PluginManager | typeof ThemeManager) {
-    return manager.addonList.map(a => `- ${a.name}${manager.isEnabled(a.id) ? " (Enabled)" : ""}`).join("\n");
+    return Object.values(manager.cacheByName).map(a => `- ${a.name}${manager.isEnabled(a.id) ? " (Enabled)" : ""}`).join("\n");
 }
 
 export function getCoreInfo() {

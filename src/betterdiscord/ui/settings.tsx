@@ -22,12 +22,11 @@ import {HistoryIcon} from "lucide-react";
 import {t} from "@common/i18n";
 import Modals from "./modals";
 import changelog from "@data/changelog";
-import {type Plugin} from "@modules/pluginmanager";
 import DOMManager from "@modules/dommanager";
 import type AddonManager from "@modules/addonmanager";
 import toasts from "@stores/toasts";
 import ContextMenuPatcher from "@api/contextmenu";
-import type {Theme} from "@modules/thememanager";
+import type {Plugin} from "@modules/plugin";
 
 const SettingsRenderer = new class SettingsRenderer {
     initialize() {
@@ -552,14 +551,14 @@ function useCollectionMenu(collection: SettingsCollection) {
     );
 }
 
-function useAddonMenu(manager: AddonManager<Plugin | Theme>) {
+function useAddonMenu(manager: AddonManager) {
     const addons = useStateFromStores(manager, () => {
-        return manager.addonList
-            .map((a) => {
-                return [a.name, a, manager.isEnabled(a.name)] as const;
+        return Object.values(manager.cacheByName)
+            .sort((a, b) => {
+                return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
             })
-            .sort(([a], [b]) => {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
+            .map((a) => {
+                return [a.name, a, manager.enablement[a.id] || false] as const;
             });
     }, [], true);
     const addonStoreIsEnabled = useStateFromStores(Settings, () => Settings.get("settings", "store", "bdAddonStore"), []);
