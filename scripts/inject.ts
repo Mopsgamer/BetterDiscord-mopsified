@@ -17,62 +17,59 @@ const bdPath = useBdRelease ? path.resolve(__dirname, "..", "dist", "betterdisco
 
 type PathsEntry = {
     discordDir: string;
+    discordBaseDir: string;
     discord_desktop_core: string;
 };
 type Paths = PathsEntry[];
 async function getDiscordPaths(releaseName: string): Promise<Paths> {
     let discordDir = "";
+    let discordBaseDir = discordDir;
     let discord_desktop_core = "";
     const versions: PathsEntry[] = [];
 
     if (process.platform === "win32") {
-        discordDir = path.join(process.env.LOCALAPPDATA!, releaseName.replace(/ /g, ""));
+        discordBaseDir = discordDir = path.join(process.env.LOCALAPPDATA!, releaseName.replace(/ /g, ""));
     }
     else if (process.env.WSL_DISTRO_NAME) {
         const appdata = (await bun.$`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()).trim();
-        discordDir = path.join(appdata, releaseName.replace(/ /g, ""));
+        discordBaseDir = discordDir = path.join(appdata, releaseName.replace(/ /g, ""));
     }
     else {
         let configDir = process.env.XDG_CONFIG_HOME || path.join(process.env.HOME!, ".config");
         if (process.platform === "darwin") configDir = path.join(process.env.HOME!, "Library", "Application Support");
         discordDir = path.join(configDir, releaseName.toLowerCase().replace(" ", ""));
+        if (process.platform === "darwin") discordBaseDir = "applications/" + release + ".app/contents";
+        else discordBaseDir = "/usr/share/discord";
     }
-
-    if (!fs.existsSync(discordDir)) return [{discordDir: discordDir, discord_desktop_core}];
 
     // 2. Find the version and core module path
-    try {
-        const appDirs = fs.readdirSync(discordDir)
-            .filter(f => fs.lstatSync(path.join(discordDir, f)).isDirectory() && f.includes("."))
-            .sort();
+    const appDirs = fs.readdirSync(discordDir)
+        .filter(f => fs.lstatSync(path.join(discordDir, f)).isDirectory() && f.includes("."))
+        .sort();
 
-        const discordDirRoot = discordDir;
-        if (!appDirs.length) return [{discordDir, discord_desktop_core}];
+    const discordDirRoot = discordDir;
 
-        for (const ver of appDirs) {
-            discordDir = path.join(discordDirRoot, ver);
-            discord_desktop_core = getDiscord_desktop_core(discordDir);
-            versions.push({discordDir, discord_desktop_core});
-        }
-    }
-    catch {
-        return [{discordDir, discord_desktop_core}, ...versions];
+    for (const ver of appDirs) {
+        discordDir = path.join(discordDirRoot, ver);
+        discord_desktop_core = getDiscord_desktop_core(discordDir);
+        versions.push({discordDir, discordBaseDir, discord_desktop_core});
     }
 
     return versions;
 }
 
-function getDiscord_desktop_core(discordDir: string) {
+function getDiscord_desktop_core(discordDir: string): string {
+    const corename = "discord_desktop_core";
+    const paths: string = [];
     const modulesPath = path.join(discordDir, "modules");
+    paths.push(modulesPath);
 
     // Handle variations in folder naming (especially on Windows/WSL)
-    const coreWrap = fs.existsSync(modulesPath)
-        ? fs.readdirSync(modulesPath).find(e => e.startsWith("discord_desktop_core"))
-        : null;
+    const coreWrap = fs.readdirSync(modulesPath).find(e => e.startsWith(corename + "-"));
+    if (coreWrap) paths.push(corewrap);
+    paths.push(corename);
 
-    return coreWrap
-        ? path.join(modulesPath, coreWrap, "discord_desktop_core")
-        : path.join(modulesPath, "discord_desktop_core");
+    return path.join(...paths);
 }
 
 doSanityChecks(bdPath);
@@ -81,7 +78,7 @@ buildPackage(bdPath);
 const prepared = await getDiscordPaths(release);
 for (const [i, discordPaths] of prepared.reverse().entries()) {
     const isLatest = i === prepared.length - 1;
-    const {discordDir, discord_desktop_core} = discordPaths;
+    const {discordDir, discordBaseDir, discord_desktop_core} = discordPaths;
 
     console.log(`\nInjecting into ${release}`);
     console.log(`    Base Dir: '${discordDir}'`);
@@ -97,7 +94,7 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
     console.log(`    discord_desktop_core: '${discord_desktop_core}'`);
 
     // protocols.js
-    const appAsarPath = path.join(discordDir, "resources", "app.asar");
+    const appAsarPath = path.join(discordBaseDir, "resources", "app.asar");
 
     if (!fs.existsSync(appAsarPath)) {
         throw new Error(`Cannot find resource directory for ${release} at ${appAsarPath}`);
@@ -149,3 +146,4 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
 }
 
 console.log(`Injection successful, please restart ${release}.`);
+
