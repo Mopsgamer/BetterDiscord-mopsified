@@ -25,7 +25,7 @@ type PathsEntry = {
      * Discord's application directory.
      *
      * When installed from `.deb`:
-     * @example "/usr/share/discord" // for linux deb
+     * @example "/usr/share/discord"
      * When installed from `.flatpakref`:
      * @example "/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord"
      */
@@ -78,11 +78,10 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
         .filter(f => fs.lstatSync(path.join(discordDir, f)).isDirectory() && f.includes("."))
         .sort();
 
+    if (appDirs.length === 0) {
+        throw new Error(`No versions found: ${discordDir}`)
+    }
     for (const ver of appDirs) {
-        console.log(ver);
-        console.log(ver);
-        console.log(ver);
-        console.log(ver);
         discordDir = path.join(discordDir, ver);
         discord_desktop_core = getDiscord_desktop_core(discordDir);
         versions.push({discordDir, discordBaseDir, discord_desktop_core});
@@ -128,12 +127,13 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
     console.log(`    discord_desktop_core: '${discord_desktop_core}'`);
 
     // protocols.js
-    const appAsarPath = path.join(discordDir, "resources", "app.asar");
+    const resources = path.join(flatpak ? discordBaseDir : discordDir, "resources");
+    const appAsarPath = path.join(resources, "app.asar");
 
     if (!fs.existsSync(appAsarPath)) {
         throw new Error(`Cannot find resource directory for ${release} at ${appAsarPath}`);
     }
-    const tempUnpackPath = path.join(discordDir, "resources", "app-unpacked-temp");
+    const tempUnpackPath = path.join(resources, "app-unpacked-temp");
     fs.rmSync(tempUnpackPath, {force: true, recursive: true});
 
     const isAppAsarPatched = fs.readFileSync(appAsarPath, "utf8").includes("scheme: \"bd\"");
