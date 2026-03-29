@@ -51,26 +51,23 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
 
     if (process.platform === "win32") {
         discordBaseDir = discordDir = path.join(process.env.LOCALAPPDATA!, releaseName.replace(/ /g, ""));
-        discordDir = discordBaseDir;
     }
     else if (process.env.WSL_DISTRO_NAME) {
         const appdata = (await bun.$`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()).trim();
         discordBaseDir = discordDir = path.join(appdata, releaseName.replace(/ /g, ""));
-        discordDir = discordBaseDir;
     }
     else {
-        let configDir = "";
         if (flatpak) {
             discordDir = path.join(process.env.HOME!, ".var", "app", "com.discordapp.Discord", "config", "discord");
             discordBaseDir = "/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord";
         }
         else if (process.platform === "darwin") {
-            configDir = path.join(process.env.HOME!, "Library", "Application Support");
+            const configDir = path.join(process.env.HOME!, "Library", "Application Support");
             discordDir = path.join(configDir, releaseName.toLowerCase().replace(" ", ""));
             discordBaseDir = "applications/" + release + ".app/contents";
         }
         else {
-            configDir = process.env.XDG_CONFIG_HOME || path.join(process.env.HOME!, ".config");
+            const configDir = process.env.XDG_CONFIG_HOME || path.join(process.env.HOME!, ".config");
             discordDir = path.join(configDir, releaseName.toLowerCase().replace(" ", ""));
             discordBaseDir = "/usr/share/discord";
         }
@@ -81,10 +78,12 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
         .filter(f => fs.lstatSync(path.join(discordDir, f)).isDirectory() && f.includes("."))
         .sort();
 
-    const discordDirRoot = discordDir;
-
     for (const ver of appDirs) {
-        discordDir = path.join(discordDirRoot, ver);
+        console.log(ver);
+        console.log(ver);
+        console.log(ver);
+        console.log(ver);
+        discordDir = path.join(discordDir, ver);
         discord_desktop_core = getDiscord_desktop_core(discordDir);
         versions.push({discordDir, discordBaseDir, discord_desktop_core});
     }
@@ -94,7 +93,7 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
 
 function getDiscord_desktop_core(discordDir: string): string {
     const corename = "discord_desktop_core";
-    const paths: string = [];
+    const paths: string[] = [];
     const modulesPath = path.join(discordDir, "modules");
     paths.push(modulesPath);
 
@@ -129,7 +128,7 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
     console.log(`    discord_desktop_core: '${discord_desktop_core}'`);
 
     // protocols.js
-    const appAsarPath = path.join(discordBaseDir, "resources", "app.asar");
+    const appAsarPath = path.join(discordDir, "resources", "app.asar");
 
     if (!fs.existsSync(appAsarPath)) {
         throw new Error(`Cannot find resource directory for ${release} at ${appAsarPath}`);
@@ -176,14 +175,15 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
         : `require("${bdPath.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}");\nmodule.exports = require("./core.asar");`;
 
     fs.writeFileSync(indexJs, injectionCode);
+    console.log("    ✅ Wrote index.js\n");
+
     // exec flatpak patch override here
     if (flatpak) {
         console.log("    🔒 Setting Flatpak filesystem overrides...");
-    
+
         // This gives the Flatpak permission to read your project directory
         await bun.$`flatpak override --filesystem=${"host"} com.discordapp.Discord`;
     }
-    console.log("    ✅ Wrote index.js\n");
     break;
 }
 
