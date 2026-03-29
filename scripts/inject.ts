@@ -140,6 +140,8 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
     if (!fs.existsSync(appAsarPath)) {
         throw new Error(`Cannot find resource directory for ${release} at ${appAsarPath}`);
     }
+    console.log(`    appAsarPath: '${appAsarPath}'`);
+
     const tempUnpackPath = path.join(resources, "app-unpacked-temp");
     fs.rmSync(tempUnpackPath, {force: true, recursive: true});
 
@@ -168,7 +170,7 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
         console.log("    ✅ Patched protocols.js in app.asar");
     }
     else {
-        console.log("    ℹ️  app.asar already patched.");
+        console.log("    ℹ️ app.asar already patched.");
     }
 
     fs.rmSync(tempUnpackPath, {recursive: true, force: true});
