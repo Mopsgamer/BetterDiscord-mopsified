@@ -44,15 +44,15 @@ type PathsEntry = {
 type Paths = PathsEntry[];
 
 async function getDiscordPaths(releaseName: string): Promise<Paths> {
-    const paths: Paths = {
+    const paths: PathsEntry = {
         discordDir: "",
         discordBaseDir: "",
         discord_desktop_core: "",
-    }
+    };
     const versions: PathsEntry[] = [];
 
     if (process.platform === "win32") {
-        path.discordBaseDir = paths.discordDir = path.join(process.env.LOCALAPPDATA!, releaseName.replace(/ /g, ""));
+        paths.discordBaseDir = paths.discordDir = path.join(process.env.LOCALAPPDATA!, releaseName.replace(/ /g, ""));
     }
     else if (process.env.WSL_DISTRO_NAME) {
         const appdata = (await bun.$`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()).trim();
@@ -81,11 +81,15 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
         .sort();
 
     if (appDirs.length === 0) {
-        throw new Error(`No versions found: ${paths.discordDir}`)
+        throw new Error(`No versions found: ${paths.discordDir}`);
     }
+
     for (const ver of appDirs) {
-        const pathsv: Paths = {...paths}
+        const pathsv: PathsEntry = {...paths};
         pathsv.discordDir = path.join(pathsv.discordDir, ver);
+        if (process.platform === "win32" || process.env.WSL_DISTRO_NAME) {
+            pathsv.discordBaseDir = pathsv.discordDir;
+        }
         pathsv.discord_desktop_core = getDiscord_desktop_core(pathsv.discordDir);
         versions.push(pathsv);
     }
