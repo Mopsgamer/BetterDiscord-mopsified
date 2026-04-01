@@ -37,8 +37,11 @@ type PathsEntry = {
     discordDir: string;
     /**
      * Everything is implemented here.
+     *
+     * It's undefined when discord hasn't applied the discordDir version.
      */
-    discord_desktop_core: string;
+    discord_desktop_core: string | undefined;
+    version: string;
 };
 
 type Paths = PathsEntry[];
@@ -48,6 +51,7 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
         discordDir: "",
         discordBaseDir: "",
         discord_desktop_core: "",
+        version: "",
     };
     const versions: PathsEntry[] = [];
 
@@ -85,7 +89,7 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
     }
 
     for (const ver of appDirs) {
-        const pathsv: PathsEntry = {...paths};
+        const pathsv: PathsEntry = {...paths, version: ver};
         pathsv.discordDir = path.join(pathsv.discordDir, ver);
         if (process.platform === "win32" || process.env.WSL_DISTRO_NAME) {
             pathsv.discordBaseDir = pathsv.discordDir;
@@ -97,15 +101,21 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
     return versions;
 }
 
-function getDiscord_desktop_core(discordDir: string): string {
+function getDiscord_desktop_core(discordDir: string): string | undefined {
     const corename = "discord_desktop_core";
     const paths: string[] = [];
     const modulesPath = path.join(discordDir, "modules");
     paths.push(modulesPath);
 
     // Handle variations in folder naming (especially on Windows/WSL)
-    const coreWrap = fs.readdirSync(modulesPath).find(e => e.startsWith(corename + "-"));
-    if (coreWrap) paths.push(coreWrap);
+    try {
+        const coreWrap = fs.readdirSync(modulesPath).find(e => e.startsWith(corename + "-"));
+        if (coreWrap) paths.push(coreWrap);
+    }
+    catch {
+        return undefined;
+    }
+
     paths.push(corename);
 
     return path.join(...paths);
@@ -115,7 +125,8 @@ doSanityChecks(bdPath);
 buildPackage(bdPath);
 
 const prepared = await getDiscordPaths(release);
-for (const [i, discordPaths] of prepared.reverse().entries()) {
+const rev = prepared.toReversed();
+for (const [i, discordPaths] of rev.entries()) {
     const isLatest = i === prepared.length - 1;
     const {discordDir, discordBaseDir, discord_desktop_core} = discordPaths;
     const resources = path.join(discordBaseDir, "resources");
@@ -124,11 +135,12 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
     console.log(`    Base Dir: '${discordBaseDir}'`);
     console.log(`    Dir: '${discordDir}'`);
 
-    const isNoCore = !discord_desktop_core.length || !fs.existsSync(discord_desktop_core);
+    const isNoCore = !discord_desktop_core || !fs.existsSync(discord_desktop_core);
     if (isNoCore) {
         if (!isLatest) {
-            console.log(`    It's a peding update directory. Skipped.\n`);
-            continue;
+            console.log(`    It's a pending update directory. Skipped.`);
+            console.log(`    You have an update! ${release}: ${prepared.map(({version}) => version).join(" -> ")}\n`);
+            throw new Error(`Injection failed, please restart ${release}, wait for the update to complete. Then inject again.`);
         }
         throw new Error(`Cannot find resource directory for ${release} at ${discord_desktop_core}`);
     }
@@ -193,8 +205,6 @@ for (const [i, discordPaths] of prepared.reverse().entries()) {
         // This gives the Flatpak permission to read your project directory
         await bun.$`flatpak override --filesystem=${"host"} com.discordapp.Discord`;
     }
+    console.log(`Injection successful, please restart ${release}.`);
     break;
 }
-
-console.log(`Injection successful, please restart ${release}.`);
-
