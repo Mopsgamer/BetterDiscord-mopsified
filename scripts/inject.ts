@@ -126,21 +126,22 @@ buildPackage(bdPath);
 
 const prepared = await getDiscordPaths(release);
 const rev = prepared.toReversed();
+let potentialInjectionwipe = false;
 for (const [i, discordPaths] of rev.entries()) {
     const isLatest = i === prepared.length - 1;
-    const {discordDir, discordBaseDir, discord_desktop_core} = discordPaths;
+    const {discordDir, discordBaseDir, discord_desktop_core, version} = discordPaths;
     const resources = path.join(discordBaseDir, "resources");
 
-    console.log(`\nInjecting into ${release}`);
+    console.log(`\nInjecting into ${release} ${version}`);
     console.log(`    Base Dir: '${discordBaseDir}'`);
     console.log(`    Dir: '${discordDir}'`);
 
     const isNoCore = !discord_desktop_core || !fs.existsSync(discord_desktop_core);
     if (isNoCore) {
         if (!isLatest) {
-            console.log(`    It's a pending update directory. Skipped.`);
-            console.log(`    You have an update! ${release}: ${prepared.map(({version}) => version).join(" -> ")}\n`);
-            throw new Error(`Injection failed, please restart ${release}, wait for the update to complete. Then inject again.`);
+            console.log(`    ⏭️ It's a pending update directory. Skipped.`);
+            potentialInjectionwipe = true;
+            continue;
         }
         throw new Error(`Cannot find resource directory for ${release} at ${discord_desktop_core}`);
     }
@@ -205,6 +206,10 @@ for (const [i, discordPaths] of rev.entries()) {
         // This gives the Flatpak permission to read your project directory
         await bun.$`flatpak override --filesystem=${"host"} com.discordapp.Discord`;
     }
-    console.log(`Injection successful, please restart ${release}.`);
+    console.log(`Injection successful, please restart ${release} ${version}.`);
+    if (potentialInjectionwipe) {
+        console.log(`    ⚠️ Your injection may be wiped out by the pending update.`);
+        console.log(`    The update: ${prepared.map(({version: v}) => v).join(" -> ")}`);
+    }
     break;
 }
