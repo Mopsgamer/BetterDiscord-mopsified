@@ -1,4 +1,4 @@
-/* oxlint-disable no-labels */
+/* eslint-disable no-labels */
 
 import type {Webpack} from "discord";
 import {bySource} from "./filter";

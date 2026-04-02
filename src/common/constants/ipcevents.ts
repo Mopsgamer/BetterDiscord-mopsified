@@ -1,3 +1,6 @@
+/* eslint-disable no-multi-spaces */
+
+
 export const MINIMIZE                   = "bd-window-minimize";
 export const MAXIMIZE                   = "bd-window-maximize";
 export const RELAUNCH                   = "bd-relaunch-app";

@@ -15,7 +15,7 @@ export default new class DeveloperMode extends Builtin {
 
     debugListener(e: KeyboardEvent) {
         if (e.key === "F7" || e.key == "F8") {
-            debugger; // oxlint-disable-line no-debugger
+            debugger; // eslint-disable-line no-debugger
             e.preventDefault();
             e.stopImmediatePropagation();
         }

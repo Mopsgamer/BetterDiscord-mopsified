@@ -206,7 +206,7 @@ export default class IPCMain {
             ipc.handle(IPCEvents.SET_ALLOW_PRELOAD_OVERRIDE, setAllowPreloadOverride);
         }
         catch (err) {
-            // oxlint-disable-next-line no-console
+            // eslint-disable-next-line no-console
             console.error(err);
         }
     }

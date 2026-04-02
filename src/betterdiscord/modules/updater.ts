@@ -214,7 +214,7 @@ export class CoreUpdater {
                 }));
 
             const asarPath = path.join(Config.get("dataPath"), "betterdiscord.asar");
-            // oxlint-disable-next-line @typescript-eslint/no-require-imports
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const fs = require("original-fs");
             fs.writeFileSync(asarPath, buff);
 

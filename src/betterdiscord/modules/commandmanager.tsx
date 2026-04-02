@@ -349,7 +349,7 @@ class CommandManager {
     }
 
     static #formatCommand(caller: string, command: Command, commandId: string) {
-        // oxlint-disable-next-line @typescript-eslint/no-this-alias
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self: any = this;
 
         return {

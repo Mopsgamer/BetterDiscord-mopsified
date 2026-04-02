@@ -5,7 +5,7 @@
  * @version 0.1.0
  */
 
-/* oxlint-disable no-console */
+/* eslint-disable no-console */
 
 type ConsoleLogTypes = "error" | "debug" | "log" | "warn" | "info";
 

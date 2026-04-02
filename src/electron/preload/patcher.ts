@@ -21,7 +21,7 @@ export default function () {
                         effect(newValue);
                     }
                     catch (error) {
-                        // oxlint-disable-next-line no-console
+                        // eslint-disable-next-line no-console
                         console.error(error);
                     }
 
@@ -52,7 +52,7 @@ export default function () {
                                 });
                             }
                             catch (error) {
-                                // oxlint-disable-next-line no-console
+                                // eslint-disable-next-line no-console
                                 console.error(error);
                             }
                         }

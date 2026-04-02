@@ -25,9 +25,9 @@ interface EditorWindow {
 }
 
 declare global {
-    // oxlint-disable-next-line @typescript-eslint/no-empty-object-type
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface Window extends EditorWindow {};
 }
 
-// oxlint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Window extends EditorWindow {};

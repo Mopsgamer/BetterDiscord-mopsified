@@ -1,5 +1,5 @@
 // @ts-expect-error this is how we override require
-// oxlint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import require from "./polyfill";
 import secure from "./secure";
 import LoadingIcon from "./loadingicon";

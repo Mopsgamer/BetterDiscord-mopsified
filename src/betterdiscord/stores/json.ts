@@ -154,10 +154,10 @@ export default new class JsonStore extends Store {
     }
 
     public useData<T>(pluginName: string, key: string): T {
-        // oxlint-disable-next-line react-hooks/rules-of-hooks
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         const [state, setState] = useState(() => this.getData<T>(pluginName, key));
 
-        // oxlint-disable-next-line react-hooks/rules-of-hooks
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         useInsertionEffect(() => {
             const listener = () => setState(() => this.getData<T>(pluginName, key));
 

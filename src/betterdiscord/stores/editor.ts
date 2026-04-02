@@ -33,7 +33,7 @@ export default new class EditorStore extends Store {
             }
             else {
                 const manager: typeof import("@modules/thememanager")["default"] | typeof import("@modules/pluginmanager")["default"] = (
-                    // oxlint-disable-next-line @typescript-eslint/no-require-imports
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     match[1] === "theme" ? require("@modules/thememanager") : require("@modules/pluginmanager")
                 ).default;
 

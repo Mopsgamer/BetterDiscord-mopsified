@@ -33,7 +33,7 @@ export default class Module {
             const ext = path.extname(file as string);
 
             if (file === "package.json") {
-                // oxlint-disable-next-line @typescript-eslint/no-require-imports
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
                 const pkg = require(path.resolve(parent, file));
                 if (!Reflect.has(pkg, "main")) continue;
 

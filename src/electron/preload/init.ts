@@ -13,7 +13,7 @@ export default function () {
         try {
             const originalKill = process.kill;
             process.kill = function (_: number, __?: string | number | undefined) {return true;};
-            // oxlint-disable-next-line @typescript-eslint/no-require-imports
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             require(preload);
             process.kill = originalKill;
         }

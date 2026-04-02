@@ -42,7 +42,7 @@ interface DiscordWindow {
 
 declare global {
     const DiscordNative: DiscordNativeAPI;
-    // oxlint-disable-next-line @typescript-eslint/no-empty-object-type
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface Window extends DiscordWindow {};
 
     interface Node {
@@ -51,6 +51,6 @@ declare global {
     }
 }
 
-// oxlint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Window extends DiscordWindow {};
 

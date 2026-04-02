@@ -32,6 +32,7 @@ const HOST = "api.poeditor.com";
 const LIST = "/v2/languages/list";
 const EXPORT = "/v2/projects/export";
 
+/* eslint-disable no-multi-spaces */
 const editorMap = {
     "en-us": "en-us.json",   // English, US
     "en": "en-gb.json",      // English, UK
@@ -67,6 +68,7 @@ const editorMap = {
     "vi": "vi.json",         // Vietnamese
     "hi": "hi.json",         // Hindi
 };
+/* eslint-enable no-multi-spaces */
 
 const mo = opts => Object.assign(opts ?? {}, {api_token: process.env.POEDITOR_API_KEY, id: process.env.POEDITOR_PROJECT_ID});
 

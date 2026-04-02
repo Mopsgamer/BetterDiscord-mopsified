@@ -1,4 +1,4 @@
-/* oxlint-disable prefer-rest-params */
+/* eslint-disable prefer-rest-params */
 import Logger from "@common/logger";
 
 import Events from "@modules/emitter";

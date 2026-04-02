@@ -1,4 +1,4 @@
-/* oxlint-disable react-hooks/rules-of-hooks */
+/* eslint-disable react-hooks/rules-of-hooks */
 import fs from "fs";
 import path from "path";
 import electron from "electron";

@@ -719,10 +719,10 @@ const addonStore = new class AddonStore {
      * @returns {ReturnType<typeof this["getState"]>}
      */
     useState() {
-        // oxlint-disable-next-line react-hooks/rules-of-hooks
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         const [state, setState] = React.useState(() => this.getState());
 
-        // oxlint-disable-next-line react-hooks/rules-of-hooks
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         React.useEffect(() => {
             setState(this.getState());
 

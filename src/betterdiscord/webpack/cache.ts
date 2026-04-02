@@ -57,7 +57,7 @@ export default class WebpackCache {
         fs.writeFileSync(filePath, JSON.stringify(this.data, null, 4));
     }
 
-    // oxlint-disable-next-line no-useless-escape
+    // eslint-disable-next-line no-useless-escape
     private static stackPluginRegex = /\/([^\/]+)\.plugin\.js:(\d+):(\d+)/g;
 
     static getIdFromStack(suffix?: string | number) {

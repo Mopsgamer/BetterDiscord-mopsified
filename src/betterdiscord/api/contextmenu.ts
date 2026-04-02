@@ -410,7 +410,7 @@ class ContextMenu {
 
         // This is done to make sure the UI actually displays the on/off correctly
         if (type === "toggle") {
-            // oxlint-disable-next-line react-hooks/rules-of-hooks
+            // eslint-disable-next-line react-hooks/rules-of-hooks
             const [active, doToggle] = React.useState(props.checked || false);
             const originalAction = props.action;
             props.checked = active;
@@ -537,7 +537,7 @@ try {
         value: document
     });
 }
-// oxlint-disable-next-line no-empty
+// eslint-disable-next-line no-empty
 catch {}
 
 export default ContextMenu;

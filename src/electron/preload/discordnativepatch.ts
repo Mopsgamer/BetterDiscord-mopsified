@@ -14,7 +14,7 @@ function getSetting(category: string, key: string) {
 
     try {
         const settingsFile = path.resolve(dataPath, "data", process.env.DISCORD_RELEASE_CHANNEL!, "settings.json");
-        // oxlint-disable-next-line @typescript-eslint/no-require-imports
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         _settings = require(settingsFile) ?? {};
         return _settings[category]?.[key];
     }
