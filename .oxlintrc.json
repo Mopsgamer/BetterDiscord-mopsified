@@ -1,6 +1,9 @@
 {
     "$schema": "./node_modules/oxlint/configuration_schema.json",
     "plugins": [],
+    "jsPlugins": [
+        "@stylistic/eslint-plugin"
+    ],
     "categories": {
         "correctness": "off"
     },
@@ -75,7 +78,100 @@
         "no-with": "error",
         "require-yield": "error",
         "use-isnan": "error",
-        "valid-typeof": "error"
+        "valid-typeof": "error",
+        "@stylistic/indent": "error",
+        "@stylistic/no-trailing-spaces": "error",
+        "@stylistic/array-bracket-newline": "error",
+        "@stylistic/brace-style": [
+            "error",
+            "stroustrup",
+            {
+                "allowSingleLine": true
+            }
+        ],
+        "@stylistic/block-spacing": [
+            "error",
+            "never"
+        ],
+        "@stylistic/dot-location": [
+            "error",
+            "property"
+        ],
+        "@stylistic/function-call-spacing": "error",
+        "@stylistic/key-spacing": "error",
+        "@stylistic/keyword-spacing": "error",
+        "@stylistic/no-floating-decimal": "error",
+        "@stylistic/no-mixed-spaces-and-tabs": "error",
+        "@stylistic/no-multi-spaces": "error",
+        "@stylistic/no-tabs": "error",
+        "@stylistic/no-whitespace-before-property": "error",
+        "@stylistic/object-curly-spacing": [
+            "error",
+            "never",
+            {
+                "objectsInObjects": false
+            }
+        ],
+        "@stylistic/object-property-newline": [
+            "error",
+            {
+                "allowAllPropertiesOnSameLine": true
+            }
+        ],
+        "@stylistic/operator-linebreak": [
+            "error",
+            "none",
+            {
+                "overrides": {
+                    "?": "before",
+                    ":": "before",
+                    "&&": "before"
+                }
+            }
+        ],
+        "@stylistic/quote-props": [
+            "error",
+            "consistent-as-needed",
+            {
+                "keywords": true
+            }
+        ],
+        "@stylistic/quotes": [
+            "error",
+            "double",
+            {
+                "allowTemplateLiterals": "always"
+            }
+        ],
+        "@stylistic/rest-spread-spacing": "error",
+        "@stylistic/semi": "error",
+        "@stylistic/semi-spacing": "error",
+        "@stylistic/space-before-blocks": "error",
+        "@stylistic/space-in-parens": "error",
+        "@stylistic/space-infix-ops": "error",
+        "@stylistic/space-unary-ops": [
+            "error",
+            {
+                "words": true,
+                "nonwords": false
+            }
+        ],
+        "@stylistic/spaced-comment": [
+            "error",
+            "always",
+            {
+                "exceptions": [
+                    "-",
+                    "*"
+                ]
+            }
+        ],
+        "@stylistic/template-curly-spacing": "error",
+        "@stylistic/wrap-iife": [
+            "error",
+            "inside"
+        ],
+        "@stylistic/yield-star-spacing": "error"
     },
     "overrides": [
         {
