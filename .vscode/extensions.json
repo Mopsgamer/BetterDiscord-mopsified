@@ -1,6 +1,6 @@
 {
     "recommendations": [
-        "dbaeumer.vscode-eslint",
+        "oxc.oxc-vscode",
         "quicktype.quicktype",
         "eamodio.gitlens",
         "gruntfuggly.todo-tree",

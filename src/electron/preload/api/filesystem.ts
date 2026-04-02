@@ -14,7 +14,7 @@ export function writeFile(path: string, content: string | Uint8Array, options?: 
         content = Buffer.from(content);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // oxlint-disable-next-line @typescript-eslint/no-require-imports
     const doWriteFile = options?.originalFs ? require("original-fs").writeFileSync : fs.writeFileSync;
 
     return doWriteFile(path, content, options);

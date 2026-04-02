@@ -6,7 +6,7 @@ const crypto: () => typeof import("crypto") = (() => {
     return () => {
         if (cache) return cache;
 
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        // oxlint-disable-next-line @typescript-eslint/no-require-imports
         return cache = require("crypto");
     };
 })();

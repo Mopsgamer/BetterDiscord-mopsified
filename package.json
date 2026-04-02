@@ -11,13 +11,13 @@
         "build:betterdiscord": "bun run build --module=betterdiscord",
         "build:production": "NODE_ENV=production bun run build --minify",
         "inject": "bun scripts/inject.js",
-        "lint": "bun run --bun eslint",
+        "lint": "bun run --bun oxlint",
+        "fmt": "find src -type f \\( -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.js\" \\) -exec sed -i 's/\\t/    /g; s/[[:space:]]*$//' {} +",
         "lint-css": "stylelint src/betterdiscord/styles/*.css && stylelint src/betterdiscord/styles/**/*.css",
         "test": "bun test tests/",
         "dist": "bun run build:production && bun scripts/pack.js",
         "api": "bun run --bun jsdoc -X -r renderer/src/modules/api/ > dist/jsdoc-ast.json",
-        "translations": "bun -r dotenv/config scripts/translations.js",
-        "circulars": "bun run --bun dpdm -T --no-warning --no-tree src/betterdiscord/index.js"
+        "translations": "bun -r dotenv/config scripts/translations.js"
     },
     "devDependencies": {
         "@electron/asar": "^3.2.0",
@@ -30,13 +30,13 @@
         "@types/react-reconciler": "^0.32.0",
         "bun-style-loader": "^0.4.0",
         "dotenv": "^16.4.5",
-        "dpdm": "^3.14.0",
         "electron": "^36.2.1",
         "esbuild": "^0.24.2",
         "eslint": "^9.19.0",
         "eslint-plugin-react": "^7.37.4",
         "eslint-plugin-react-hooks": "^5.2.0-canary-9ff42a87-20250130",
         "globals": "^15.14.0",
+        "oxlint-tsgolint": "^0.19.0",
         "stylelint": "^14.16.1",
         "stylelint-config-standard": "^24.0.0",
         "typescript-eslint": "^8.22.0"

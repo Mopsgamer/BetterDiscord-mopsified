@@ -20,7 +20,7 @@ import Text from "@ui/base/text";
 import {CheckIcon, ChevronRightIcon, FolderIcon, LayoutGridIcon, StoreIcon, StretchHorizontalIcon, XIcon} from "lucide-react";
 import {useStateFromStores} from "@ui/hooks";
 import {type Addon} from "@modules/addonmanager";
-import type AddonManager from "@modules/addonmanager"; // eslint-disable-line no-duplicate-imports
+import type AddonManager from "@modules/addonmanager"; // oxlint-disable-line no-duplicate-imports
 import type {Plugin} from "@modules/pluginmanager";
 import type {ChangeEvent, MouseEvent, ReactNode} from "react";
 

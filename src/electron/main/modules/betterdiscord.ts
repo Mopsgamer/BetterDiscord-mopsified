@@ -24,11 +24,11 @@ export default class BetterDiscord {
         if (this._settings) return this._settings[category]?.[key];
 
         try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            // oxlint-disable-next-line @typescript-eslint/no-require-imports
             const buildInfo = require(buildInfoFile);
             const settingsFile = path.resolve(bdFolder, "data", buildInfo.releaseChannel, "settings.json");
 
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            // oxlint-disable-next-line @typescript-eslint/no-require-imports
             this._settings = require(settingsFile) ?? {};
             return this._settings[category]?.[key];
         }
@@ -45,7 +45,7 @@ export default class BetterDiscord {
             if (this._settings) return this._settings;
 
             try {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                // oxlint-disable-next-line @typescript-eslint/no-require-imports
                 const buildInfo = require(buildInfoFile);
                 const settingsFile = path.resolve(bdFolder, "data", buildInfo.releaseChannel, "clientModCompatibility.json");
 
@@ -58,7 +58,7 @@ export default class BetterDiscord {
 
         private static writeJSON() {
             try {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                // oxlint-disable-next-line @typescript-eslint/no-require-imports
                 const buildInfo = require(buildInfoFile);
                 const settingsFile = path.resolve(bdFolder, "data", buildInfo.releaseChannel, "clientModCompatibility.json");
 
@@ -122,7 +122,7 @@ export default class BetterDiscord {
 
         // Setup some useful vars to avoid blocking IPC calls
         try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            // oxlint-disable-next-line @typescript-eslint/no-require-imports
             process.env.DISCORD_RELEASE_CHANNEL = require(buildInfoFile).releaseChannel;
         }
         catch {
@@ -211,7 +211,6 @@ if (BetterDiscord.getSetting("developer", "reactDevTools")) {
     });
 }
 
-// eslint-disable-next-line accessor-pairs
 Object.defineProperty(global, "appSettings", {
     set(setting) {
         setting.set("DANGEROUS_ENABLE_DEVTOOLS_ONLY_ENABLE_IF_YOU_KNOW_WHAT_YOURE_DOING", true);

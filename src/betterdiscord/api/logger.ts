@@ -5,7 +5,7 @@
  * @version 0.1.0
  */
 
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 
 /**
  * List of logging types.

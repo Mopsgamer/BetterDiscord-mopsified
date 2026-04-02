@@ -23,7 +23,7 @@ class Hooks<CN extends string | undefined = undefined, Bounded extends IsTruthy<
     public useData<T>(...args: UseDataArgs<Bounded>) {
         const callerName = this.#callerName || args.shift();
 
-        // eslint-disable-next-line react-hooks/rules-of-hooks
+        // oxlint-disable-next-line react-hooks/rules-of-hooks
         return JsonStore.useData<T>(callerName!, args[0]);
     }
 }

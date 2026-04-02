@@ -88,7 +88,7 @@ class BrowserWindow extends electron.BrowserWindow {
         BetterDiscord.setup(this);
         Editor.initialize(this);
 
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        // oxlint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
         this.webContents.setWindowOpenHandler = new Proxy(this.webContents.setWindowOpenHandler, {
             apply(target, thisArg, argArray) {
@@ -123,7 +123,7 @@ class BrowserWindow extends electron.BrowserWindow {
                         return {action: "deny"};
                     }
 
-                    // eslint-disable-next-line prefer-rest-params
+                    // oxlint-disable-next-line prefer-rest-params
                     return handler.apply(this, arguments);
                 };
 

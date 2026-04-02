@@ -15,7 +15,7 @@ function dryAbortSignal(signal: AbortSignal): DriedAbortSignal {
                     onAbort();
                 }
                 finally {
-                    // eslint-disable-next-line no-unsafe-finally
+                    // oxlint-disable-next-line no-unsafe-finally
                     return () => {};
                 }
             }
