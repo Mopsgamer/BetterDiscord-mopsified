@@ -11,6 +11,9 @@
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "never"
     },
+    "oxc.enable": true,
+    "oxc.enable.oxlint": true,
+    "oxc.enable.oxfmt": false,
     "eslint.enable": false,
     "search.smartCase": true,
     // JavaScript / TypeScript
