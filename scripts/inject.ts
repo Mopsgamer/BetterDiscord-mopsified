@@ -13,6 +13,7 @@ const releaseInput = (useBdRelease ? args[3] : args[2])?.toLowerCase();
 
 const release = releaseInput === "canary" ? "Discord Canary" : releaseInput === "ptb" ? "Discord PTB" : "Discord";
 const flatpak = args.includes("flatpak");
+const opt = args.includes("opt"); // pacman puts it into /opt, yay does it in the debian way
 const bdPath = useBdRelease ? path.resolve(__dirname, "..", "dist", "betterdiscord.asar") : path.resolve(__dirname, "..", "dist");
 
 /**
@@ -81,7 +82,10 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
         else {
             const configDir = process.env.XDG_CONFIG_HOME || path.posix.join(process.env.HOME!, ".config");
             paths.discordDir = path.join(configDir, releaseNameLowerNoSpaces);
-            syncBaseDirAndDir = true;
+            syncBaseDirAndDir = !opt;
+            if (opt) {
+                paths.discordBaseDir = path.join("/opt", releaseNameLowerNoSpaces);
+            }
         }
     }
 
