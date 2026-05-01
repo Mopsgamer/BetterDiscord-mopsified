@@ -55,27 +55,33 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
     };
     const versions: PathsEntry[] = [];
 
+    let syncBaseDirAndDir = false;
     if (process.platform === "win32") {
-        paths.discordBaseDir = paths.discordDir = path.join(process.env.LOCALAPPDATA!, releaseName.replace(/ /g, ""));
+        paths.discordDir = path.join(process.env.LOCALAPPDATA!, releaseName.replace(/ /g, ""));
+        syncBaseDirAndDir = true;
     }
     else if (process.env.WSL_DISTRO_NAME) {
         const appdata = (await bun.$`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()).trim();
-        paths.discordBaseDir = paths.discordDir = path.join(appdata, releaseName.replace(/ /g, ""));
+        paths.discordDir = path.join(appdata, releaseName.replace(/ /g, ""));
+        syncBaseDirAndDir = true;
     }
     else {
+        const releaseNameLower = releaseName.toLowerCase();
+        const releaseNameLowerNoSpaces = releaseNameLower.replace(" ", "");
+        const releaseNameLowerSnake = releaseNameLower.replace(" ", "-");
         if (flatpak) {
-            paths.discordDir = path.join(process.env.HOME!, ".var", "app", "com.discordapp.Discord", "config", "discord");
-            paths.discordBaseDir = "/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord";
+            paths.discordDir = path.posix.join(process.env.HOME!, ".var", "app", "com.discordapp.Discord", "config", releaseNameLowerNoSpaces);
+            paths.discordBaseDir = "/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/" + releaseNameLowerSnake;
         }
         else if (process.platform === "darwin") {
-            const configDir = path.join(process.env.HOME!, "Library", "Application Support");
-            paths.discordDir = path.join(configDir, releaseName.toLowerCase().replace(" ", ""));
+            const configDir = path.posix.join(process.env.HOME!, "Library", "Application Support");
+            paths.discordDir = path.posix.join(configDir, releaseNameLowerNoSpaces);
             paths.discordBaseDir = "applications/" + release + ".app/contents";
         }
         else {
-            const configDir = process.env.XDG_CONFIG_HOME || path.join(process.env.HOME!, ".config");
-            paths.discordDir = path.join(configDir, releaseName.toLowerCase().replace(" ", ""));
-            paths.discordBaseDir = "/usr/share/discord";
+            const configDir = process.env.XDG_CONFIG_HOME || path.posix.join(process.env.HOME!, ".config");
+            paths.discordDir = path.join(configDir, releaseNameLowerNoSpaces);
+            syncBaseDirAndDir = true;
         }
     }
 
@@ -91,7 +97,7 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
     for (const ver of appDirs) {
         const pathsv: PathsEntry = {...paths, version: ver};
         pathsv.discordDir = path.join(pathsv.discordDir, ver);
-        if (process.platform === "win32" || process.env.WSL_DISTRO_NAME) {
+        if (syncBaseDirAndDir) {
             pathsv.discordBaseDir = pathsv.discordDir;
         }
         pathsv.discord_desktop_core = getDiscord_desktop_core(pathsv.discordDir);
@@ -164,14 +170,17 @@ for (const [i, discordPaths] of rev.entries()) {
     if (!isAppAsarPatched) {
         console.log(`    📦  Extracting app.asar...`);
         asar.extractAll(appAsarPath, tempUnpackPath);
-        const targetFile = path.join(tempUnpackPath, "app_bootstrap", "protocols.js");
+        let targetFile = path.join(tempUnpackPath, "app_bootstrap", "protocols.js");
         if (!fs.existsSync(targetFile)) {
-            throw new Error(`Cannot find resource file for ${release} at ${targetFile}`);
+            targetFile = path.join(tempUnpackPath, "bundle.js");
+            if (!fs.existsSync(targetFile)) {
+                throw new Error(`Cannot find resource file for ${release} at ${targetFile}`);
+            }
         }
         console.log(`    🔨  Patching app.asar...`);
         const appAsarContent = fs.readFileSync(targetFile, "utf8");
         const patchedContent = appAsarContent.replace(
-            /(_electron\.protocol\.registerSchemesAsPrivileged\(\s*\[)(\s*{)/,
+            /(protocol\.registerSchemesAsPrivileged\(\s*\[)(\s*{\s*scheme:\s*DISCORD_CLIP_PROTOCOL)/,
             `$1\n    {\n      scheme: "bd",\n      privileges: {\n          standard: true,\n          secure: true,\n          supportFetchAPI: true,\n      }\n    },$2`
         );
 
@@ -180,7 +189,7 @@ for (const [i, discordPaths] of rev.entries()) {
         // Backup and Repack
         if (!fs.existsSync(`${appAsarPath}.bak`)) fs.copyFileSync(appAsarPath, `${appAsarPath}.bak`);
         await asar.createPackage(tempUnpackPath, appAsarPath);
-        console.log("    ✅ Patched protocols.js in app.asar");
+        console.log("    ✅ Patched " + targetFile + " in app.asar");
     }
     else {
         console.log("    ℹ️ app.asar already patched.");
