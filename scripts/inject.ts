@@ -2,49 +2,100 @@ import fs from "fs";
 import path from "path";
 import bun from "bun";
 import asar from "@electron/asar";
+import {styleText as c} from "node:util";
 
 import doSanityChecks from "./helpers/validate";
 import buildPackage from "./helpers/package";
 import copyFiles from "./helpers/copy";
 
-const args = process.argv;
-const useBdRelease = args[2]?.toLowerCase() === "release";
-const releaseInput = (useBdRelease ? args[3] : args[2])?.toLowerCase();
+const args = process.argv.slice(2); // Slice to ignore 'bun' and 'inject.ts'
+if (args.includes("-h") || args.includes("--help")) {
+    showHelp();
+    process.exit(0);
+}
 
-const release = releaseInput === "canary" ? "Discord Canary" : releaseInput === "ptb" ? "Discord PTB" : "Discord";
-const flatpak = args.includes("flatpak");
-const opt = args.includes("opt"); // pacman puts it into /opt, yay does it in the debian way
+function includesIgnoreCase(arr: string[], target: string): boolean {
+    target = target.toLowerCase();
+    return arr.some((el) => el.toLowerCase() === target);
+}
+
+const useBdRelease = includesIgnoreCase(args, "release");
+
+const release = includesIgnoreCase(args, "canary") ? "Discord Canary" : includesIgnoreCase(args, "ptb") ? "Discord PTB" : "Discord";
+const flatpak = includesIgnoreCase(args, "flatpak");
+const opt = includesIgnoreCase(args, "opt"); // pacman puts it into /opt, yay does it in the debian way
 const bdPath = useBdRelease ? path.resolve(__dirname, "..", "dist", "betterdiscord.asar") : path.resolve(__dirname, "..", "dist");
 
+function showHelp(): void {
+    const discordRelease = ["canary", "ptb"].map((v) => c(["yellow", "bold"], v)).join("|");
+    console.log(`
+${c("bold", `Usage: bun inject.ts [${c(["cyan"], "options")}]`)}
+
+${c("bold", "Options:")}
+  ${c(["blue", "bold"], "release")}              Build and inject the production asar (dist/betterdiscord.asar)
+                       If omitted, injects the development folder (dist/)
+  ${discordRelease}           Inject into Discord Canary or Discord PTB
+  ${c(["cyan", "bold"], "flatpak")}              Configure for Flatpak Discord installation
+  ${c(["cyan", "bold"], "opt")}                  Use /opt directory for Linux installations (Arch/pacman)
+  ${c(["cyan", "bold"], "-h, --help")}           Show this help message
+
+${c("bold", "Examples:")}
+  ${c("bold", c("magenta", "bun inject.ts") + " canary")}
+  ${c("bold", c("magenta", "bun inject.ts") + " release canary")}
+  ${c("bold", c("magenta", "bun inject.ts") + " release ptb flatpak")}
+    `);
+}
+
 /**
- * Paths of the specific discord version.
- * When discord updates it can provide multiple versions
- * and this type represents paths for /0.0.130/ discord.
+ * Represents the directory paths for a specific Discord version.
+ *
+ * Discord can have multiple installed versions (e.g., 0.0.130, 0.0.131),
+ * and this type contains the paths for a single version entry.
  */
 type PathsEntry = {
     /**
-     * Discord's application directory.
+     * Discord's root application installation directory.
      *
-     * When installed from `.deb`:
-     * @example "/usr/share/discord"
-     * When installed from `.flatpakref`:
-     * @example "/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord"
+     * Examples:
+     * - **Debian/Ubuntu (`.deb`)**: `/usr/share/discord`
+     * - **Flatpak**: `/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord`
+     * - **Windows**: `C:\Users\<user>\AppData\Local\Discord`
+     * - **macOS**: `/Applications/Discord.app/Contents`
      */
     discordBaseDir: string;
+
     /**
-     * Discord's configuration directory.
-     * `discord_desktop_core` is somewhere in this directory.
+     * Discord's user configuration directory where caches and settings are stored.
+     *
+     * The `discord_desktop_core` module is located within this directory structure.
+     *
+     * Examples:
+     * - **Linux**: `~/.config/discord`
+     * - **Windows**: `%LOCALAPPDATA%\Discord`
+     * - **macOS**: `~/Library/Application Support/discord`
      */
     discordDir: string;
+
     /**
-     * Everything is implemented here.
+     * Full path to the `discord_desktop_core` module directory.
      *
-     * It's undefined when discord hasn't applied the discordDir version.
+     * This is where the core Discord application logic resides. May be `undefined`
+     * if Discord is in the process of updating or hasn't fully initialized this version yet.
+     *
+     * @nullable When Discord hasn't prepared the directory for this version
      */
     discord_desktop_core: string | undefined;
+
+    /**
+     * The semantic version string of this Discord installation (e.g., "0.0.130").
+     */
     version: string;
 };
 
+/**
+ * Array of `PathsEntry` objects representing all installed Discord versions
+ * on the current system, typically sorted from oldest to newest.
+ */
 type Paths = PathsEntry[];
 
 async function getDiscordPaths(releaseName: string): Promise<Paths> {
