@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import bun from "bun";
 import asar from "@electron/asar";
+import os from "node:os";
 import {styleText as c} from "node:util";
 
 import doSanityChecks from "./helpers/validate";
@@ -25,6 +26,7 @@ const isSimple = includesIgnoreCase(args, "simple");
 const release = includesIgnoreCase(args, "canary") ? "Discord Canary" : includesIgnoreCase(args, "ptb") ? "Discord PTB" : "Discord";
 const flatpak = includesIgnoreCase(args, "flatpak");
 const opt = includesIgnoreCase(args, "opt"); // pacman puts it into /opt, yay does it in the debian way
+const snap = includesIgnoreCase(args, "snap");
 const bdPath = useBdRelease ? path.resolve(__dirname, "..", "dist", "betterdiscord.asar") : path.resolve(__dirname, "..", "dist");
 
 function showHelp(): void {
@@ -89,6 +91,13 @@ type PathsEntry = {
     discord_desktop_core: string;
 
     /**
+     * Current snap revision.
+     *
+     * Empty for non-snap injection.
+     */
+    snapCurrent: string;
+
+    /**
      * The semantic version string of this Discord installation (e.g., "0.0.130").
      */
     version: string;
@@ -105,6 +114,7 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
         discordDir: "",
         discordBaseDir: "",
         discord_desktop_core: "",
+        snapCurrent: "",
         version: "",
     };
     const versions: PathsEntry[] = [];
@@ -126,6 +136,11 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
         if (flatpak) {
             paths.discordDir = path.posix.join(process.env.HOME!, ".var", "app", "com.discordapp.Discord", "config", releaseNameLowerNoSpaces);
             paths.discordBaseDir = "/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/" + releaseNameLowerSnake;
+        }
+        else if (snap) {
+            paths.snapCurrent = (await bun.$`snap list ${releaseNameLowerSnake} | tail -n 1 | awk '{print $3}'`.text()).trim();
+            paths.discordDir = path.join(process.env.HOME!, "snap", releaseNameLowerNoSpaces, paths.snapCurrent, ".config", releaseNameLowerSnake);
+            paths.discordBaseDir = path.join("/snap", releaseNameLowerSnake, paths.snapCurrent, "usr", "share", releaseNameLowerNoSpaces);
         }
         else if (process.platform === "darwin") {
             const configDir = path.posix.join(process.env.HOME!, "Library", "Application Support");
@@ -175,9 +190,7 @@ function getDiscord_desktop_core(discordDir: string): string {
         const coreWrap = fs.readdirSync(modulesPath).find(e => e.startsWith(corename + "-"));
         if (coreWrap) paths.push(coreWrap);
     }
-    catch {
-        return "";
-    }
+    catch {/* no wrap */}
 
     paths.push(corename);
 
@@ -188,16 +201,25 @@ doSanityChecks(bdPath);
 buildPackage(bdPath);
 
 const asarBase = "app.asar";
-async function patchAppAsar(resources: string): Promise<void> {
+async function patchAppAsar(resources: string, snapCurrent: string): Promise<void> {
     const appAsarPath = path.join(resources, asarBase);
 
-    const tempUnpackPath = path.join(resources, "app-unpacked-temp");
+    // create temporary directory
+    const tempDir = path.join(os.tmpdir(), "bd-inj");
+    if (snap) {
+        console.log(`    ℹ️  Creating temporary directory ${tempDir}...`);
+        fs.mkdirSync(tempDir, {recursive: true});
+    }
+
+    const tempUnpackPath = path.join(snap ? tempDir : resources, "app-unpacked-temp");
     fs.rmSync(tempUnpackPath, {force: true, recursive: true});
 
     const isAppAsarPatched = fs.readFileSync(appAsarPath, "utf8").includes("scheme: \"bd\"");
+    const origSnapPath = "/var/lib/snapd/snaps/discord_" + snapCurrent + ".snap";
 
     // Only patch if not already patched
     if (!isAppAsarPatched) {
+        if (snap && !fs.existsSync(origSnapPath)) throw new Error(`${origSnapPath} does not exist.`);
         { // create backup
             const appAsarBakPath = path.join(resources, `${asarBase}.bd.bak`);
             try {await fs.promises.copyFile(appAsarPath, appAsarBakPath, fs.constants.COPYFILE_EXCL);}
@@ -223,9 +245,36 @@ async function patchAppAsar(resources: string): Promise<void> {
             fs.writeFileSync(targetFile, patchedContent);
         }
 
-        // repack app.asar
-        await asar.createPackage(tempUnpackPath, appAsarPath);
-        console.log(`    ✅ Patched ${targetFile} in ${asarBase}`);
+        if (!snap) {
+            // repack app.asar
+            await asar.createPackage(tempUnpackPath, appAsarPath);
+            console.log(`    ✅ Patched ${targetFile} in ${asarBase}`);
+        }
+        else if (!isAppAsarPatched) {
+            const snapCopyPath = path.join(tempDir, "discord.snap");
+
+            console.log(`    ℹ️  Copying ${origSnapPath} into ${snapCopyPath}...`);
+            fs.copyFileSync(origSnapPath, snapCopyPath);
+            fs.chmodSync(snapCopyPath, 0o644);
+
+            const unsfsPath = path.join(tempDir, "squashfs-root");
+
+            console.log(`    ℹ️  Unsquashing into ${unsfsPath}...`);
+            const appAsarPathUnsquashed = path.join(unsfsPath, "usr", "share", "discord", "resources", "app.asar");
+            await bun.$`unsquashfs -f -d ${unsfsPath} ${snapCopyPath}`;
+
+            // repack app.asar
+            await asar.createPackage(tempUnpackPath, appAsarPathUnsquashed);
+            console.log(`    ✅ Patched ${targetFile} in ${asarBase}`);
+
+            const newSnapPath = path.join(tempDir, "better_discord.snap");
+            console.log(`    ℹ️  Creating ${newSnapPath}...`);
+            await bun.$`mksquashfs ${unsfsPath} ${newSnapPath} -comp xz`;
+            console.log(`    ℹ️  Installing (dangerous, devmode)...`);
+            await bun.$`snap install --dangerous --devmode ${newSnapPath}`;
+
+            console.log(`    ✅ Installed patched discord snap ${newSnapPath}.`);
+        }
     }
     else {
         console.log(`    ℹ️  Can't patch ${asarBase}, it's already patched.`);
@@ -250,8 +299,7 @@ const rev = prepared.toReversed();
 let potentialInjectionWipe = false;
 for (const [i, discordPaths] of rev.entries()) {
     const isLatest = i === prepared.length - 1;
-    const {discordDir, discordBaseDir, discord_desktop_core, version} = discordPaths;
-
+    const {discordDir, discordBaseDir, discord_desktop_core, snapCurrent, version} = discordPaths;
 
     console.log(`\nInjecting into ${release} (${version})`);
     console.log(`    Base Dir: '${discordBaseDir}'`);
@@ -269,7 +317,7 @@ for (const [i, discordPaths] of rev.entries()) {
     }
     console.log(`    appAsarPath: '${appAsarPath}'`);
 
-    if (!discord_desktop_core) {
+    if ((!discord_desktop_core || !fs.existsSync(discord_desktop_core))) {
         if (!isLatest) {
             console.log(`    ⏭️ It's a pending update directory. Skipped.`);
             potentialInjectionWipe = true;
@@ -280,14 +328,15 @@ for (const [i, discordPaths] of rev.entries()) {
 
     // protocols.js (or bundle.js for canary)
     if (!isSimple) {
-        patchAppAsar(resources);
+        await patchAppAsar(resources, snapCurrent);
     }
     else {
         console.log(`    ℹ️  Skipping ${asarBase} patching.`);
     }
 
-    // index.js
-    patchCore(discord_desktop_core);
+    // discord_desktop_core/index.js
+    // for snap discord_desktop_core does not have .config
+    if (!snap) await patchCore(discord_desktop_core);
 
     // exec flatpak patch override here
     if (flatpak) {
