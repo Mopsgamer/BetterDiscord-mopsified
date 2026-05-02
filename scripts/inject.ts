@@ -20,6 +20,7 @@ function includesIgnoreCase(arr: string[], target: string): boolean {
 }
 
 const useBdRelease = includesIgnoreCase(args, "release");
+const isSimple = includesIgnoreCase(args, "simple");
 
 const release = includesIgnoreCase(args, "canary") ? "Discord Canary" : includesIgnoreCase(args, "ptb") ? "Discord PTB" : "Discord";
 const flatpak = includesIgnoreCase(args, "flatpak");
@@ -37,6 +38,7 @@ ${c("bold", "Options:")}
   ${discordRelease}           Inject into Discord Canary or Discord PTB
   ${c(["cyan", "bold"], "flatpak")}              Configure for Flatpak Discord installation
   ${c(["cyan", "bold"], "opt")}                  Use /opt directory for Linux installations (Arch/pacman)
+  ${c(["cyan", "bold"], "simple")}               Skip app.asar patching (only write index.js)
   ${c(["cyan", "bold"], "-h, --help")}           Show this help message
 
 ${c("bold", "Examples:")}
@@ -82,9 +84,9 @@ type PathsEntry = {
      * This is where the core Discord application logic resides. May be `undefined`
      * if Discord is in the process of updating or hasn't fully initialized this version yet.
      *
-     * @nullable When Discord hasn't prepared the directory for this version
+     * Empty when Discord hasn't prepared the directory for this version.
      */
-    discord_desktop_core: string | undefined;
+    discord_desktop_core: string;
 
     /**
      * The semantic version string of this Discord installation (e.g., "0.0.130").
@@ -162,7 +164,7 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
     return versions;
 }
 
-function getDiscord_desktop_core(discordDir: string): string | undefined {
+function getDiscord_desktop_core(discordDir: string): string {
     const corename = "discord_desktop_core";
     const paths: string[] = [];
     const modulesPath = path.join(discordDir, "modules");
@@ -174,7 +176,7 @@ function getDiscord_desktop_core(discordDir: string): string | undefined {
         if (coreWrap) paths.push(coreWrap);
     }
     catch {
-        return undefined;
+        return "";
     }
 
     paths.push(corename);
@@ -185,36 +187,9 @@ function getDiscord_desktop_core(discordDir: string): string | undefined {
 doSanityChecks(bdPath);
 buildPackage(bdPath);
 
-const prepared = await getDiscordPaths(release);
-const rev = prepared.toReversed();
-let potentialInjectionwipe = false;
-for (const [i, discordPaths] of rev.entries()) {
-    const isLatest = i === prepared.length - 1;
-    const {discordDir, discordBaseDir, discord_desktop_core, version} = discordPaths;
-    const resources = path.join(discordBaseDir, "resources");
-
-    console.log(`\nInjecting into ${release} ${version}`);
-    console.log(`    Base Dir: '${discordBaseDir}'`);
-    console.log(`    Dir: '${discordDir}'`);
-
-    const isNoCore = !discord_desktop_core || !fs.existsSync(discord_desktop_core);
-    if (isNoCore) {
-        if (!isLatest) {
-            console.log(`    ⏭️ It's a pending update directory. Skipped.`);
-            potentialInjectionwipe = true;
-            continue;
-        }
-        throw new Error(`Cannot find resource directory for ${release} at ${discord_desktop_core}`);
-    }
-    console.log(`    discord_desktop_core: '${discord_desktop_core}'`);
-
-    // protocols.js
-    const appAsarPath = path.join(resources, "app.asar");
-
-    if (!fs.existsSync(appAsarPath)) {
-        throw new Error(`Cannot find resource directory for ${release} at ${appAsarPath}`);
-    }
-    console.log(`    appAsarPath: '${appAsarPath}'`);
+const asarBase = "app.asar";
+async function patchAppAsar(resources: string): Promise<void> {
+    const appAsarPath = path.join(resources, asarBase);
 
     const tempUnpackPath = path.join(resources, "app-unpacked-temp");
     fs.rmSync(tempUnpackPath, {force: true, recursive: true});
@@ -223,7 +198,12 @@ for (const [i, discordPaths] of rev.entries()) {
 
     // Only patch if not already patched
     if (!isAppAsarPatched) {
-        console.log(`    📦  Extracting app.asar...`);
+        { // create backup
+            const appAsarBakPath = path.join(resources, `${asarBase}.bd.bak`);
+            try {await fs.promises.copyFile(appAsarPath, appAsarBakPath, fs.constants.COPYFILE_EXCL);}
+            catch {/* do not recopy */};
+        }
+        console.log(`    📦  Extracting ${asarBase}...`);
         asar.extractAll(appAsarPath, tempUnpackPath);
         let targetFile = path.join(tempUnpackPath, "app_bootstrap", "protocols.js");
         if (!fs.existsSync(targetFile)) {
@@ -232,27 +212,28 @@ for (const [i, discordPaths] of rev.entries()) {
                 throw new Error(`Cannot find resource file for ${release} at ${targetFile}`);
             }
         }
-        console.log(`    🔨  Patching app.asar...`);
-        const appAsarContent = fs.readFileSync(targetFile, "utf8");
-        const patchedContent = appAsarContent.replace(
-            /(protocol\.registerSchemesAsPrivileged\(\s*\[)(\s*{\s*scheme:\s*DISCORD_CLIP_PROTOCOL)/,
-            `$1\n    {\n      scheme: "bd",\n      privileges: {\n          standard: true,\n          secure: true,\n          supportFetchAPI: true,\n      }\n    },$2`
-        );
+        console.log(`    🔨  Patching ${asarBase} at ${targetFile}...`);
+        { // add new bd protocol
+            const appAsarContent = fs.readFileSync(targetFile, "utf8");
+            const patchedContent = appAsarContent.replace(
+                /(protocol\.registerSchemesAsPrivileged\(\s*\[)(\s*{\s*scheme:\s*DISCORD_CLIP_PROTOCOL)/,
+                `$1{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true},},$2`
+            );
 
-        fs.writeFileSync(targetFile, patchedContent);
+            fs.writeFileSync(targetFile, patchedContent);
+        }
 
-        // Backup and Repack
-        if (!fs.existsSync(`${appAsarPath}.bak`)) fs.copyFileSync(appAsarPath, `${appAsarPath}.bak`);
+        // repack app.asar
         await asar.createPackage(tempUnpackPath, appAsarPath);
-        console.log("    ✅ Patched " + targetFile + " in app.asar");
+        console.log(`    ✅ Patched ${targetFile} in ${asarBase}`);
     }
     else {
-        console.log("    ℹ️ app.asar already patched.");
+        console.log(`    ℹ️  Can't patch ${asarBase}, it's already patched.`);
     }
+    fs.rmSync(tempUnpackPath, {force: true, recursive: true});
+}
 
-    fs.rmSync(tempUnpackPath, {recursive: true, force: true});
-
-    // index.js
+async function patchCore(discord_desktop_core: string): Promise<void> {
     const indexJs = path.join(discord_desktop_core, "index.js");
     if (fs.existsSync(indexJs)) fs.unlinkSync(indexJs);
 
@@ -262,16 +243,59 @@ for (const [i, discordPaths] of rev.entries()) {
 
     fs.writeFileSync(indexJs, injectionCode);
     console.log("    ✅ Wrote index.js\n");
+}
+
+const prepared = await getDiscordPaths(release);
+const rev = prepared.toReversed();
+let potentialInjectionWipe = false;
+for (const [i, discordPaths] of rev.entries()) {
+    const isLatest = i === prepared.length - 1;
+    const {discordDir, discordBaseDir, discord_desktop_core, version} = discordPaths;
+
+
+    console.log(`\nInjecting into ${release} (${version})`);
+    console.log(`    Base Dir: '${discordBaseDir}'`);
+    console.log(`    Dir: '${discordDir}'`);
+    console.log(`    discord_desktop_core: '${discord_desktop_core}'`);
+
+    const resources = path.join(discordBaseDir, "resources");
+    if (!fs.existsSync(resources)) {
+        throw new Error(`Cannot find directory for ${release} at ${resources}`);
+    }
+
+    const appAsarPath = path.join(resources, asarBase);
+    if (!fs.existsSync(appAsarPath)) {
+        throw new Error(`Cannot find ${asarBase} for ${release} at ${appAsarPath}`);
+    }
+    console.log(`    appAsarPath: '${appAsarPath}'`);
+
+    if (!discord_desktop_core) {
+        if (!isLatest) {
+            console.log(`    ⏭️ It's a pending update directory. Skipped.`);
+            potentialInjectionWipe = true;
+            continue;
+        }
+        throw new Error(`Cannot find discord_desktop_core for ${release} at ${discord_desktop_core}`);
+    }
+
+    // protocols.js (or bundle.js for canary)
+    if (!isSimple) {
+        patchAppAsar(resources);
+    }
+    else {
+        console.log(`    ℹ️  Skipping ${asarBase} patching.`);
+    }
+
+    // index.js
+    patchCore(discord_desktop_core);
 
     // exec flatpak patch override here
     if (flatpak) {
         console.log("    🔒 Setting Flatpak filesystem overrides...");
-
-        // This gives the Flatpak permission to read your project directory
-        await bun.$`flatpak override --filesystem=${"host"} com.discordapp.Discord`;
+        await bun.$`flatpak override --filesystem=host com.discordapp.Discord`;
     }
-    console.log(`Injection successful, please restart ${release} ${version}.`);
-    if (potentialInjectionwipe) {
+    console.log(`Injection successful, please restart ${release} (${version}).`);
+    if (potentialInjectionWipe) {
         console.log(`    ⚠️ Your injection may be wiped out by the pending update.`);
         console.log(`    The update: ${prepared.map(({version: v}) => v).join(" -> ")}`);
     }
