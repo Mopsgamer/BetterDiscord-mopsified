@@ -1,0 +1,10 @@
+{
+  "name": "@betterdiscord.com/injection",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "@electron/asar": "^3.2.0"
+  }
+}

@@ -1,4 +1,6 @@
-dist/
 node_modules
-.env
-.idea/
+dist
+*.log
+.DS_Store
+packages/**/dist
+extension/dist

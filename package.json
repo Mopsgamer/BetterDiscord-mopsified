@@ -1,12 +1,17 @@
 {
-    "name": "betterdiscord",
-    "version": "2.0.0-micro",
-    "description": "Enhances Discord by adding functionality and themes.",
-    "type": "module",
-    "scripts": {
-        "inject": "echo \"not implemented\" && exit 1"
-    },
-    "engines": {
-        "bun": ">=1.3"
-    }
+  "name": "betterdiscord-rewrite",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "oxlint .",
+    "format": "oxlint . --fix",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "oxc": "latest",
+    "@typescript/native-preview": "latest"
+  }
 }
