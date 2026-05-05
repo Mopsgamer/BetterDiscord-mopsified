@@ -12,9 +12,10 @@ export async function patchAsar(resourcesPath: string): Promise<void> {
         throw new Error(`Could not find app.asar at ${asarPath}`);
     }
 
-    const content = fs.readFileSync(asarPath, "utf8");
-    if (content.includes("scheme: \"bd\"")) {
-        console.log(styleText("blue", "ℹ️  Discord is already patched."));
+    // Check if already patched
+    const asarContent = fs.readFileSync(asarPath);
+    if (asarContent.includes(Buffer.from("scheme: \"bd\""))) {
+        console.log(styleText("blue", "ℹ️  Discord app.asar is already patched."));
         return;
     }
 
@@ -22,7 +23,7 @@ export async function patchAsar(resourcesPath: string): Promise<void> {
 
     if (!fs.existsSync(backupPath)) {
         fs.copyFileSync(asarPath, backupPath);
-        console.log(styleText("green", "✅ Created backup of app.asar"));
+        console.log(styleText("green", `✅ Created backup at ${backupPath}`));
     }
 
     if (fs.existsSync(unpackPath)) {
@@ -42,12 +43,25 @@ export async function patchAsar(resourcesPath: string): Promise<void> {
 
     let fileContent = fs.readFileSync(targetFile, "utf8");
 
-    // Patching protocols to register 'bd' scheme
-    const patch = "{scheme: \"bd\", privileges: {standard: true, secure: true, supportFetchAPI: true}},";
-    fileContent = fileContent.replace(
+    // Patching protocols to register 'bd' scheme as privileged
+    const patch = '{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true}},';
+
+    // We target the place where DISCORD_CLIP_PROTOCOL is registered
+    const patchedContent = fileContent.replace(
         /(protocol\.registerSchemesAsPrivileged\(\s*\[)(\s*{\s*scheme:\s*)/,
         `$1${patch}$2`
     );
+
+    if (patchedContent === fileContent) {
+        // Fallback patch if the regex didn't match exactly as expected
+        console.log(styleText("yellow", "⚠️ Primary patch pattern not found, trying fallback..."));
+        fileContent = fileContent.replace(
+            "protocol.registerSchemesAsPrivileged([",
+            `protocol.registerSchemesAsPrivileged([${patch}`
+        );
+    } else {
+        fileContent = patchedContent;
+    }
 
     fs.writeFileSync(targetFile, fileContent);
 
