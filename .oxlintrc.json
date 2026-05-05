@@ -4,7 +4,7 @@
   },
   "overrides": [
     {
-      "files": ["packages/found/src/index.ts"],
+      "files": ["packages/find/src/index.ts"],
       "rules": {
         "no-unused-vars": "off"
       }

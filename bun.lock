@@ -22,6 +22,10 @@
         "react": "^19.0.0",
       },
     },
+    "packages/find": {
+      "name": "@betterdiscord.com/find",
+      "version": "1.0.0",
+    },
     "packages/found": {
       "name": "@betterdiscord.com/found",
       "version": "1.0.0",
@@ -42,6 +46,8 @@
     "@betterdiscord.com/cli": ["@betterdiscord.com/cli@workspace:packages/cli"],
 
     "@betterdiscord.com/components": ["@betterdiscord.com/components@workspace:packages/components"],
+
+    "@betterdiscord.com/find": ["@betterdiscord.com/find@workspace:packages/find"],
 
     "@betterdiscord.com/found": ["@betterdiscord.com/found@workspace:packages/found"],
 
