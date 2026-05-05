@@ -1,5 +1,5 @@
-import { findNow } from "@betterdiscord.com/find";
 import { byProps } from "@betterdiscord.com/find/filters";
+import { findNow } from "@betterdiscord.com/find";
 
 /**
  * Common Discord modules discovered and exported.

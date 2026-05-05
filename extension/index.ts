@@ -1,6 +1,7 @@
 /**
  * BetterDiscord Extension Core
  */
+import * as themes from "@betterdiscord.com/themes";
 import { find, findNow } from "@betterdiscord.com/find";
 
 class Mutex {
@@ -24,18 +25,10 @@ class Mutex {
 class Patcher {
     private mutex = new Mutex();
 
-    /**
-     * Searches webpack instantly.
-     * Use this if you need immediate results and the module is unlikely to be searched by others.
-     */
     findNow(filters: ((m: any) => boolean)[]) {
         return findNow(filters);
     }
 
-    /**
-     * Async search, batches multiple calls within 1 second.
-     * RECOMMENDED for better performance and reduced overhead.
-     */
     async find(filters: ((m: any) => boolean)[]) {
         await this.mutex.lock();
         try {
@@ -48,30 +41,26 @@ class Patcher {
 
 const patcher = new Patcher();
 
-const BdApi = {
-    Patcher: patcher,
-};
-
 /**
  * Protocol handler for bd:
  */
 async function handleBdProtocol(url: string) {
-    if (url === "bd:api") {
-        return BdApi;
-    }
-
-    if (url.startsWith("bd:import/plugins/")) {
-        const pluginId = url.replace("bd:import/plugins/", "");
-        console.log(`Resolving plugin source for: ${pluginId}`);
-        return { id: pluginId };
-    }
-
-    if (url === "bd:patcher") {
-        return patcher;
+    switch (url) {
+        case "bd:patcher":
+            return patcher;
+        case "bd:themes":
+            return themes;
+        default:
+            if (url.startsWith("bd:import/plugins/")) {
+                const pluginId = url.replace("bd:import/plugins/", "");
+                console.log(`Importing plugin: ${pluginId}`);
+                // Implementation for fetching and loading plugin via bd: protocol
+                return { id: pluginId };
+            }
     }
 }
 
-// Global import helper
+// Global import interceptor
 (window as any).bdImport = async (specifier: string) => {
     if (specifier.startsWith("bd:")) {
         return handleBdProtocol(specifier);
@@ -83,9 +72,7 @@ async function handleBdProtocol(url: string) {
 export default async function initialize() {
     console.log("BetterDiscord Rewrite initializing...");
 
-    (window as any).BetterDiscord = {
-        api: BdApi,
-    };
+    // Core extension logic: initialize themes, setup watchers, etc.
 
     console.log("BetterDiscord Rewrite initialized.");
 }

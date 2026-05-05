@@ -1,7 +1,7 @@
+import asar from "@electron/asar";
 import fs from "node:fs";
 import path from "node:path";
 import { styleText } from "node:util";
-import asar from "@electron/asar";
 
 export async function patchAsar(resourcesPath: string): Promise<void> {
     const asarPath = path.join(resourcesPath, "app.asar");
@@ -12,7 +12,6 @@ export async function patchAsar(resourcesPath: string): Promise<void> {
         throw new Error(`Could not find app.asar at ${asarPath}`);
     }
 
-    // Check if already patched
     const asarContent = fs.readFileSync(asarPath);
     if (asarContent.includes(Buffer.from("scheme: \"bd\""))) {
         console.log(styleText("blue", "ℹ️  Discord app.asar is already patched."));
@@ -45,22 +44,33 @@ export async function patchAsar(resourcesPath: string): Promise<void> {
 
     // Patching protocols to register 'bd' scheme as privileged
     const patch = '{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true}},';
-
-    // We target the place where DISCORD_CLIP_PROTOCOL is registered
     const patchedContent = fileContent.replace(
         /(protocol\.registerSchemesAsPrivileged\(\s*\[)(\s*{\s*scheme:\s*)/,
         `$1${patch}$2`
     );
 
     if (patchedContent === fileContent) {
-        // Fallback patch if the regex didn't match exactly as expected
-        console.log(styleText("yellow", "⚠️ Primary patch pattern not found, trying fallback..."));
         fileContent = fileContent.replace(
             "protocol.registerSchemesAsPrivileged([",
             `protocol.registerSchemesAsPrivileged([${patch}`
         );
     } else {
         fileContent = patchedContent;
+    }
+
+    // Add protocol handler to the main process
+    const handlerCode = `
+        const { protocol } = require('electron');
+        protocol.handle('bd', async (request) => {
+            const url = new URL(request.url);
+            return new Response("console.log('BD Protocol')", {
+                headers: { 'Content-Type': 'text/javascript' }
+            });
+        });
+    `;
+
+    if (targetFile.endsWith("bundle.js")) {
+        fileContent = handlerCode + fileContent;
     }
 
     fs.writeFileSync(targetFile, fileContent);
