@@ -1,13 +1,29 @@
-import { findBulk } from "@betterdiscord.com/find";
+import { find } from "@betterdiscord.com/find";
+import { byProps } from "@betterdiscord.com/find/filters";
 
 /**
  * Common Discord modules discovered and exported.
- * found/ is for found modules only, searchers are in find/.
+ * Modules are retrieved asynchronously using the find API.
  */
 
-// We use lazy exports to ensure webpack is ready when accessed
-export const React = () => findBulk(m => m.createElement && m.useLayoutEffect)[0];
-export const ReactDOM = () => findBulk(m => m.render && m.createPortal)[0];
-export const Dispatcher = () => findBulk(m => m.dispatch && m.subscribe)[0];
-export const Flux = () => findBulk(m => m.Store && m.connectStores)[0];
-export const Modals = () => findBulk(m => m.openModal && m.closeModal && m.ModalRoot)[0];
+async function getFoundModules() {
+    return find([
+        byProps("createElement", "useLayoutEffect"), // React
+        byProps("render", "createPortal"),         // ReactDOM
+        byProps("dispatch", "subscribe"),          // Dispatcher
+        byProps("Store", "connectStores"),         // Flux
+        byProps("openModal", "closeModal", "ModalRoot") // Modals
+    ]);
+}
+
+let cache: any[] | null = null;
+async function getCached() {
+    if (!cache) cache = await getFoundModules();
+    return cache;
+}
+
+export const React = async () => (await getCached())[0];
+export const ReactDOM = async () => (await getCached())[1];
+export const Dispatcher = async () => (await getCached())[2];
+export const Flux = async () => (await getCached())[3];
+export const Modals = async () => (await getCached())[4];

@@ -1,7 +1,7 @@
 /**
  * BetterDiscord Extension Core
  */
-import { findBulk } from "@betterdiscord.com/find";
+import { find, findInstant } from "@betterdiscord.com/find";
 
 class Mutex {
     private locked = false;
@@ -31,20 +31,21 @@ class Patcher {
     }
 
     private async waitForPlugins() {
-        // Implementation for waiting until all plugins are loaded
+        // Wait for all plugins to load or 1s timeout
         await new Promise(r => setTimeout(r, 500));
         this.pluginsLoaded = true;
     }
 
     /**
      * Searches webpack instantly.
+     * @deprecated Use `find` instead for safer, asynchronous module searching.
      */
     findInstant(filters: ((m: any) => boolean)[]) {
-        return findBulk(...filters);
+        return findInstant(filters);
     }
 
     /**
-     * Async search, waits for plugins to load or 1 second timeout.
+     * Async search, waits for plugins to load or until all plugins are loaded.
      */
     async find(filters: ((m: any) => boolean)[]) {
         await this.mutex.lock();
@@ -55,7 +56,7 @@ class Patcher {
                     new Promise(r => setTimeout(r, 1000))
                 ]);
             }
-            return findBulk(...filters);
+            return find(filters);
         } finally {
             this.mutex.unlock();
         }
@@ -66,7 +67,6 @@ const patcher = new Patcher();
 
 const BdApi = {
     Patcher: patcher,
-    // Add other API methods
 };
 
 /**
