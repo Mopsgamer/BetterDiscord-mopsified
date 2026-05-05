@@ -15,5 +15,8 @@
   "devDependencies": {
     "oxc": "latest",
     "@typescript/native-preview": "latest"
+  },
+  "engines": {
+    "bun": ">=1.3.13"
   }
 }

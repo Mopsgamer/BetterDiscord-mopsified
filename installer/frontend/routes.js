@@ -9,7 +9,6 @@ export default {
     "/actions": ActionsPage,
     "/setup/:action": PlatformsPage,
     "/install": PerformActionPage,
-    "/repair": PerformActionPage,
     "/uninstall": PerformActionPage,
     "*": LoadingPage,
 };

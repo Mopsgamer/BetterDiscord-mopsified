@@ -3,12 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
-
-	"layeh.com/asar"
+	"os/exec"
 )
 
 type App struct {
@@ -23,88 +18,35 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-func (a *App) getDiscordResources(release string) (string, error) {
-	var baseDir string
-	home, _ := os.UserHomeDir()
-
-	switch runtime.GOOS {
-	case "windows":
-		baseDir = filepath.Join(os.Getenv("LOCALAPPDATA"), strings.Title(release))
-	case "darwin":
-		baseDir = filepath.Join(home, "Library", "Application Support", release)
-	default:
-		baseDir = filepath.Join(home, ".config", release)
-	}
-
-	entries, err := os.ReadDir(baseDir)
+func (a *App) GetInstallations() string {
+	cmd := exec.Command("bun", "run", "cli", "list", "--json")
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", err
+		return "[]"
 	}
-
-	var latest string
-	for _, entry := range entries {
-		if entry.IsDir() && (strings.Contains(entry.Name(), ".") || len(entry.Name()) > 5) {
-			latest = entry.Name()
-		}
-	}
-
-	resources := filepath.Join(baseDir, latest, "resources")
-	if _, err := os.Stat(resources); err == nil {
-		return resources, nil
-	}
-
-	return "", fmt.Errorf("resources not found")
+	return string(output)
 }
 
-func (a *App) InstallBD(release string) string {
-	resources, err := a.getDiscordResources(release)
+func (a *App) Inject(channel string, release bool, simple bool, flatpak bool, opt bool) string {
+	args := []string{"run", "cli", "inject", channel}
+	if release { args = append(args, "release") }
+	if simple { args = append(args, "simple") }
+	if flatpak { args = append(args, "flatpak") }
+	if opt { args = append(args, "opt") }
+
+	cmd := exec.Command("bun", args...)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return fmt.Sprintf("Error: %v\n%s", err, string(output))
 	}
-
-	asarPath := filepath.Join(resources, "app.asar")
-	backupPath := asarPath + ".bd.bak"
-
-	// Create backup
-	if _, err := os.Stat(backupPath); os.IsNotExist(err) {
-		input, _ := os.ReadFile(asarPath)
-		os.WriteFile(backupPath, input, 0644)
-	}
-
-	// Read ASAR
-	f, err := os.Open(asarPath)
-	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
-	}
-	defer f.Close()
-
-	archive, err := asar.Decode(f)
-	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
-	}
-
-	// This is a simplified asar patching in Go.
-	// In a real scenario, we'd iterate files and patch protocols.js
-	_ = archive
-
-	return "Successfully installed BetterDiscord (Go Native)"
+	return string(output)
 }
 
-func (a *App) UninstallBD(release string) string {
-	resources, err := a.getDiscordResources(release)
+func (a *App) Uninject(channel string) string {
+	cmd := exec.Command("bun", "run", "cli", "uninject", channel)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return fmt.Sprintf("Error: %v\n%s", err, string(output))
 	}
-
-	asarPath := filepath.Join(resources, "app.asar")
-	backupPath := asarPath + ".bd.bak"
-
-	if _, err := os.Stat(backupPath); err == nil {
-		input, _ := os.ReadFile(backupPath)
-		os.WriteFile(asarPath, input, 0644)
-		os.Remove(backupPath)
-		return "Successfully uninstalled BetterDiscord"
-	}
-
-	return "No backup found"
+	return string(output)
 }

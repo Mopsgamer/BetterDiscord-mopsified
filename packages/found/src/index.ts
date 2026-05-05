@@ -1,10 +1,9 @@
-import { byProps } from "@betterdiscord.com/find/filters";
+import { byCode, byProps } from "@betterdiscord.com/find/filters";
 import { findNow } from "@betterdiscord.com/find";
 
 /**
- * Common Discord modules discovered and exported.
- * found/ is for found modules only, searchers are in find/.
- * These are searched immediately using findNow for performance.
+ * Discovery layer for Discord internal modules.
+ * Ported and rewritten for the new architecture.
  */
 
 const [
@@ -13,12 +12,39 @@ const [
     Dispatcher,
     Flux,
     Modals,
+    MessageUtils,
+    ChannelStore,
+    UserStore,
+    GuildStore,
+    SelectedChannelStore,
+    Layout,
+    SimpleMarkdown,
 ] = findNow([
-    byProps("createElement", "useLayoutEffect"),
+    byProps("createElement", "cloneElement"),
     byProps("render", "createPortal"),
-    byProps("dispatch", "subscribe"),
+    byProps("dispatch", "subscribe", "register"),
     byProps("Store", "connectStores"),
-    byProps("openModal", "closeModal", "ModalRoot")
+    byProps("openModal", "closeModal", "ModalRoot"),
+    byProps("sendMessage", "editMessage"),
+    byProps("getChannel", "getDMFromUserId"),
+    byProps("getUser", "getCurrentUser"),
+    byProps("getGuild", "getGuilds"),
+    byProps("getChannelId", "getVoiceChannelId"),
+    byCode("buildLayout"),
+    byProps("defaultReactOutput", "parse")
 ]);
 
-export { React, ReactDOM, Dispatcher, Flux, Modals };
+export {
+    React,
+    ReactDOM,
+    Dispatcher,
+    Flux,
+    Modals,
+    MessageUtils,
+    ChannelStore,
+    UserStore,
+    GuildStore,
+    SelectedChannelStore,
+    Layout,
+    SimpleMarkdown
+};

@@ -7,7 +7,7 @@
     "react-perf/jsx-no-new-function-as-prop": "warn",
     "react-perf/jsx-no-new-object-as-prop": "warn"
   },
-  "ignorePatterns": ["vendors/**", "installer/frontend/**"],
+  "ignorePatterns": ["vendors/**", "installer/frontend/**", "packages/injection/reference_inject.ts"],
   "overrides": [
     {
       "files": ["packages/find/src/index.ts"],
