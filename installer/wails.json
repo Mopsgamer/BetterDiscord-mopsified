@@ -1,0 +1,10 @@
+{
+  "name": "betterdiscord-installer",
+  "frontend:dir": "frontend",
+  "wailsjs:dir": "frontend/src/wailsjs",
+  "outputfilename": "betterdiscord-installer",
+  "author": {
+    "name": "BetterDiscord",
+    "email": "info@betterdiscord.app"
+  }
+}

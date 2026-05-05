@@ -9,7 +9,6 @@
   "scripts": {
     "lint": "oxlint .",
     "format": "oxlint . --fix",
-    "test": "bun test",
     "build:extension": "bun build ./extension/index.ts --outdir ./extension/dist --target browser",
     "typecheck": "tsgo"
   },

@@ -11,40 +11,46 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-22.04, windows-latest]
+        include:
+          - os: macos-latest
+            platform: macos
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
 
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: setup node
-        uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          submodules: recursive
 
       - name: install bun
         uses: oven-sh/setup-bun@v2
 
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: install perry
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+          if [ "${{ matrix.platform }}" = "macos" ]; then
+            brew tap PerryTS/perry
+            brew install perry
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            curl -fsSL https://perryts.com/install.sh | bash
+          else
+            winget install PerryTS.Perry
+          fi
 
-      - name: install frontend dependencies
+      - name: install dependencies
         run: bun install
 
-      - name: build installer
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: compile native installer
+        run: |
+          cd installer
+          perry compile src/index.ts -o bd-installer --enable-js-runtime
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          tagName: v__VERSION__
-          releaseName: "BetterDiscord Installer v__VERSION__"
-          releaseBody: "Automated release from GitHub Actions"
-          releaseDraft: true
-          prerelease: false
-          projectPath: ./installer
+          name: BetterDiscord-Installer-${{ matrix.platform }}
+          path: |
+            installer/bd-installer
+            installer/bd-installer.exe

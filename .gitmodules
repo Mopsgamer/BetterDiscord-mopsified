@@ -1,0 +1,9 @@
+[submodule "vendors/BetterDiscord"]
+	path = vendors/BetterDiscord
+	url = https://github.com/BetterDiscord/BetterDiscord
+[submodule "vendors/Installer"]
+	path = vendors/Installer
+	url = https://github.com/BetterDiscord/Installer
+[submodule "vendors/Vencord"]
+	path = vendors/Vencord
+	url = https://github.com/Vendicated/Vencord

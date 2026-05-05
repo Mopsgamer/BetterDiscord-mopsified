@@ -12,12 +12,8 @@
       "name": "betterdiscord-installer",
       "version": "1.0.0",
       "dependencies": {
-        "@tauri-apps/api": "latest",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
-      },
-      "devDependencies": {
-        "@tauri-apps/cli": "latest",
+        "@betterdiscord.com/injection": "workspace:*",
+        "@perryts/perry": "latest",
       },
     },
     "packages/cli": {
@@ -63,31 +59,21 @@
 
     "@electron/asar": ["@electron/asar@3.4.1", "", { "dependencies": { "commander": "^5.0.0", "glob": "^7.1.6", "minimatch": "^3.0.4" }, "bin": { "asar": "bin/asar.js" } }, "sha512-i4/rNPRS84t0vSRa2HorerGRXWyF4vThfHesw0dmcWHp+cspK743UanA0suA5Q5y8kzY2y6YKrvbIUn69BCAiA=="],
 
-    "@tauri-apps/api": ["@tauri-apps/api@2.11.0", "", {}, "sha512-7CinYODhky9lmO23xHnUFv0Xt43fbtWMyxZcLcRBlFkcgXKuEirBvHpmtJ89YMhyeGcq20Wuc47Fa4XjyniywA=="],
+    "@perryts/perry": ["@perryts/perry@0.5.511", "", { "optionalDependencies": { "@perryts/perry-darwin-arm64": "0.5.511", "@perryts/perry-darwin-x64": "0.5.511", "@perryts/perry-linux-arm64": "0.5.511", "@perryts/perry-linux-arm64-musl": "0.5.511", "@perryts/perry-linux-x64": "0.5.511", "@perryts/perry-linux-x64-musl": "0.5.511", "@perryts/perry-win32-x64": "0.5.511" }, "bin": { "perry": "bin/perry.js" } }, "sha512-1wrWHn99pF4Gh76wa+TaeAOJKNbERbVl4dYEKaf5/j27KR+t1CF+GU+aNqkaZU4X3OVROPvLGQjmvv3D9MidtQ=="],
 
-    "@tauri-apps/cli": ["@tauri-apps/cli@2.11.0", "", { "optionalDependencies": { "@tauri-apps/cli-darwin-arm64": "2.11.0", "@tauri-apps/cli-darwin-x64": "2.11.0", "@tauri-apps/cli-linux-arm-gnueabihf": "2.11.0", "@tauri-apps/cli-linux-arm64-gnu": "2.11.0", "@tauri-apps/cli-linux-arm64-musl": "2.11.0", "@tauri-apps/cli-linux-riscv64-gnu": "2.11.0", "@tauri-apps/cli-linux-x64-gnu": "2.11.0", "@tauri-apps/cli-linux-x64-musl": "2.11.0", "@tauri-apps/cli-win32-arm64-msvc": "2.11.0", "@tauri-apps/cli-win32-ia32-msvc": "2.11.0", "@tauri-apps/cli-win32-x64-msvc": "2.11.0" }, "bin": { "tauri": "tauri.js" } }, "sha512-W5Wbuqsb2pHFPTj4TaRNKTj5rwXhDShPiLSY9T18y4ouSR/NNCptAEFxFsBtyNRgL6Vs1a/q9LzfqqYzEwC+Jw=="],
+    "@perryts/perry-darwin-arm64": ["@perryts/perry-darwin-arm64@0.5.511", "", { "os": "darwin", "cpu": "arm64" }, "sha512-s4dEAguM+skFBZSm405OI/PeNe1zQz/I2FoJEhJKIt5ucUcVkNFP8eKIwKKO2D1gfp7LkKum12Qc/eKeM/ETBw=="],
 
-    "@tauri-apps/cli-darwin-arm64": ["@tauri-apps/cli-darwin-arm64@2.11.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-UfMeDNlgIP252rm/KSTuu8yHatPua5TjtUEUf+jyIzVwBNcIl7Ywkdpfj+e5jVVg3EfCTp+4gwuL1dNpgF8clg=="],
+    "@perryts/perry-darwin-x64": ["@perryts/perry-darwin-x64@0.5.511", "", { "os": "darwin", "cpu": "x64" }, "sha512-ue7HxNs9+h73tkMVNzqIcKeNVDV83Uq43QLmralnmJJFtMVZ45CforD7koYNW0nZUrbmxV96CsaXRSWnk+6XDw=="],
 
-    "@tauri-apps/cli-darwin-x64": ["@tauri-apps/cli-darwin-x64@2.11.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-lY1+aPlgyMN7vgjtCdQ3+WODfZkebAcxnrCrO0HjqDpKSXieDkrJbimqeaoM4RwhTSrCLRHfVYiYrfE5E131tg=="],
+    "@perryts/perry-linux-arm64": ["@perryts/perry-linux-arm64@0.5.511", "", { "os": "linux", "cpu": "arm64" }, "sha512-pYDrpo4d6uqfefpQGYuWXCPi+5Ay5eTm7eAP0qRgzaduiAqWbU11Atu5mTi+ewtmzDmDt0RzXB+cPpmZvuysLw=="],
 
-    "@tauri-apps/cli-linux-arm-gnueabihf": ["@tauri-apps/cli-linux-arm-gnueabihf@2.11.0", "", { "os": "linux", "cpu": "arm" }, "sha512-5uCP0AusgN3NrKC8EpkuJwjek1k8pEffBdugJSpXPey/QGbPEb8vZ542n/giJ2mZPjMSllDkdhG2QIDpBY4PpQ=="],
+    "@perryts/perry-linux-arm64-musl": ["@perryts/perry-linux-arm64-musl@0.5.511", "", { "os": "linux", "cpu": "arm64" }, "sha512-hIW2ru9YjBcSEN3dd/ncbAJnBXvP+6jDgg8bj9o3C+MCS44cP3B8giZkWgQ08wKG/sXdYTdLEZTJMTlr1pTORw=="],
 
-    "@tauri-apps/cli-linux-arm64-gnu": ["@tauri-apps/cli-linux-arm64-gnu@2.11.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-loDPqtRHMSbIcrH2VBd4GgHoQlF7jJnrZj7MxA2lj1cixS/jEgMAPFqj83U6Wvjete4HfYplbE/gCpSFifA9jw=="],
+    "@perryts/perry-linux-x64": ["@perryts/perry-linux-x64@0.5.511", "", { "os": "linux", "cpu": "x64" }, "sha512-a41XH22U2Qps5IAZSQumVmnO6+wv/vsxiQYR2kZBJKHCpsXHGnd/dbz+72gZYCeHcLeThQ/t9xq4stOlHl7FBQ=="],
 
-    "@tauri-apps/cli-linux-arm64-musl": ["@tauri-apps/cli-linux-arm64-musl@2.11.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-DtSE8ZBlB9H+L+eHkfZ3myt00EVEyAB3e41juEHoE2qT88fgVlJvyrwa9SZYc/xTwCS9TnmK+R84tpg+ZsAg7Q=="],
+    "@perryts/perry-linux-x64-musl": ["@perryts/perry-linux-x64-musl@0.5.511", "", { "os": "linux", "cpu": "x64" }, "sha512-UJMB/j2fwroBrlKHGhqVon5/8IVjywttuWs8A5TrsL2GiXc/WIdYeA8xSytV1Z474fEtUSseejETk1f1xSTkcg=="],
 
-    "@tauri-apps/cli-linux-riscv64-gnu": ["@tauri-apps/cli-linux-riscv64-gnu@2.11.0", "", { "os": "linux", "cpu": "none" }, "sha512-5QdgS4LD+kntClI1aj2JmwjW38LosNXxwCe8viIHEwqYIWuMPdNEIau6/cLogI38Yzx9DnfCPRfEWLyI+5li8Q=="],
-
-    "@tauri-apps/cli-linux-x64-gnu": ["@tauri-apps/cli-linux-x64-gnu@2.11.0", "", { "os": "linux", "cpu": "x64" }, "sha512-5UynPXo3Zq9khjVdAbD+YogeLltdVUeOah2ioSIM3tu6H7wY9vMy6rgGJhv9r5R8ZXmk9GttMippdqYJWrnLnA=="],
-
-    "@tauri-apps/cli-linux-x64-musl": ["@tauri-apps/cli-linux-x64-musl@2.11.0", "", { "os": "linux", "cpu": "x64" }, "sha512-CNz7fHbApz1Zyhhq73jtGn9JqgNEV/lIWnTnUo6h6ujw+mHsTmkLszvJSM8W6JBaDjNpTTFr/RSNoVL5FMwcTg=="],
-
-    "@tauri-apps/cli-win32-arm64-msvc": ["@tauri-apps/cli-win32-arm64-msvc@2.11.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-K+br+VXZ+Xx0n/9FdWohpW5Ugq+2FQUpJScqcPl1hTxXfh3fgjYgt4qA2NgrjlJo+zZPNrmUMl+NLvm0ufEqBQ=="],
-
-    "@tauri-apps/cli-win32-ia32-msvc": ["@tauri-apps/cli-win32-ia32-msvc@2.11.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-OFV+s3MLZnd75zl0ZAFU5riMpGK4waUEA8ZDuijDsnkU0btz/gHhqh5jVlOn8thyvgdtT3Xyoxqo099MMifH3g=="],
-
-    "@tauri-apps/cli-win32-x64-msvc": ["@tauri-apps/cli-win32-x64-msvc@2.11.0", "", { "os": "win32", "cpu": "x64" }, "sha512-AeDTWBd2cOZ6TX133BWsoo+LutG9o0JRcgjMsIfLE13ZugpgCMv/2dJbUiBGeRvbPOGin5A3aYmsArPVV6ZSHQ=="],
+    "@perryts/perry-win32-x64": ["@perryts/perry-win32-x64@0.5.511", "", { "os": "win32", "cpu": "x64" }, "sha512-3JAJJf7Dg3Mvik/CFrlctSu/04RLoXY6duL3CKLY8eUF5ISDd/AAKmc0EW3WtwgFxdZpprmgwVaIx0D+YyyLaw=="],
 
     "@typescript/native-preview": ["@typescript/native-preview@7.0.0-dev.20260505.1", "", { "optionalDependencies": { "@typescript/native-preview-darwin-arm64": "7.0.0-dev.20260505.1", "@typescript/native-preview-darwin-x64": "7.0.0-dev.20260505.1", "@typescript/native-preview-linux-arm": "7.0.0-dev.20260505.1", "@typescript/native-preview-linux-arm64": "7.0.0-dev.20260505.1", "@typescript/native-preview-linux-x64": "7.0.0-dev.20260505.1", "@typescript/native-preview-win32-arm64": "7.0.0-dev.20260505.1", "@typescript/native-preview-win32-x64": "7.0.0-dev.20260505.1" }, "bin": { "tsgo": "bin/tsgo.js" } }, "sha512-o82qX7L97dwQMpj6DzzokF6SQlChcxduNaL4OWzJhJkz1EP//gZOa0/xNPbPLufoJojHLQcANnpkA4JDXZDFhQ=="],
 
@@ -132,10 +118,6 @@
     "path-is-absolute": ["path-is-absolute@1.0.1", "", {}, "sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg=="],
 
     "react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
-
-    "react-dom": ["react-dom@19.2.5", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.5" } }, "sha512-J5bAZz+DXMMwW/wV3xzKke59Af6CHY7G4uYLN1OvBcKEsWOs4pQExj86BBKamxl/Ik5bx9whOrvBlSDfWzgSag=="],
-
-    "scheduler": ["scheduler@0.27.0", "", {}, "sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q=="],
 
     "wrappy": ["wrappy@1.0.2", "", {}, "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ=="],
   }
