@@ -1,0 +1,23 @@
+[package]
+name = "betterdiscord-installer"
+version = "1.0.0"
+description = "BetterDiscord Installer"
+authors = ["BetterDiscord"]
+license = "Apache-2.0"
+repository = "https://github.com/BetterDiscord/BetterDiscord"
+edition = "2021"
+rust-version = "1.70"
+
+[build-dependencies]
+tauri-build = { version = "1", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tauri = { version = "1", features = ["shell-all", "api-all"] }
+
+[features]
+# by default Tauri runs in production mode
+# if you want to use the dev server, run `cargo run --features tauri/dev`
+default = [ "custom-protocol" ]
+custom-protocol = [ "tauri/custom-protocol" ]

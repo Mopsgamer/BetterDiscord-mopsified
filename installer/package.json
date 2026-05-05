@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "bun build ./src/renderer/index.html --outdir ./dist/renderer && electron ./src/main/index.ts"
+    "dev": "bun build ./src/renderer/index.html --outdir ./dist/renderer --watch",
+    "build": "bun build ./src/renderer/index.html --outdir ./dist/renderer"
   },
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "electron": "^36.2.1",
-    "@betterdiscord.com/injection": "workspace:*"
+    "@tauri-apps/api": "latest"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "latest"
   }
 }
