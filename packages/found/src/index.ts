@@ -3,27 +3,22 @@ import { byProps } from "@betterdiscord.com/find/filters";
 
 /**
  * Common Discord modules discovered and exported.
- * Modules are retrieved asynchronously using the find API.
+ * found/ is for found modules only, searchers are in find/.
+ * These are searched only once during module initialization.
  */
 
-async function getFoundModules() {
-    return find([
-        byProps("createElement", "useLayoutEffect"), // React
-        byProps("render", "createPortal"),         // ReactDOM
-        byProps("dispatch", "subscribe"),          // Dispatcher
-        byProps("Store", "connectStores"),         // Flux
-        byProps("openModal", "closeModal", "ModalRoot") // Modals
-    ]);
-}
+const [
+    React,
+    ReactDOM,
+    Dispatcher,
+    Flux,
+    Modals,
+] = await find([
+    byProps("createElement", "useLayoutEffect"),
+    byProps("render", "createPortal"),
+    byProps("dispatch", "subscribe"),
+    byProps("Store", "connectStores"),
+    byProps("openModal", "closeModal", "ModalRoot")
+]);
 
-let cache: any[] | null = null;
-async function getCached() {
-    if (!cache) cache = await getFoundModules();
-    return cache;
-}
-
-export const React = async () => (await getCached())[0];
-export const ReactDOM = async () => (await getCached())[1];
-export const Dispatcher = async () => (await getCached())[2];
-export const Flux = async () => (await getCached())[3];
-export const Modals = async () => (await getCached())[4];
+export { React, ReactDOM, Dispatcher, Flux, Modals };

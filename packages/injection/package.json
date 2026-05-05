@@ -1,7 +1,7 @@
 {
   "name": "@betterdiscord.com/injection",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "./src/index.ts",
   "dependencies": {

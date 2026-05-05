@@ -3,12 +3,15 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "installer"
   ],
   "scripts": {
     "lint": "oxlint .",
     "format": "oxlint . --fix",
-    "test": "bun test"
+    "test": "bun test",
+    "build:extension": "bun build ./extension/index.ts --outdir ./extension/dist --target browser",
+    "typecheck": "tsgo"
   },
   "devDependencies": {
     "oxc": "latest",
