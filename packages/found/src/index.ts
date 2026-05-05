@@ -1,10 +1,10 @@
-import { find } from "@betterdiscord.com/find";
+import { findNow } from "@betterdiscord.com/find";
 import { byProps } from "@betterdiscord.com/find/filters";
 
 /**
  * Common Discord modules discovered and exported.
  * found/ is for found modules only, searchers are in find/.
- * These are searched only once during module initialization.
+ * These are searched immediately using findNow for performance.
  */
 
 const [
@@ -13,7 +13,7 @@ const [
     Dispatcher,
     Flux,
     Modals,
-] = await find([
+] = findNow([
     byProps("createElement", "useLayoutEffect"),
     byProps("render", "createPortal"),
     byProps("dispatch", "subscribe"),

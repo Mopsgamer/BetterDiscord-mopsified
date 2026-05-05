@@ -1,7 +1,7 @@
 /**
  * BetterDiscord Extension Core
  */
-import { find, findInstant } from "@betterdiscord.com/find";
+import { find, findNow } from "@betterdiscord.com/find";
 
 class Mutex {
     private locked = false;
@@ -23,40 +23,23 @@ class Mutex {
 
 class Patcher {
     private mutex = new Mutex();
-    private pluginsLoaded = false;
-    private loadPromise: Promise<void> | null = null;
-
-    constructor() {
-        this.loadPromise = this.waitForPlugins();
-    }
-
-    private async waitForPlugins() {
-        // Wait for all plugins to load or 1s timeout
-        await new Promise(r => setTimeout(r, 500));
-        this.pluginsLoaded = true;
-    }
 
     /**
      * Searches webpack instantly.
-     * @deprecated Use `find` instead for safer, asynchronous module searching.
+     * Use this if you need immediate results and the module is unlikely to be searched by others.
      */
-    findInstant(filters: ((m: any) => boolean)[]) {
-        return findInstant(filters);
+    findNow(filters: ((m: any) => boolean)[]) {
+        return findNow(filters);
     }
 
     /**
-     * Async search, waits for plugins to load or until all plugins are loaded.
+     * Async search, batches multiple calls within 1 second.
+     * RECOMMENDED for better performance and reduced overhead.
      */
     async find(filters: ((m: any) => boolean)[]) {
         await this.mutex.lock();
         try {
-            if (!this.pluginsLoaded) {
-                await Promise.race([
-                    this.loadPromise,
-                    new Promise(r => setTimeout(r, 1000))
-                ]);
-            }
-            return find(filters);
+            return await find(filters);
         } finally {
             this.mutex.unlock();
         }

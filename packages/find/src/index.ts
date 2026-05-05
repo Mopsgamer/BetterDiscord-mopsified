@@ -39,14 +39,14 @@ export function getAllModules() {
 /**
  * Searches webpack instantly for modules matching the given filters.
  *
- * @deprecated **DISCOURAGED**: This method searches the webpack cache immediately.
- * Since many modules are loaded lazily, they may not be present when this is called.
- * Prefer using the asynchronous `find` method which waits for plugins and modules to initialize.
+ * This method searches the webpack cache immediately. While faster for individual calls,
+ * it is less efficient than the asynchronous `find` method when multiple modules need
+ * to be searched across different plugins.
  *
  * @param filters An array of filter functions to match modules against.
  * @returns An array of matched modules in the same order as the filters.
  */
-export function findInstant(filters: Filter[]): any[] {
+export function findNow(filters: Filter[]): any[] {
     const modules = getAllModules();
     const results = Array.from({ length: filters.length }).fill(null);
     let foundCount = 0;
@@ -69,16 +69,44 @@ export function findInstant(filters: Filter[]): any[] {
     return results;
 }
 
+type PendingSearch = {
+    filters: Filter[];
+    resolve: (result: any[]) => void;
+};
+
+let pendingSearches: PendingSearch[] = [];
+let searchTimeout: any = null;
+
 /**
  * Asynchronously searches for webpack modules matching the given filters.
- * It waits for a short period or until all plugins are loaded before performing the search.
+ *
+ * **RECOMMENDED**: This method batches multiple calls within a 1-second interval
+ * and performs a single pass over the webpack module array to resolve all pending searches.
+ * This significantly reduces the performance overhead compared to multiple `findNow` calls.
  *
  * @param filters An array of filter functions to match modules against.
  * @returns A promise that resolves to an array of matched modules in the same order as the filters.
  */
 export async function find(filters: Filter[]): Promise<any[]> {
-    // In a real environment, this would hook into an event or promise that resolves when
-    // all plugins and core modules are known to be loaded.
-    await new Promise(r => setTimeout(r, 1000));
-    return findInstant(filters);
+    return new Promise((resolve) => {
+        pendingSearches.push({ filters, resolve });
+
+        if (!searchTimeout) {
+            searchTimeout = setTimeout(() => {
+                const currentSearches = pendingSearches;
+                pendingSearches = [];
+                searchTimeout = null;
+
+                const allFilters = currentSearches.flatMap(s => s.filters);
+                const allResults = findNow(allFilters);
+
+                let offset = 0;
+                for (const search of currentSearches) {
+                    const resultSlice = allResults.slice(offset, offset + search.filters.length);
+                    search.resolve(resultSlice);
+                    offset += search.filters.length;
+                }
+            }, 1000);
+        }
+    });
 }
