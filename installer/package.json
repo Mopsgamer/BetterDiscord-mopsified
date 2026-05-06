@@ -1,45 +1,97 @@
 {
-    "name": "betterdiscord-installer",
-    "version": "1.3.0",
-    "description": "A simple standalone program which automates the installation, removal and maintenance of BetterDiscord.",
-    "license": "MIT",
-    "author": "BetterDiscord",
-    "type": "module",
-    "scripts": {
-        "dev": "bun electrobun dev",
-        "build:renderer": "bun build ./src/renderer/index.js --outdir ./dist/renderer --minify",
-        "compile": "bun run build:renderer",
-        "lint": "bun oxlint --fix",
-        "fmt": "bun oxfmt",
-        "dist": "bun run compile && bun electrobun build --bundle"
-    },
-    "devDependencies": {
-        "electrobun": "catalog:installer",
-        "find-process": "catalog:installer",
-        "focus-visible": "catalog:installer",
-        "phin": "catalog:installer",
-        "rimraf": "catalog:installer",
-        "semver": "catalog:installer",
-        "tree-kill": "catalog:installer"
-    },
-    "electrobun": {
-        "main": "src/main/index.js",
-        "views": {
-            "main": {
-                "url": "dist/renderer/index.html"
-            }
-        },
-        "build": {
-            "appId": "app.betterdiscord.installer",
-            "productName": "BetterDiscord",
-            "copyright": "Copyright '©' 2021 BetterDiscord",
-            "mac": {
-                "icon": "assets/icon.icns",
-                "category": "public.app-category.social-networking"
-            },
-            "win": {
-                "icon": "assets/icon.ico"
-            }
-        }
-    }
+	"name": "betterdiscord-installer",
+	"version": "1.3.0",
+	"description": "A simple standalone program which automates the installation, removal and maintenance of BetterDiscord.",
+	"license": "MIT",
+	"author": "BetterDiscord",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/BetterDiscord/Installer.git"
+	},
+	"scripts": {
+		"dev": "bun compiler dev",
+		"compiler": "node ../node_modules/electron-webpack/out/cli.js",
+		"builder": "node ../node_modules/electron-builder/out/cli/cli.js",
+		"lint": "bun oxlint --fix",
+		"stats": "webpack --json --profile --config webpack.renderer.js > dist/stats.json",
+		"analyze": "webpack-bundle-analyzer dist/stats.json",
+		"dist": "bun compiler && bun builder -p never"
+	},
+	"dependencies": {
+		"source-map-support": "^0.5.16"
+	},
+	"devDependencies": {
+		"electron": "^13.6.9",
+		"electron-builder": "^26.8.1",
+		"electron-webpack": "^2.8.2",
+		"eslint": "^7.21.0",
+		"eslint-plugin-svelte3": "^3.1.2",
+		"find-process": "https://github.com/BetterDiscord/find-process",
+		"focus-visible": "^5.2.0",
+		"phin": "^3.7.0",
+		"rimraf": "^3.0.2",
+		"semver": "^7.3.8",
+		"svelte": "^3.38.2",
+		"svelte-loader": "^3.1.7",
+		"svelte-spa-router": "^3.1.0",
+		"tree-kill": "^1.2.2",
+		"webpack": "~5.76.0",
+		"webpack-bundle-analyzer": "^4.4.0"
+	},
+	"build": {
+		"appId": "app.betterdiscord.installer",
+		"electronVersion": "13.6.9",
+		"npmRebuild": false,
+		"nodeGypRebuild": false,
+		"buildDependenciesFromSource": false,
+		"productName": "BetterDiscord",
+		"copyright": "Copyright © 2021 BetterDiscord",
+		"afterAllArtifactBuild": "scripts/fixmac.js",
+		"win": {
+			"artifactName": "${productName}-Windows.${ext}",
+			"icon": "assets/icon.ico",
+			"target": {
+				"target": "portable",
+				"arch": [
+					"ia32"
+				]
+			}
+		},
+		"portable": {
+			"requestExecutionLevel": "user",
+			"useZip": true,
+			"splashImage": "assets/images/splash.bmp"
+		},
+		"mac": {
+			"artifactName": "${productName}-Mac.${ext}",
+			"icon": "assets/icon.icns",
+			"category": "public.app-category.social-networking",
+			"target": {
+				"target": "zip",
+				"arch": [
+					"x64"
+				]
+			}
+		},
+		"linux": {
+			"artifactName": "${productName}-Linux.${ext}",
+			"category": "Utility",
+			"target": {
+				"target": "AppImage",
+				"arch": [
+					"x64"
+				]
+			}
+		}
+	},
+	"electronWebpack": {
+		"staticSourceDirectory": "assets",
+		"renderer": {
+			"webpackConfig": "webpack.renderer.js"
+		},
+		"main": {
+			"webpackConfig": "webpack.main.js"
+		}
+	},
+	"productName": "BetterDiscord Installer"
 }
