@@ -1,11 +1,19 @@
 {
-  "name": "@betterdiscord.com/find",
-  "version": "1.0.0",
-  "private": false,
-  "type": "module",
-  "main": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts",
-    "./filters": "./src/filters.ts"
-  }
+    "name": "@betterdiscord.com/find",
+    "version": "1.0.0",
+    "private": false,
+    "type": "module",
+    "main": "./dist/index.js",
+    "exports": {
+        ".": "./dist/index.js",
+        "./filters": "./dist/filters.js"
+    },
+    "scripts": {
+        "lint": "bun oxlint --fix",
+        "fmt": "bun oxfmt",
+        "dist": "bun dts && bun index && bun filters",
+        "index": "bun build --production src/index.ts --outfile=./dist/index.js",
+        "filters": "bun build --production src/filters.ts --outfile=./dist/filters.js",
+        "dts": "bun tsgo --declaration --emitDeclarationOnly --outDir ./dist"
+    }
 }
