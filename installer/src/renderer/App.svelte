@@ -2,9 +2,9 @@
     import "focus-visible";
 
     // import Page from "./containers/Page.svelte";
-    import Titlebar from "./common/Titlebar.svelte";
     import Footer from "./common/Footer.svelte";
     import Router from "svelte-spa-router";
+    import Titlebar from "./common/Titlebar.svelte";
     import routes from "./routes";
 </script>
 

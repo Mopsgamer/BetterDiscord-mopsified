@@ -1,5 +1,9 @@
 import * as asar from "@electron/asar";
-import { getDiscordAsarPath as getAsarPath, getCoreSource, getLoaderScript } from "@betterdiscord.com/core";
+import {
+	getDiscordAsarPath as getAsarPath,
+	getCoreSource,
+	getLoaderScript,
+} from "@betterdiscord.com/core";
 import fs from "node:fs";
 import path from "node:path";
 import { styleText } from "node:util";
@@ -40,7 +44,9 @@ export function getDiscordAsarPath(inst: DiscordInstallation): string {
 	return getAsarPath(inst.resourcesPath);
 }
 
-export async function getInstallations(options: InjectionOptions = {}): Promise<DiscordInstallation[]> {
+export async function getInstallations(
+	options: InjectionOptions = {},
+): Promise<DiscordInstallation[]> {
 	const channels: DiscordRelease[] = ["stable", "canary", "ptb", "development"];
 	const installations: DiscordInstallation[] = [];
 
@@ -58,7 +64,9 @@ export async function getInstallations(options: InjectionOptions = {}): Promise<
 		} else if (process.env.WSL_DISTRO_NAME) {
 			try {
 				const { $ } = await import("bun");
-				const appdata = (await $`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()).trim();
+				const appdata = (
+					await $`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()
+				).trim();
 				discordDir = path.join(appdata, nameNoSpace);
 				discordBaseDir = discordDir;
 			} catch {
@@ -103,12 +111,12 @@ export async function getInstallations(options: InjectionOptions = {}): Promise<
 
 		if (!fs.existsSync(discordDir) && !fs.existsSync(discordBaseDir)) continue;
 
-		const searchDirs = [discordDir, discordBaseDir].filter(d => d && fs.existsSync(d));
+		const searchDirs = [discordDir, discordBaseDir].filter((d) => d && fs.existsSync(d));
 		let appDirs: string[] = [];
 		let selectedBase = "";
 
 		for (const dir of searchDirs) {
-			const found = fs.readdirSync(dir).filter(f => {
+			const found = fs.readdirSync(dir).filter((f) => {
 				const p = path.join(dir, f);
 				return fs.lstatSync(p).isDirectory() && (/^\d+\.\d+\.\d+$/.test(f) || f.startsWith("app-"));
 			});

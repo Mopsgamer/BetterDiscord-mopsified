@@ -1,5 +1,5 @@
+import { progress, status } from "../stores/installation";
 import logs from "../stores/logs";
-import { status, progress } from "../stores/installation";
 
 function log(entry) {
 	logs.update((a) => {

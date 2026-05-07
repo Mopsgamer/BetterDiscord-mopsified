@@ -7,6 +7,7 @@
 	"scripts": {
 		"lint": "bun oxlint --fix",
 		"fmt": "bun oxfmt",
-		"dist": "bun build --production src/index.ts --outdir ./dist --outfile=./dist/index.js --bytecode"
+		"dist": "bun dts && bun build --production src/index.ts --outdir ./dist --outfile=./dist/index.js",
+		"dts": "bun tsgo -p ."
 	}
 }

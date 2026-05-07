@@ -5,10 +5,10 @@ async function main() {
 	const args = process.argv.slice(2);
 
 	const commands = ["inject", "uninject", "list"];
-	const command = args.find(a => commands.includes(a));
+	const command = args.find((a) => commands.includes(a));
 
 	const channels = ["stable", "canary", "ptb", "development"];
-	const channel = args.find(a => channels.includes(a)) || "stable";
+	const channel = args.find((a) => channels.includes(a)) || "stable";
 
 	const options = {
 		release: args.includes("release"),
@@ -37,9 +37,7 @@ async function main() {
 		}
 		console.log(c("bold", "Available Discord Installations:"));
 		for (const inst of installations) {
-			const status = inst.isInjected
-				? c("green", "Injected")
-				: c("gray", "Not Injected");
+			const status = inst.isInjected ? c("green", "Injected") : c("gray", "Not Injected");
 			console.log(`- ${c("cyan", inst.channel)} (${inst.version}) [${status}]`);
 		}
 		return;

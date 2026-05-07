@@ -1,12 +1,13 @@
+import * as asar from "@electron/asar";
+import { getDiscordAsarPath, getInstallations } from "../src/index.js";
+import { $ } from "bun";
+import { styleText as c } from "node:util";
 import fs from "node:fs";
 import path from "node:path";
-import * as asar from "@electron/asar";
-import { styleText as c } from "node:util";
-import { $ } from "bun";
 
 const args = process.argv.slice(2);
 const allowedChannels = ["stable", "canary", "ptb", "development"];
-const channels = args.filter(a => allowedChannels.includes(a));
+const channels = args.filter((a) => allowedChannels.includes(a));
 
 if (args.includes("-h") || args.includes("--help")) {
 	console.log(c("bold", "BetterDiscord Distribution Fetcher"));
@@ -43,7 +44,10 @@ async function downloadAndUnpack(channel: string) {
 
 	if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
-	console.log(c("cyan", `[${channel}] `) + `Downloading Discord ${channel} (Linux distribution) for analysis...`);
+	console.log(
+		c("cyan", `[${channel}] `) +
+			`Downloading Discord ${channel} (Linux distribution) for analysis...`,
+	);
 	const url = `https://discord.com/api/download/${channel}?platform=linux&format=tar.gz`;
 
 	try {
@@ -75,9 +79,8 @@ async function downloadAndUnpack(channel: string) {
 			} catch {}
 		}
 
-		const { getInstallations, getDiscordAsarPath } = await import("../src/index");
 		const installations = await getInstallations();
-		const inst = installations.find(i => i.channel === channel);
+		const inst = installations.find((i) => i.channel === channel);
 
 		let asarPath = inst ? getDiscordAsarPath(inst) : null;
 
@@ -94,7 +97,6 @@ async function downloadAndUnpack(channel: string) {
 		if (fs.existsSync(UNPACK_DIR)) fs.rmSync(UNPACK_DIR, { recursive: true, force: true });
 		asar.extractAll(asarPath, UNPACK_DIR);
 		console.log(c("cyan", `[${channel}] `) + c("green", `Unpacked app.asar to ${UNPACK_DIR}`));
-
 	} catch (err: any) {
 		console.error(c("red", `[${channel}] Error: ${err.message}`));
 	}

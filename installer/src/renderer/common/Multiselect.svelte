@@ -1,8 +1,8 @@
 <script>
     import Button from "./Button.svelte";
-    import {handleKeyboardToggle} from "../stores/controls.js";
     import {createEventDispatcher} from "svelte";
-    
+    import {handleKeyboardToggle} from "../stores/controls.js";
+
     export let value;
     export let description;
     export let disabled = false;

@@ -51,7 +51,7 @@ export async function handleBdProtocol(url: string) {
 
 async function loadAddons(type: "plugins" | "themes") {
 	try {
-		const { ids } = await import(`bd:${type}.js`) as { ids: string[] };
+		const { ids } = (await import(`bd:${type}.js`)) as { ids: string[] };
 		for (const id of ids) {
 			await import(`bd:import/${type}/${id}/index.js`);
 		}
@@ -61,6 +61,6 @@ async function loadAddons(type: "plugins" | "themes") {
 }
 
 export async function initialize() {
-	(window as any).bdImport = (s: string) => s.startsWith("bd:") ? handleBdProtocol(s) : import(s);
+	(window as any).bdImport = (s: string) => (s.startsWith("bd:") ? handleBdProtocol(s) : import(s));
 	await Promise.all([loadAddons("plugins"), loadAddons("themes")]);
 }

@@ -4,21 +4,11 @@
 	"workspaces": {
 		"packages": [
 			"packages/*",
+			"extension",
 			"installer"
 		],
 		"catalog": {
 			"react": "19.x"
-		},
-		"catalogs": {
-			"installer": {
-				"electrobun": "1.x",
-				"find-process": "https://github.com/BetterDiscord/find-process",
-				"focus-visible": "^5.2.0",
-				"phin": "^3.7.0",
-				"rimraf": "^3.0.2",
-				"semver": "^7.3.8",
-				"tree-kill": "^1.2.2"
-			}
 		}
 	},
 	"type": "module",
@@ -26,7 +16,9 @@
 		"cli": "bun ./packages/cli/dist/main.js",
 		"ui": "bun -e \"const fs=require('fs'), path=require('path'); const dist=path.join('installer', 'dist'); const exe=fs.readdirSync(dist).find(f => f.startsWith('BetterDiscord') && (f.endsWith('.exe') || !f.includes('.'))); if (exe) require('child_process').spawn(path.join(dist, exe), {detached:true, stdio:'ignore'}).unref(); else console.error('Binary not found in installer/dist')\"",
 		"lint": "bun oxlint --fix",
-		"fmt": "bun oxfmt"
+		"fmt": "bun oxfmt",
+		"dist": "bun -F '*' dist && bun -F '*' publint --pack bun",
+		"dts": "bun -F '*' dts"
 	},
 	"dependencies": {
 		"original-fs": "latest"
@@ -37,6 +29,7 @@
 		"@typescript/native-preview": "latest",
 		"oxfmt": "latest",
 		"oxlint": "latest",
+		"publint": "latest",
 		"standalone-electron-types": "^41.2.1"
 	},
 	"engines": {

@@ -1,18 +1,14 @@
-import { promises as fs } from "fs";
-import originalFs from "original-fs";
-import rimraf from "rimraf";
-import path from "path";
-
-import { progress } from "../stores/installation";
-
 import { log, lognewline } from "./utils/log";
-import succeed from "./utils/succeed";
-import fail from "./utils/fail";
-import exists from "./utils/exists";
-import reset from "./utils/reset";
-import kill from "./utils/kill";
-import { showRestartNotice } from "./utils/notices";
 import doSanityCheck from "./utils/sanity";
+import exists from "./utils/exists";
+import fail from "./utils/fail";
+import { promises as fs } from "fs";
+import kill from "./utils/kill";
+import path from "path";
+import { progress } from "../stores/installation";
+import reset from "./utils/reset";
+import { showRestartNotice } from "./utils/notices";
+import succeed from "./utils/succeed";
 
 const DELETE_SHIM_PROGRESS = 85;
 const RESTART_DISCORD_PROGRESS = 100;

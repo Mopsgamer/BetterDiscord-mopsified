@@ -1,11 +1,11 @@
 <script>
-    import page from "../transitions/page.js";
+    import {canGoBack, canGoForward, nextPage} from "../stores/navigation";
     import PageHeader from "../common/PageHeader.svelte";
     import Radio from "../common/Radio.svelte";
     import RadioGroup from "../common/RadioGroup.svelte";
-    import {canGoBack, canGoForward, nextPage} from "../stores/navigation";
-    import {radioSelectedIndex} from "../stores/controls";
     import {action} from "../stores/installation";
+    import page from "../transitions/page.js";
+    import {radioSelectedIndex} from "../stores/controls";
 
     let group = $action;
     canGoBack.set(true);

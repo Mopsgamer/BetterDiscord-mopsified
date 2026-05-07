@@ -1,8 +1,13 @@
-import { expect, test, describe, beforeAll, afterAll } from "bun:test";
-import { getInstallations, inject, uninject, getDiscordAsarPath, type DiscordInstallation } from "../packages/injection/src/index";
+import {
+	type DiscordInstallation,
+	getInstallations,
+	inject,
+	uninject,
+} from "../packages/injection/src/index";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { $ } from "bun";
 import fs from "node:fs";
 import path from "node:path";
-import { $ } from "bun";
 
 const args = process.argv.slice(2);
 const channelArg = args.find((_, i) => args[i - 1] === "--channel");
@@ -11,7 +16,15 @@ const targetChannels = channelArg ? [channelArg] : ["stable", "canary", "ptb", "
 describe("Injection", () => {
 	for (const channel of targetChannels) {
 		describe(`Channel: ${channel}`, () => {
-			const distributionDir = path.join(import.meta.dirname, "..", "packages", "injection", "temp", channel, "app-unpacked");
+			const distributionDir = path.join(
+				import.meta.dirname,
+				"..",
+				"packages",
+				"injection",
+				"temp",
+				channel,
+				"app-unpacked",
+			);
 			const testDir = path.join(import.meta.dirname, `test-env-${channel}`);
 			const resourcesPath = path.join(testDir, "resources");
 			const asarPath = path.join(resourcesPath, "app.asar");
@@ -59,8 +72,8 @@ describe("Injection", () => {
 					const content = fs.readFileSync(asarPath, "utf8");
 					expect(content).toContain('scheme: "bd"');
 					expect(content).toContain('protocol.handle("bd"');
-					expect(content).toContain('plugins.js');
-					expect(content).toContain('themes.js');
+					expect(content).toContain("plugins.js");
+					expect(content).toContain("themes.js");
 				}
 
 				// 2. Uninject

@@ -1,8 +1,8 @@
-import LoadingPage from "./pages/Loading.svelte";
-import LicensePage from "./pages/License.svelte";
 import ActionsPage from "./pages/Actions.svelte";
-import PlatformsPage from "./pages/Platforms.svelte";
+import LicensePage from "./pages/License.svelte";
+import LoadingPage from "./pages/Loading.svelte";
 import PerformActionPage from "./pages/PerformAction.svelte";
+import PlatformsPage from "./pages/Platforms.svelte";
 
 export default {
 	"/": LicensePage,

@@ -1,5 +1,5 @@
-import { log } from "./log";
 import { action, status } from "../../stores/installation";
+import { log } from "./log";
 
 const discordURL = "https://betterdiscord.app/invite";
 

@@ -1,6 +1,6 @@
 <script>
-    import {remote} from "electron";
     import quit from "../actions/quit";
+    import {remote} from "electron";
     import {version} from "../../../package.json";
 
     export let macButtons;

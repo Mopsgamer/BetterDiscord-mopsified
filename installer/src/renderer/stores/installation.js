@@ -1,6 +1,6 @@
-import { writable } from "svelte/store";
 import { locations } from "../actions/paths";
 import readwritable from "./types/readwritable";
+import { writable } from "svelte/store";
 
 export const status = writable("");
 export const hasAgreed = writable(false);

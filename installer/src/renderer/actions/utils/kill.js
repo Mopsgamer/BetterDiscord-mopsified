@@ -1,9 +1,9 @@
-import path from "path";
 import findProcess from "find-process";
 import kill from "tree-kill";
-import { shell } from "electron";
-import { progress } from "../../stores/installation";
 import { log } from "./log";
+import path from "path";
+import { progress } from "../../stores/installation";
+import { shell } from "electron";
 
 const platforms = { stable: "Discord", ptb: "Discord PTB", canary: "Discord Canary" };
 export default async function killProcesses(channels, progressPerLoop, shouldRestart = true) {

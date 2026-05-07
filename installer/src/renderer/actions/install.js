@@ -1,17 +1,16 @@
-import { progress, status } from "../stores/installation";
-import { remote, shell } from "electron";
+import { log, lognewline } from "./utils/log";
+import doSanityCheck from "./utils/sanity";
+import exists from "./utils/exists";
+import fail from "./utils/fail";
 import { promises as fs } from "fs";
+import kill from "./utils/kill";
 import path from "path";
 import phin from "phin";
-
-import { log, lognewline } from "./utils/log";
-import succeed from "./utils/succeed";
-import fail from "./utils/fail";
-import exists from "./utils/exists";
+import { progress } from "../stores/installation";
+import { remote } from "electron";
 import reset from "./utils/reset";
-import kill from "./utils/kill";
 import { showRestartNotice } from "./utils/notices";
-import doSanityCheck from "./utils/sanity";
+import succeed from "./utils/succeed";
 
 const MAKE_DIR_PROGRESS = 30;
 const DOWNLOAD_PACKAGE_PROGRESS = 60;

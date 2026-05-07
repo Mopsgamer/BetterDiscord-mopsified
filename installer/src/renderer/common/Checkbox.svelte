@@ -1,6 +1,6 @@
 <script>
     // NOTES: preventing the default click event behavior is needed to stop the change event being fired twice when the spacebar is pressed.
-    import {handleKeyboardToggle, checkItem} from "../stores/controls.js";
+    import {checkItem, handleKeyboardToggle} from "../stores/controls.js";
 
     export let checked = false;
     export let label = undefined; // eslint-disable-line no-undef-init

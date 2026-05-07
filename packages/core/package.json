@@ -7,8 +7,8 @@
 	"scripts": {
 		"lint": "bun oxlint --fix",
 		"fmt": "bun oxfmt",
-		"dist": "bun build --target node --production src/index.ts --outfile=./dist/index.js && bun build --target browser --production src/renderer.ts --outfile=./dist/renderer.js",
-		"dts": "bun tsgo --declaration --emitDeclarationOnly --outDir ./dist"
+		"dist": "bun dts && bun build --target node --production src/index.ts --outfile=./dist/index.js && bun build --target browser --production src/renderer.ts --outfile=./dist/renderer.js",
+		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {
 		"@betterdiscord.com/find": "workspace:*",

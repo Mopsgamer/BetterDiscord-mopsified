@@ -1,16 +1,16 @@
 <script>
-    import page from "../transitions/page.js";
+    import {action, paths, platforms, progress, status} from "../stores/installation";
+    import {canGoBack, canGoForward, nextPage} from "../stores/navigation";
     import PageHeader from "../common/PageHeader.svelte";
     import ProgressBar from "../common/ProgressBar.svelte";
     import TextDisplay from "../common/TextDisplay.svelte";
-    import logs from "../stores/logs";
+    import debug from "../actions/debug";
     import install from "../actions/install";
+    import logs from "../stores/logs";
+    import {onDestroy} from "svelte";
+    import page from "../transitions/page.js";
     import repair from "../actions/repair";
     import uninstall from "../actions/uninstall";
-    import debug from "../actions/debug";
-    import {canGoBack, canGoForward, nextPage} from "../stores/navigation";
-    import {action, paths, progress, platforms, status} from "../stores/installation";
-    import {onDestroy} from "svelte";
 
     canGoForward.set(false);
     canGoBack.set(false);

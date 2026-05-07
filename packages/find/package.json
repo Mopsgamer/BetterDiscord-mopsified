@@ -5,8 +5,14 @@
 	"type": "module",
 	"main": "./dist/index.js",
 	"exports": {
-		".": "./dist/index.js",
-		"./filters": "./dist/filters.js"
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./filters": {
+			"import": "./dist/filters.js",
+			"types": "./dist/filters.d.ts"
+		}
 	},
 	"scripts": {
 		"lint": "bun oxlint --fix",
@@ -14,6 +20,6 @@
 		"dist": "bun dts && bun index && bun filters",
 		"index": "bun build --production src/index.ts --outfile=./dist/index.js",
 		"filters": "bun build --production src/filters.ts --outfile=./dist/filters.js",
-		"dts": "bun tsgo --declaration --emitDeclarationOnly --outDir ./dist"
+		"dts": "bun tsgo -p ."
 	}
 }
