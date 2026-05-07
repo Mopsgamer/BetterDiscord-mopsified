@@ -1,4 +1,5 @@
 import * as asar from "@electron/asar";
+import { getDiscordAsarPath as getAsarPath, getCoreSource, getLoaderScript } from "@betterdiscord.com/core";
 import fs from "node:fs";
 import path from "node:path";
 import { styleText } from "node:util";
@@ -36,7 +37,7 @@ function getDiscordBaseName(channel: DiscordRelease): string {
 }
 
 export function getDiscordAsarPath(inst: DiscordInstallation): string {
-	return path.join(inst.resourcesPath, "app.asar");
+	return getAsarPath(inst.resourcesPath);
 }
 
 export async function getInstallations(options: InjectionOptions = {}): Promise<DiscordInstallation[]> {
@@ -102,26 +103,31 @@ export async function getInstallations(options: InjectionOptions = {}): Promise<
 
 		if (!fs.existsSync(discordDir) && !fs.existsSync(discordBaseDir)) continue;
 
-		if (!fs.existsSync(discordDir)) {
+		const searchDirs = [discordDir, discordBaseDir].filter(d => d && fs.existsSync(d));
+		let appDirs: string[] = [];
+		let selectedBase = "";
+
+		for (const dir of searchDirs) {
+			const found = fs.readdirSync(dir).filter(f => {
+				const p = path.join(dir, f);
+				return fs.lstatSync(p).isDirectory() && (/^\d+\.\d+\.\d+$/.test(f) || f.startsWith("app-"));
+			});
+			if (found.length > 0) {
+				appDirs = found.sort();
+				selectedBase = dir;
+				break;
+			}
+		}
+
+		if (appDirs.length === 0) {
 			if (process.platform === "darwin" && fs.existsSync(resourcesPath)) {
 				installations.push(createInstallation(channel, "unknown", resourcesPath, ""));
 			}
 			continue;
 		}
 
-		const appDirs = fs
-			.readdirSync(discordDir)
-			.filter(
-				(f) => fs.lstatSync(path.join(discordDir, f)).isDirectory() && (/^\d+\.\d+\.\d+$/.test(f) || f.startsWith("app-")),
-			)
-			.sort();
-
-		if (appDirs.length === 0) {
-			continue;
-		}
-
 		const latestVersion = appDirs[appDirs.length - 1]!;
-		const versionDir = path.join(discordDir, latestVersion);
+		const versionDir = path.join(selectedBase, latestVersion);
 
 		if (!resourcesPath) {
 			// On Linux, app.asar is usually in the base installation directory,
@@ -173,8 +179,6 @@ function createInstallation(
 
 function checkIsInjected(inst: DiscordInstallation): boolean {
 	const asarPath = getDiscordAsarPath(inst);
-	// We check for the presence of the backup file as a reliable indicator of injection.
-	// Reading the binary app.asar as a string is unsafe and inefficient.
 	if (fs.existsSync(asarPath + ".bd.bak")) return true;
 
 	if (inst.corePath) {
@@ -248,61 +252,10 @@ async function patchAsar(inst: DiscordInstallation): Promise<void> {
 			`$1${protocolPatch}`,
 		);
 
-		// 2. Load Core API source
-		const corePath = path.join(__dirname, "..", "..", "core", "dist", "index.js");
-		let coreSource = "";
-		try {
-			coreSource = fs.readFileSync(corePath, "utf8");
-		} catch (err) {
-			console.error("Failed to read Core API source:", err);
-		}
+		// 2. Inject BetterDiscord loader and protocol handler from Core
+		const coreSource = getCoreSource();
+		const loaderPatch = getLoaderScript(coreSource);
 
-		// 3. Inject BetterDiscord loader and protocol handler
-		const loaderPatch = `
-(async () => {
-	try {
-		const { join } = require("node:path");
-		const { existsSync, readFileSync } = require("node:fs");
-		const { app, session, protocol } = require("electron");
-
-		const bdPath = join(app.getPath("userData"), "betterdiscord");
-		const extensionPath = join(bdPath, "extension");
-
-		// Register bd: protocol handler
-		protocol.handle("bd", async (request) => {
-			const url = new URL(request.url);
-			const pathName = url.pathname.replace(/^\\/+/, "");
-
-			// Handle core API
-			if (pathName === "api.js") {
-				return new Response(\`${coreSource.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`, {
-					headers: { "Content-Type": "application/javascript" }
-				});
-			}
-
-			// Handle addon imports
-			if (pathName.startsWith("import/plugins/")) {
-				const pluginId = pathName.replace("import/plugins/", "");
-				const pluginPath = join(bdPath, "plugins", pluginId, "index.js");
-				if (existsSync(pluginPath)) {
-					return new Response(readFileSync(pluginPath), {
-						headers: { "Content-Type": "application/javascript" }
-					});
-				}
-			}
-
-			return new Response("Not Found", { status: 404 });
-		});
-
-		// Load Core and Extension
-		if (existsSync(extensionPath)) {
-			await session.defaultSession.loadExtension(extensionPath, { allowFileAccess: true });
-		}
-	} catch (err) {
-		console.error("BetterDiscord Loader Error:", err);
-	}
-})();
-`;
 		// Handle arrow function, regular function, and minified function calls for app.on("ready")
 		fileContent = fileContent.replace(
 			/(app\.on\("ready",\s*(?:async\s*)?(?:function\s*(?:\([^)]*\)|[a-zA-Z0-9_]+)?|(?:\([^)]*\)|[a-zA-Z0-9_]+)\s*=>)\s*{)/,

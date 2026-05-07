@@ -59,7 +59,8 @@ describe("Injection", () => {
 					const content = fs.readFileSync(asarPath, "utf8");
 					expect(content).toContain('scheme: "bd"');
 					expect(content).toContain('protocol.handle("bd"');
-					expect(content).toContain('BetterDiscord Core');
+					expect(content).toContain('plugins.js');
+					expect(content).toContain('themes.js');
 				}
 
 				// 2. Uninject
