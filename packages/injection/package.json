@@ -1,19 +1,19 @@
 {
-    "name": "@betterdiscord.com/injection",
-    "version": "1.0.0",
-    "private": false,
-    "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "scripts": {
-        "get": "bun scripts/preload.ts",
-        "test": "bun test ../../tests/injection.test.ts",
-        "lint": "bun oxlint --fix",
-        "fmt": "bun oxfmt",
-        "dist": "bun dts && bun publint --pack bun && bun build --target node --production src/index.ts --outfile=./dist/index.js -e '@electron/asar'",
-        "dts": "bun tsgo -p ."
-    },
-    "dependencies": {
-        "@electron/asar": "^3.2.0"
-    }
+	"name": "@betterdiscord.com/injection",
+	"version": "1.0.0",
+	"private": false,
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"scripts": {
+		"get": "bun scripts/preload.ts",
+		"test": "bun test ../../tests/injection.test.ts",
+		"lint": "bun oxlint --fix",
+		"fmt": "bun oxfmt",
+		"dist": "bun dts && bun publint --pack bun && bun build --target node --production src/index.ts --outfile=./dist/index.js -e '@electron/asar'",
+		"dts": "bun tsgo -p ."
+	},
+	"dependencies": {
+		"@electron/asar": "^3.2.0"
+	}
 }

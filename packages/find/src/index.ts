@@ -9,33 +9,33 @@ let webpackRequire: any;
  * Intercepts the webpack require function from the Discord application.
  */
 export function getWebpackRequire() {
-    if (webpackRequire) return webpackRequire;
+	if (webpackRequire) return webpackRequire;
 
-    const chunkName = "webpackChunkdiscord_app";
-    const chunk = (globalThis as any)[chunkName];
-    if (!chunk) return null;
+	const chunkName = "webpackChunkdiscord_app";
+	const chunk = (globalThis as any)[chunkName];
+	if (!chunk) return null;
 
-    const tempId = "bd-webpack-searcher";
-    let require: any;
+	const tempId = "bd-webpack-searcher";
+	let require: any;
 
-    chunk.push([[tempId], {}, (r: any) => (require = r)]);
+	chunk.push([[tempId], {}, (r: any) => (require = r)]);
 
-    const index = chunk.findIndex((c: any) => c[0][0] === tempId);
-    if (index !== -1) chunk.splice(index, 1);
+	const index = chunk.findIndex((c: any) => c[0][0] === tempId);
+	if (index !== -1) chunk.splice(index, 1);
 
-    webpackRequire = require;
-    return require;
+	webpackRequire = require;
+	return require;
 }
 
 /**
  * Returns all exports from the webpack cache.
  */
 export function getAllModules() {
-    const require = getWebpackRequire();
-    if (!require || !require.c) return [];
-    return Object.values(require.c)
-        .map((m: any) => m.exports)
-        .filter((m) => m);
+	const require = getWebpackRequire();
+	if (!require || !require.c) return [];
+	return Object.values(require.c)
+		.map((m: any) => m.exports)
+		.filter((m) => m);
 }
 
 /**
@@ -49,31 +49,31 @@ export function getAllModules() {
  * @returns An array of matched modules in the same order as the filters.
  */
 export function findNow(filters: Filter[]): any[] {
-    const modules = getAllModules();
-    const results = Array.from({ length: filters.length }).fill(null);
-    let foundCount = 0;
+	const modules = getAllModules();
+	const results = Array.from({ length: filters.length }).fill(null);
+	let foundCount = 0;
 
-    for (const m of modules) {
-        for (let i = 0; i < filters.length; i++) {
-            if (results[i]) continue;
-            try {
-                if (filters[i]!(m)) {
-                    results[i] = m;
-                    foundCount++;
-                } else if (m.default && filters[i]!(m.default)) {
-                    results[i] = m.default;
-                    foundCount++;
-                }
-            } catch (_e) { }
-        }
-        if (foundCount === filters.length) break;
-    }
-    return results;
+	for (const m of modules) {
+		for (let i = 0; i < filters.length; i++) {
+			if (results[i]) continue;
+			try {
+				if (filters[i]!(m)) {
+					results[i] = m;
+					foundCount++;
+				} else if (m.default && filters[i]!(m.default)) {
+					results[i] = m.default;
+					foundCount++;
+				}
+			} catch (_e) {}
+		}
+		if (foundCount === filters.length) break;
+	}
+	return results;
 }
 
 type PendingSearch = {
-    filters: Filter[];
-    resolve: (result: any[]) => void;
+	filters: Filter[];
+	resolve: (result: any[]) => void;
 };
 
 let pendingSearches: PendingSearch[] = [];
@@ -90,25 +90,25 @@ let searchTimeout: any = null;
  * @returns A promise that resolves to an array of matched modules in the same order as the filters.
  */
 export async function find(filters: Filter[]): Promise<any[]> {
-    return new Promise((resolve) => {
-        pendingSearches.push({ filters, resolve });
+	return new Promise((resolve) => {
+		pendingSearches.push({ filters, resolve });
 
-        if (!searchTimeout) {
-            searchTimeout = setTimeout(() => {
-                const currentSearches = pendingSearches;
-                pendingSearches = [];
-                searchTimeout = null;
+		if (!searchTimeout) {
+			searchTimeout = setTimeout(() => {
+				const currentSearches = pendingSearches;
+				pendingSearches = [];
+				searchTimeout = null;
 
-                const allFilters = currentSearches.flatMap((s) => s.filters);
-                const allResults = findNow(allFilters);
+				const allFilters = currentSearches.flatMap((s) => s.filters);
+				const allResults = findNow(allFilters);
 
-                let offset = 0;
-                for (const search of currentSearches) {
-                    const resultSlice = allResults.slice(offset, offset + search.filters.length);
-                    search.resolve(resultSlice);
-                    offset += search.filters.length;
-                }
-            }, 1000);
-        }
-    });
+				let offset = 0;
+				for (const search of currentSearches) {
+					const resultSlice = allResults.slice(offset, offset + search.filters.length);
+					search.resolve(resultSlice);
+					offset += search.filters.length;
+				}
+			}, 1000);
+		}
+	});
 }
