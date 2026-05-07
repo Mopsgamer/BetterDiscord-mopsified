@@ -1,9 +1,9 @@
-import asar from "@electron/asar";
+import * as asar from "@electron/asar";
 import fs from "node:fs";
 import path from "node:path";
 import { styleText } from "node:util";
 
-export type DiscordRelease = "stable" | "canary" | "ptb";
+export type DiscordRelease = "stable" | "canary" | "ptb" | "development";
 
 export interface InjectionOptions {
 	release?: boolean; // Use production asar
@@ -28,6 +28,8 @@ function getDiscordBaseName(channel: DiscordRelease): string {
 			return "Discord Canary";
 		case "ptb":
 			return "Discord PTB";
+		case "development":
+			return "Discord Development";
 		default:
 			return "Discord";
 	}
@@ -38,7 +40,7 @@ export function getDiscordAsarPath(inst: DiscordInstallation): string {
 }
 
 export async function getInstallations(options: InjectionOptions = {}): Promise<DiscordInstallation[]> {
-	const channels: DiscordRelease[] = ["stable", "canary", "ptb"];
+	const channels: DiscordRelease[] = ["stable", "canary", "ptb", "development"];
 	const installations: DiscordInstallation[] = [];
 
 	for (const channel of channels) {
@@ -85,9 +87,14 @@ export async function getInstallations(options: InjectionOptions = {}): Promise<
 				if (options.opt) {
 					discordBaseDir = path.join("/opt", nameLowerNoSpace);
 				} else {
-					discordBaseDir = `/usr/share/${nameLowerNoSpace}`;
-					if (!fs.existsSync(discordBaseDir)) {
-						discordBaseDir = `/usr/lib64/${nameLowerNoSpace}`;
+					const standardPath = `/usr/share/${nameLowerNoSpace}`;
+					const libPath = `/usr/lib64/${nameLowerNoSpace}`;
+					if (fs.existsSync(standardPath)) {
+						discordBaseDir = standardPath;
+					} else if (fs.existsSync(libPath)) {
+						discordBaseDir = libPath;
+					} else {
+						discordBaseDir = discordDir;
 					}
 				}
 			}

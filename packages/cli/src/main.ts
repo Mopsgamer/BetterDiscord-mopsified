@@ -1,10 +1,14 @@
 import { getInstallations, inject, uninject } from "@betterdiscord.com/injection";
-import { styleText } from "node:util";
+import { styleText as c } from "node:util";
 
 async function main() {
 	const args = process.argv.slice(2);
-	const command = args[0];
-	const channel = (args.find((a) => ["stable", "canary", "ptb"].includes(a)) || "stable") as any;
+
+	const commands = ["inject", "uninject", "list"];
+	const command = args.find(a => commands.includes(a));
+
+	const channels = ["stable", "canary", "ptb", "development"];
+	const channel = args.find(a => channels.includes(a)) || "stable";
 
 	const options = {
 		release: args.includes("release"),
@@ -13,13 +17,13 @@ async function main() {
 		opt: args.includes("opt"),
 	};
 
-	if (!command || !["inject", "uninject", "list"].includes(command)) {
-		console.log(styleText("bold", "BetterDiscord CLI"));
+	if (!command) {
+		console.log(c("bold", "BetterDiscord CLI"));
 		console.log("\nUsage:");
-		console.log("  bun run cli inject [channel] [options]");
-		console.log("  bun run cli uninject [channel]");
-		console.log("  bun run cli list [--json]");
-		console.log("\nChannels: stable, canary, ptb");
+		console.log(`  bun run cli ${c("cyan", "inject")} [channel] [options]`);
+		console.log(`  bun run cli ${c("cyan", "uninject")} [channel]`);
+		console.log(`  bun run cli ${c("cyan", "list")} [--json]`);
+		console.log("\nChannels: stable, canary, ptb, development");
 		console.log("\nOptions: release, simple, flatpak, opt");
 		return;
 	}
@@ -31,19 +35,19 @@ async function main() {
 			console.log(JSON.stringify(installations));
 			return;
 		}
-		console.log(styleText("bold", "Available Discord Installations:"));
+		console.log(c("bold", "Available Discord Installations:"));
 		for (const inst of installations) {
 			const status = inst.isInjected
-				? styleText("green", "Injected")
-				: styleText("gray", "Not Injected");
-			console.log(`- ${inst.channel} (${inst.version}) [${status}]`);
+				? c("green", "Injected")
+				: c("gray", "Not Injected");
+			console.log(`- ${c("cyan", inst.channel)} (${inst.version}) [${status}]`);
 		}
 		return;
 	}
 
 	const target = installations.find((i) => i.channel === channel);
 	if (!target) {
-		console.error(styleText("red", `Error: Could not find Discord ${channel}`));
+		console.error(c("red", `Error: Could not find Discord ${channel}`));
 		process.exit(1);
 	}
 
@@ -54,7 +58,7 @@ async function main() {
 			await uninject(target);
 		}
 	} catch (err: any) {
-		console.error(styleText("red", `\nError: ${err.message}`));
+		console.error(c("red", `\nError: ${err.message}`));
 		process.exit(1);
 	}
 }
