@@ -22,7 +22,9 @@ describe("Injection", () => {
 				// 1. Ensure distribution exists
 				if (!fs.existsSync(distributionDir)) {
 					console.log(`Distribution for ${channel} not found. Fetching...`);
-					execSync(`bun run get ${channel}`, { cwd: path.join(import.meta.dirname, "..", "packages", "injection") });
+					const pkgDir = path.join(import.meta.dirname, "..", "packages", "injection");
+					// Use cross-platform bun execution
+					execSync(`bun run get ${channel}`, { cwd: pkgDir });
 				}
 
 				// 2. Create test environment
@@ -30,9 +32,6 @@ describe("Injection", () => {
 				fs.mkdirSync(resourcesPath, { recursive: true });
 
 				// 3. Mock installation from distribution
-				// Instead of real asar for speed/simplicity in tests, we use a directory-based mock
-				// but BetterDiscord's patcher needs a real asar file.
-				// We'll pack the distribution's unpacked files into an asar in our test env.
 				const asar = await import("@electron/asar");
 				await asar.createPackage(distributionDir, asarPath);
 
