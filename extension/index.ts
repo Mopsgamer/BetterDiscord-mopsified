@@ -1,9 +1,14 @@
 /**
  * BetterDiscord Extension Entry Point
  */
-import { initialize } from "@betterdiscord.com/core";
 
-// Inject the BetterDiscord Core
-initialize();
+(async () => {
+	// Import API from the custom protocol
+	// @ts-ignore
+	const { initialize } = await import("bd:api.js");
 
-console.log("BetterDiscord Extension Loaded.");
+	// Inject the BetterDiscord Core
+	initialize();
+
+	console.log("BetterDiscord Extension Loaded.");
+})();

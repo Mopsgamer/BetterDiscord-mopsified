@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "betterdiscord-rewrite",
@@ -56,6 +55,14 @@
       },
       "devDependencies": {
         "react": "catalog:",
+      },
+    },
+    "packages/core": {
+      "name": "@betterdiscord.com/core",
+      "version": "1.0.0",
+      "dependencies": {
+        "@betterdiscord.com/find": "workspace:*",
+        "@betterdiscord.com/themes": "workspace:*",
       },
     },
     "packages/find": {
@@ -287,6 +294,8 @@
     "@betterdiscord.com/cli": ["@betterdiscord.com/cli@workspace:packages/cli"],
 
     "@betterdiscord.com/components": ["@betterdiscord.com/components@workspace:packages/components"],
+
+    "@betterdiscord.com/core": ["@betterdiscord.com/core@workspace:packages/core"],
 
     "@betterdiscord.com/find": ["@betterdiscord.com/find@workspace:packages/find"],
 
@@ -1006,7 +1015,7 @@
 
     "find-cache-dir": ["find-cache-dir@3.3.2", "", { "dependencies": { "commondir": "^1.0.1", "make-dir": "^3.0.2", "pkg-dir": "^4.1.0" } }, "sha512-wXZV5emFEjrridIgED11OoUKLxiYjAcqot/NJdAkOhlJ+vGzwhOAfcG5OX1jP+S0PcjEn8bdMJv+g2jwQ3Onig=="],
 
-    "find-process": ["find-process@github:BetterDiscord/find-process#e8632d8", { "dependencies": { "chalk": "^4.0.0", "commander": "^5.1.0", "loglevel": "^1.8.0" }, "bin": { "find-process": "bin/find-process.js" } }, "BetterDiscord-find-process-e8632d8", "sha512-k0CKVxzBcMXZFOO2gdgSiQQKeLvckCVbBdYggTkYd95J1SDAo7pfecZb/nV6/kKWDAawwJTJjOp0d8hGmXl9fw=="],
+    "find-process": ["find-process@github:BetterDiscord/find-process#e8632d8", { "dependencies": { "chalk": "^4.0.0", "commander": "^5.1.0", "loglevel": "^1.8.0" }, "bin": { "find-process": "bin/find-process.js" } }, "BetterDiscord-find-process-e8632d8"],
 
     "find-up": ["find-up@4.1.0", "", { "dependencies": { "locate-path": "^5.0.0", "path-exists": "^4.0.0" } }, "sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw=="],
 

@@ -55,6 +55,14 @@ describe("Injection", () => {
 				// Verify backup exists
 				expect(fs.existsSync(asarPath + ".bd.bak")).toBe(true);
 
+				// Verify protocol and core injection
+				if (channel !== "development") {
+					const content = fs.readFileSync(asarPath, "utf8");
+					expect(content).toContain('scheme: "bd"');
+					expect(content).toContain('protocol.handle("bd"');
+					expect(content).toContain('BetterDiscord Core');
+				}
+
 				// 2. Uninject
 				await uninject(mockInst);
 

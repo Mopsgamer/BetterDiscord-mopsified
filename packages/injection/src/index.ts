@@ -102,17 +102,21 @@ export async function getInstallations(options: InjectionOptions = {}): Promise<
 
 		if (!fs.existsSync(discordDir) && !fs.existsSync(discordBaseDir)) continue;
 
+		if (!fs.existsSync(discordDir)) {
+			if (process.platform === "darwin" && fs.existsSync(resourcesPath)) {
+				installations.push(createInstallation(channel, "unknown", resourcesPath, ""));
+			}
+			continue;
+		}
+
 		const appDirs = fs
 			.readdirSync(discordDir)
 			.filter(
-				(f) => fs.lstatSync(path.join(discordDir, f)).isDirectory() && /^\d+\.\d+\.\d+$/.test(f),
+				(f) => fs.lstatSync(path.join(discordDir, f)).isDirectory() && (/^\d+\.\d+\.\d+$/.test(f) || f.startsWith("app-")),
 			)
 			.sort();
 
 		if (appDirs.length === 0) {
-			if (process.platform === "darwin" && fs.existsSync(resourcesPath)) {
-				installations.push(createInstallation(channel, "unknown", resourcesPath, ""));
-			}
 			continue;
 		}
 
@@ -244,19 +248,54 @@ async function patchAsar(inst: DiscordInstallation): Promise<void> {
 			`$1${protocolPatch}`,
 		);
 
-		// 2. Inject BetterDiscord loader
+		// 2. Load Core API source
+		const corePath = path.join(__dirname, "..", "..", "core", "dist", "index.js");
+		let coreSource = "";
+		try {
+			coreSource = fs.readFileSync(corePath, "utf8");
+		} catch (err) {
+			console.error("Failed to read Core API source:", err);
+		}
+
+		// 3. Inject BetterDiscord loader and protocol handler
 		const loaderPatch = `
 (async () => {
 	try {
 		const { join } = require("node:path");
-		const { existsSync } = require("node:fs");
-		const { app } = require("electron");
+		const { existsSync, readFileSync } = require("node:fs");
+		const { app, session, protocol } = require("electron");
 
 		const bdPath = join(app.getPath("userData"), "betterdiscord");
 		const extensionPath = join(bdPath, "extension");
 
+		// Register bd: protocol handler
+		protocol.handle("bd", async (request) => {
+			const url = new URL(request.url);
+			const pathName = url.pathname.replace(/^\\/+/, "");
+
+			// Handle core API
+			if (pathName === "api.js") {
+				return new Response(\`${coreSource.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`, {
+					headers: { "Content-Type": "application/javascript" }
+				});
+			}
+
+			// Handle addon imports
+			if (pathName.startsWith("import/plugins/")) {
+				const pluginId = pathName.replace("import/plugins/", "");
+				const pluginPath = join(bdPath, "plugins", pluginId, "index.js");
+				if (existsSync(pluginPath)) {
+					return new Response(readFileSync(pluginPath), {
+						headers: { "Content-Type": "application/javascript" }
+					});
+				}
+			}
+
+			return new Response("Not Found", { status: 404 });
+		});
+
+		// Load Core and Extension
 		if (existsSync(extensionPath)) {
-			const { session } = require("electron");
 			await session.defaultSession.loadExtension(extensionPath, { allowFileAccess: true });
 		}
 	} catch (err) {

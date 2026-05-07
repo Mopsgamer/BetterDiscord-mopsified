@@ -7,7 +7,7 @@
 	"scripts": {
 		"lint": "bun oxlint --fix",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun build --target browser --production src/index.ts --outfile=./dist/index.js -e '@betterdiscord.com/*'",
+		"dist": "bun dts && bun build --target browser --production src/index.ts --outfile=./dist/index.js",
 		"dts": "bun tsgo --declaration --emitDeclarationOnly --outDir ./dist"
 	},
 	"dependencies": {

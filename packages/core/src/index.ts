@@ -1,9 +1,10 @@
 /**
- * BetterDiscord Core Package
+ * BetterDiscord Core - Module and Addon Management
  */
 import * as themes from "@betterdiscord.com/themes";
 import { find, findNow } from "@betterdiscord.com/find";
 
+// --- Mutex ---
 export class Mutex {
 	private locked = false;
 	private queue: (() => void)[] = [];
@@ -22,6 +23,7 @@ export class Mutex {
 	}
 }
 
+// --- Patcher ---
 export class Patcher {
 	private mutex = new Mutex();
 
@@ -41,27 +43,65 @@ export class Patcher {
 
 export const patcher = new Patcher();
 
+// --- Addon Management ---
+export interface Addon {
+	id: string;
+	name: string;
+	author: string;
+	version: string;
+	description?: string;
+}
+
+export interface Plugin extends Addon {
+	instance?: any;
+}
+
+export interface Theme extends Addon {
+	css?: string;
+}
+
+const plugins = new Map<string, Plugin>();
+const activeThemes = new Map<string, Theme>();
+
+// --- Protocol Modules ---
+export const bdModules = new Map<string, any>();
+bdModules.set("patcher", patcher);
+bdModules.set("themes", themes);
+bdModules.set("api", {
+	patcher,
+	themes,
+	// Add other API members here
+});
+
 /**
- * Protocol handler for bd:
+ * Enhanced protocol handler for bd:
  */
 export async function handleBdProtocol(url: string) {
-	switch (url) {
-		case "bd:patcher":
-			return patcher;
-		case "bd:themes":
-			return themes;
-		default:
-			if (url.startsWith("bd:import/plugins/")) {
-				const pluginId = url.replace("bd:import/plugins/", "");
-				console.log(`Importing plugin: ${pluginId}`);
-				// Future implementation for plugin loading
-				return { id: pluginId };
-			}
+	const path = url.replace("bd:", "");
+
+	// Check for direct module mapping (e.g., bd:patcher, bd:api)
+	if (bdModules.has(path)) {
+		return bdModules.get(path);
 	}
+
+	// Handle addon imports (e.g., bd:import/plugins/my-plugin)
+	if (path.startsWith("import/plugins/")) {
+		// Static imports like 'import x from "bd:import/plugins/id"'
+		// are served by the Electron process as application/javascript.
+		// For dynamic import() via bdImport, we can also delegate to native import()
+		// if the environment supports the custom protocol.
+		return import(url);
+	}
+
+	if (path.startsWith("import/themes/")) {
+		return import(url);
+	}
+
+	throw new Error(`Unknown BetterDiscord module: ${url}`);
 }
 
 /**
- * Global import interceptor implementation
+ * Global import interceptor for ESM support
  */
 export async function bdImport(specifier: string) {
 	if (specifier.startsWith("bd:")) {
@@ -69,10 +109,16 @@ export async function bdImport(specifier: string) {
 	}
 	// @ts-ignore
 	return import(specifier);
-};
+}
 
 export function initialize() {
 	console.log("BetterDiscord Core Initializing...");
 	(window as any).bdImport = bdImport;
+
+	// Hook into global process to ensure bd: protocol is recognized by dynamic imports if possible
+	// Note: Standard dynamic import() cannot be easily hooked to support custom protocols
+	// without a custom loader or native Electron protocol support.
+	// Static imports 'import x from "bd:y"' are handled by the Electron process.
+
 	console.log("BetterDiscord Core Initialized.");
 }
