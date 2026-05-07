@@ -33,6 +33,10 @@ function getDiscordBaseName(channel: DiscordRelease): string {
 	}
 }
 
+export function getDiscordAsarPath(inst: DiscordInstallation): string {
+	return path.join(inst.resourcesPath, "app.asar");
+}
+
 export async function getInstallations(options: InjectionOptions = {}): Promise<DiscordInstallation[]> {
 	const channels: DiscordRelease[] = ["stable", "canary", "ptb"];
 	const installations: DiscordInstallation[] = [];
@@ -145,26 +149,25 @@ function createInstallation(
 	resourcesPath: string,
 	corePath: string,
 ): DiscordInstallation {
-	return {
+	const inst = {
 		channel,
 		version,
 		resourcesPath,
 		corePath,
-		isInjected: checkIsInjected(resourcesPath, corePath),
+		isInjected: false,
 	};
+	inst.isInjected = checkIsInjected(inst);
+	return inst;
 }
 
-function checkIsInjected(resourcesPath: string, corePath: string): boolean {
-	const asarPath = path.join(resourcesPath, "app.asar");
-	if (fs.existsSync(asarPath)) {
-		try {
-			const content = fs.readFileSync(asarPath, "utf8");
-			if (content.includes('scheme: "bd"')) return true;
-		} catch {}
-	}
+function checkIsInjected(inst: DiscordInstallation): boolean {
+	const asarPath = getDiscordAsarPath(inst);
+	// We check for the presence of the backup file as a reliable indicator of injection.
+	// Reading the binary app.asar as a string is unsafe and inefficient.
+	if (fs.existsSync(asarPath + ".bd.bak")) return true;
 
-	if (corePath) {
-		const indexJs = path.join(corePath, "index.js");
+	if (inst.corePath) {
+		const indexJs = path.join(inst.corePath, "index.js");
 		if (fs.existsSync(indexJs)) {
 			try {
 				const content = fs.readFileSync(indexJs, "utf8");
@@ -183,16 +186,16 @@ export async function inject(
 	console.log(c("bold", `Injecting into ${getDiscordBaseName(inst.channel)} (${inst.version})`));
 
 	if (!options.simple) {
-		await patchAsar(inst.resourcesPath);
+		await patchAsar(inst);
 	}
 
 	console.log(c("green", "Injection successful. Please restart Discord."));
 }
 
-async function patchAsar(resourcesPath: string): Promise<void> {
-	const asarPath = path.join(resourcesPath, "app.asar");
+async function patchAsar(inst: DiscordInstallation): Promise<void> {
+	const asarPath = getDiscordAsarPath(inst);
 	const backupPath = asarPath + ".bd.bak";
-	const unpackPath = path.join(resourcesPath, "app-unpacked-bd");
+	const unpackPath = path.join(inst.resourcesPath, "app-unpacked-bd");
 
 	if (!fs.existsSync(asarPath)) return;
 
@@ -273,7 +276,7 @@ async function patchAsar(resourcesPath: string): Promise<void> {
 export async function uninject(inst: DiscordInstallation): Promise<void> {
 	console.log(c("bold", `Uninjecting from ${getDiscordBaseName(inst.channel)}`));
 
-	const asarPath = path.join(inst.resourcesPath, "app.asar");
+	const asarPath = getDiscordAsarPath(inst);
 	const backupPath = asarPath + ".bd.bak";
 
 	if (fs.existsSync(backupPath)) {
