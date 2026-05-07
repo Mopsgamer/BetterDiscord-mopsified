@@ -2,7 +2,7 @@ import { expect, test, describe, beforeAll, afterAll } from "bun:test";
 import { getInstallations, inject, uninject, getDiscordAsarPath, type DiscordInstallation } from "../packages/injection/src/index";
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { $ } from "bun";
 
 const args = process.argv.slice(2);
 const channelArg = args.find((_, i) => args[i - 1] === "--channel");
@@ -23,8 +23,7 @@ describe("Injection", () => {
 				if (!fs.existsSync(distributionDir)) {
 					console.log(`Distribution for ${channel} not found. Fetching...`);
 					const pkgDir = path.join(import.meta.dirname, "..", "packages", "injection");
-					// Use cross-platform bun execution
-					execSync(`bun run get ${channel}`, { cwd: pkgDir });
+					await $`bun run get ${channel}`.cwd(pkgDir);
 				}
 
 				// 2. Create test environment

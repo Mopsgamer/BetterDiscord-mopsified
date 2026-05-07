@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import * as asar from "@electron/asar";
 import { styleText as c } from "node:util";
+import { $ } from "bun";
 
 const args = process.argv.slice(2);
 const allowedChannels = ["stable", "canary", "ptb", "development"];
@@ -21,6 +21,20 @@ if (channels.length === 0) {
 	channels.push("stable");
 }
 
+function findAsarRecursive(dir: string): string | null {
+	const entries = fs.readdirSync(dir, { withFileTypes: true });
+	for (const entry of entries) {
+		const fullPath = path.join(dir, entry.name);
+		if (entry.isDirectory()) {
+			const found = findAsarRecursive(fullPath);
+			if (found) return found;
+		} else if (entry.name === "app.asar") {
+			return fullPath;
+		}
+	}
+	return null;
+}
+
 async function downloadAndUnpack(channel: string) {
 	const TEMP_DIR = path.join(import.meta.dirname, "..", "temp", channel);
 	const DISCORD_TAR = path.join(TEMP_DIR, "discord.tar.gz");
@@ -29,8 +43,6 @@ async function downloadAndUnpack(channel: string) {
 
 	if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
-	// We always download the Linux distribution because it's a simple archive
-	// that can be unpacked on any OS for analysis/tests.
 	console.log(c("cyan", `[${channel}] `) + `Downloading Discord ${channel} (Linux distribution) for analysis...`);
 	const url = `https://discord.com/api/download/${channel}?platform=linux&format=tar.gz`;
 
@@ -46,37 +58,36 @@ async function downloadAndUnpack(channel: string) {
 		if (fs.existsSync(EXTRACT_DIR)) fs.rmSync(EXTRACT_DIR, { recursive: true, force: true });
 		fs.mkdirSync(EXTRACT_DIR, { recursive: true });
 
-		// tar is available on Linux, macOS, and Windows 10+
-		execSync(`tar -xzf "${DISCORD_TAR}" -C "${EXTRACT_DIR}" --strip-components=1`);
+		await $`tar -xzf ${DISCORD_TAR} -C ${EXTRACT_DIR} --strip-components=1`;
 		console.log(c("cyan", `[${channel}] `) + c("green", "Extraction complete."));
 
-		// Find app.asar within the extracted files
-		let asarPath = "";
-		const possiblePaths = [
-			path.join(EXTRACT_DIR, "resources", "app.asar"),
-			path.join(EXTRACT_DIR, "resources", "app", "app.asar"),
-		];
+		const configDirName = channel === "stable" ? "discord" : `discord${channel}`;
+		const configHome = process.env.XDG_CONFIG_HOME || path.join(process.env.HOME!, ".config");
+		const discordDir = path.join(configHome, configDirName);
 
-		for (const p of possiblePaths) {
-			if (fs.existsSync(p)) {
-				asarPath = p;
-				break;
-			}
-		}
-
-		if (!asarPath) {
-			// Fallback: search for app.asar
+		// If config doesn't exist, we run the binary once to let it create the structure
+		if (!fs.existsSync(discordDir)) {
+			console.log(c("cyan", `[${channel}] `) + "Initializing configuration...");
+			const exeName = channel === "stable" ? "discord" : `discord-${channel}`;
+			const exePath = path.join(EXTRACT_DIR, exeName);
 			try {
-				const findCmd = process.platform === "win32"
-					? `dir /s /b "${EXTRACT_DIR}\\app.asar"`
-					: `find "${EXTRACT_DIR}" -name "app.asar"`;
-				const found = execSync(findCmd).toString().trim().split("\n")[0];
-				if (found && fs.existsSync(found)) asarPath = found;
+				await $`${exePath} --help`.quiet();
 			} catch {}
 		}
 
-		if (!asarPath) {
-			throw new Error(`Could not find app.asar in ${EXTRACT_DIR}`);
+		const { getInstallations, getDiscordAsarPath } = await import("../src/index");
+		const installations = await getInstallations();
+		const inst = installations.find(i => i.channel === channel);
+
+		let asarPath = inst ? getDiscordAsarPath(inst) : null;
+
+		if (!asarPath || !fs.existsSync(asarPath)) {
+			// Fallback: search recursively within the extracted directory using pure JS
+			asarPath = findAsarRecursive(EXTRACT_DIR);
+		}
+
+		if (!asarPath || !fs.existsSync(asarPath)) {
+			throw new Error(`Could not find app.asar for ${channel}.`);
 		}
 
 		console.log(c("cyan", `[${channel}] `) + `Unpacking app.asar...`);

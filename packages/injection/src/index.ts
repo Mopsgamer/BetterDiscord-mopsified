@@ -56,8 +56,8 @@ export async function getInstallations(options: InjectionOptions = {}): Promise<
 			discordBaseDir = discordDir;
 		} else if (process.env.WSL_DISTRO_NAME) {
 			try {
-				const { execSync } = await import("node:child_process");
-				const appdata = execSync('wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d \'\r\')"').toString().trim();
+				const { $ } = await import("bun");
+				const appdata = (await $`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()).trim();
 				discordDir = path.join(appdata, nameNoSpace);
 				discordBaseDir = discordDir;
 			} catch {
