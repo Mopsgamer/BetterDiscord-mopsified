@@ -2,9 +2,9 @@ name: BetterDiscord CI
 
 on:
   push:
-    branches: ["development"]
+    branches: ["development", "rewrite"]
   pull_request:
-    branches: ["development"]
+    branches: ["development", "rewrite"]
 
 jobs:
   build:
@@ -26,7 +26,10 @@ jobs:
         run: bun run test
 
       - name: Lint code
-        run: bun run lint
+        run: bun run oxlint
+
+      - name: Format code
+        run: bun run oxfmt --check
 
       - name: Build asar
         run: bun run dist
