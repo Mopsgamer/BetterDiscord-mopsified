@@ -1,0 +1,16 @@
+{
+	"name": "@betterdiscord.com/extension",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"main": "./dist/index.js",
+	"scripts": {
+		"lint": "bun oxlint --fix",
+		"fmt": "bun oxfmt",
+		"dist": "bun ts && bun build --target browser --production index.ts --outfile=./dist/index.js --external 'bd:*'",
+		"ts": "bun tsgo -p ."
+	},
+	"dependencies": {
+		"@betterdiscord.com/core": "workspace:*"
+	}
+}

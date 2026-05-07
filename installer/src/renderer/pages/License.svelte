@@ -1,13 +1,13 @@
 <script>
-    import PageHeader from "../common/PageHeader.svelte";
-    import page from "../transitions/page.js";
+    import {canGoBack, canGoForward, hasLoaded, nextPage} from "../stores/navigation";
     import Checkbox from "../common/Checkbox.svelte";
+    import PageHeader from "../common/PageHeader.svelte";
     import TextDisplay from "../common/TextDisplay.svelte";
     import fs from "fs";
-    import path from "path";
-    import {canGoBack, canGoForward, nextPage, hasLoaded} from "../stores/navigation";
     import {hasAgreed} from "../stores/installation";
     import {onMount} from "svelte";
+    import page from "../transitions/page.js";
+    import path from "path";
 
     onMount(() => {
         hasLoaded.set(true); // Use this to avoid initial transition caused by router

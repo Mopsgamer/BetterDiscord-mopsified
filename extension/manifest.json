@@ -1,0 +1,20 @@
+{
+	"manifest_version": 3,
+	"name": "BetterDiscord",
+	"version": "1.0.0",
+	"description": "BetterDiscord Chrome Extension for Electron",
+	"content_scripts": [
+		{
+			"matches": ["https://*.discord.com/*"],
+			"js": ["dist/index.js"],
+			"run_at": "document_start",
+			"world": "MAIN"
+		}
+	],
+	"web_accessible_resources": [
+		{
+			"resources": ["dist/*"],
+			"matches": ["https://*.discord.com/*"]
+		}
+	]
+}

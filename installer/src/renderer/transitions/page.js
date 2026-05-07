@@ -1,5 +1,5 @@
-import { state } from "../stores/navigation";
 import { quartInOut } from "svelte/easing";
+import { state } from "../stores/navigation";
 
 export default function page(
 	node,

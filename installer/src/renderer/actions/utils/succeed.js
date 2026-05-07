@@ -1,5 +1,5 @@
-import { log } from "./log";
 import { action, progress, status } from "../../stores/installation";
+import { log } from "./log";
 
 export default function succeed() {
 	const name = action.value;

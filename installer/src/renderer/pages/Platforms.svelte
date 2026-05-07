@@ -1,12 +1,12 @@
 <script>
-    import page from "../transitions/page.js";
-    import PageHeader from "../common/PageHeader.svelte";
-    import Multiselect from "../common/Multiselect.svelte";
+    import {action, paths, platforms} from "../stores/installation";
     import {canGoBack, canGoForward, nextPage} from "../stores/navigation";
-    import {action, platforms, paths} from "../stores/installation";
-    import {platforms as platformLabels, validatePath, getBrowsePath} from "../actions/paths";
-    import {remote} from "electron";
+    import {getBrowsePath, platforms as platformLabels, validatePath} from "../actions/paths";
+    import Multiselect from "../common/Multiselect.svelte";
+    import PageHeader from "../common/PageHeader.svelte";
     import getStatic from "../getstatic";
+    import page from "../transitions/page.js";
+    import {remote} from "electron";
 
     if (Object.values($platforms).some(r => r)) canGoForward.set(true);
     else canGoForward.set(false);

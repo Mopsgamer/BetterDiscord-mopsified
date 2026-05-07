@@ -7,16 +7,18 @@
 		"react-perf/jsx-no-new-function-as-prop": "warn",
 		"react-perf/jsx-no-new-object-as-prop": "warn"
 	},
-	"ignorePatterns": [
-		"vendors/**",
-		"installer/frontend/**",
-		"packages/injection/reference_inject.ts"
-	],
+	"ignorePatterns": ["vendors/**", "packages/injection/reference_inject.ts"],
 	"overrides": [
 		{
 			"files": ["packages/find/src/index.ts"],
 			"rules": {
 				"no-unused-vars": "off"
+			}
+		},
+		{
+			"files": ["installer/**/*.svelte"],
+			"rules": {
+				"no-unassigned-vars": "off"
 			}
 		}
 	]

@@ -1,19 +1,19 @@
 {
-	"name": "@betterdiscord.com/components",
-	"version": "1.0.0",
-	"private": false,
-	"type": "module",
-	"main": "./dist/index.js",
-	"scripts": {
-		"lint": "bun oxlint --fix",
-		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun build --production src/index.ts --outfile=./dist/index.js -e '@betterdiscord.com/*'",
-		"dts": "bun tsgo --declaration --emitDeclarationOnly --outDir ./dist"
-	},
-	"dependencies": {
-		"@betterdiscord.com/found": "workspace:*"
-	},
-	"devDependencies": {
-		"react": "catalog:"
-	}
+    "name": "@betterdiscord.com/components",
+    "version": "1.0.0",
+    "private": false,
+    "type": "module",
+    "main": "./dist/index.js",
+    "scripts": {
+        "lint": "bun oxlint --fix",
+        "fmt": "bun oxfmt",
+        "dist": "bun dts && bun publint --pack bun && bun build --production src/index.ts --outfile=./dist/index.js -e '@betterdiscord.com/*'",
+        "dts": "bun tsgo -p ."
+    },
+    "dependencies": {
+        "@betterdiscord.com/found": "workspace:*"
+    },
+    "devDependencies": {
+        "react": "catalog:"
+    }
 }

@@ -1,7 +1,7 @@
 <script>
+    import {afterUpdate, beforeUpdate} from "svelte";
     import Button from "./Button.svelte";
     import LoadingPage from "../pages/Loading.svelte";
-    import {beforeUpdate, afterUpdate} from "svelte";
     export let value;
     export let element;
     export let autoscroll;

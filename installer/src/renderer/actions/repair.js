@@ -1,18 +1,17 @@
+import { log, lognewline } from "./utils/log";
+import doSanityCheck from "./utils/sanity";
+import exists from "./utils/exists";
+import fail from "./utils/fail";
+import { promises as fs } from "fs";
+import install from "./install.js";
+import kill from "./utils/kill";
+import originalFs from "original-fs";
+import path from "path";
 import { progress } from "../stores/installation";
 import { remote } from "electron";
-import { promises as fs } from "fs";
-import originalFs from "original-fs";
-import rimraf from "rimraf";
-import path from "path";
-import install from "./install.js";
-import { log, lognewline } from "./utils/log";
-import succeed from "./utils/succeed";
-import fail from "./utils/fail";
-import exists from "./utils/exists";
-import kill from "./utils/kill";
 import reset from "./utils/reset";
 import { showKillNotice } from "./utils/notices";
-import doSanityCheck from "./utils/sanity";
+import succeed from "./utils/succeed";
 
 const KILL_DISCORD_PROGRESS = 20;
 const DELETE_SHIM_PROGRESS = 60;

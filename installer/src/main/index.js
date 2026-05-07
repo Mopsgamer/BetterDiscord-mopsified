@@ -1,6 +1,6 @@
-import { app, BrowserWindow, shell } from "electron";
-import path from "path";
+import { BrowserWindow, app, shell } from "electron";
 import URL from "url";
+import path from "path";
 import updateInstaller from "./update_installer";
 
 const isDevelopment = process.env.NODE_ENV !== "production";

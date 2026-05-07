@@ -1,5 +1,5 @@
-import path from "path";
 import * as url from "url";
+import path from "path";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
