@@ -7,10 +7,9 @@
 	"scripts": {
 		"lint": "bun oxlint --fix",
 		"fmt": "bun oxfmt",
-		"dist": "bun build --target node --production index.ts --outfile=./dist/index.js -e '@betterdiscord.com/*'"
+		"dist": "bun build --target browser --production index.ts --outfile=./dist/index.js -e '@betterdiscord.com/*'"
 	},
 	"dependencies": {
-		"@betterdiscord.com/find": "workspace:*",
-		"@betterdiscord.com/themes": "workspace:*"
+		"@betterdiscord.com/core": "workspace:*"
 	}
 }

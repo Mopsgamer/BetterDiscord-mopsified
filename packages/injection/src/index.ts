@@ -253,13 +253,11 @@ async function patchAsar(inst: DiscordInstallation): Promise<void> {
 		const { app } = require("electron");
 
 		const bdPath = join(app.getPath("userData"), "betterdiscord");
-		const extensionPath = join(bdPath, "extension", "index.js");
+		const extensionPath = join(bdPath, "extension");
 
 		if (existsSync(extensionPath)) {
-			const initialize = require(extensionPath).default;
-			if (typeof initialize === "function") {
-				await initialize();
-			}
+			const { session } = require("electron");
+			await session.defaultSession.loadExtension(extensionPath, { allowFileAccess: true });
 		}
 	} catch (err) {
 		console.error("BetterDiscord Loader Error:", err);
