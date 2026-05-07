@@ -100,17 +100,6 @@
   "catalog": {
     "react": "19.x",
   },
-  "catalogs": {
-    "installer": {
-      "electrobun": "1.x",
-      "find-process": "https://github.com/BetterDiscord/find-process",
-      "focus-visible": "^5.2.0",
-      "phin": "^3.7.0",
-      "rimraf": "^3.0.2",
-      "semver": "^7.3.8",
-      "tree-kill": "^1.2.2",
-    },
-  },
   "packages": {
     "7zip": ["7zip@0.0.6", "", { "bin": { "7z": "7zip-lite/7z.exe" } }, "sha512-ns8vKbKhIQm338AeWo/YdDSWil3pldwCMoyR2npoM2qDAzF8Vuko8BtDxpNt/wE15SXOh5K5WbjSLR4kTOAHLA=="],
 

@@ -1,25 +1,25 @@
 {
-	"name": "@betterdiscord.com/find",
-	"version": "1.0.0",
-	"private": false,
-	"type": "module",
-	"main": "./dist/index.js",
-	"exports": {
-		".": {
-			"import": "./dist/index.js",
-			"types": "./dist/index.d.ts"
-		},
-		"./filters": {
-			"import": "./dist/filters.js",
-			"types": "./dist/filters.d.ts"
-		}
-	},
-	"scripts": {
-		"lint": "bun oxlint --fix",
-		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun index && bun filters",
-		"index": "bun build --production src/index.ts --outfile=./dist/index.js",
-		"filters": "bun build --production src/filters.ts --outfile=./dist/filters.js",
-		"dts": "bun tsgo -p ."
-	}
+    "name": "@betterdiscord.com/find",
+    "version": "1.0.0",
+    "private": false,
+    "type": "module",
+    "main": "./dist/index.js",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./filters": {
+            "import": "./dist/filters.js",
+            "types": "./dist/filters.d.ts"
+        }
+    },
+    "scripts": {
+        "lint": "bun oxlint --fix",
+        "fmt": "bun oxfmt",
+        "dist": "bun dts && bun publint --pack bun && bun index && bun filters",
+        "index": "bun build --production src/index.ts --outfile=./dist/index.js",
+        "filters": "bun build --production src/filters.ts --outfile=./dist/filters.js",
+        "dts": "bun tsgo -p ."
+    }
 }

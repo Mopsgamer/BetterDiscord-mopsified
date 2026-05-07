@@ -1,7 +1,8 @@
 {
     "exclude": [
         "reference_inject.ts",
-        "./scripts"
+        "./scripts",
+        "./dist"
     ],
     // Visit https://aka.ms/tsconfig to read more about this file
     "compilerOptions": {
@@ -24,7 +25,7 @@
         "sourceMap": true,
         "declaration": true,
         "emitDeclarationOnly": true,
-        "noEmit": true,
+        "noEmit": false,
         "declarationMap": false,
         // Stricter Typechecking Options
         "noUncheckedIndexedAccess": true,

@@ -20,7 +20,7 @@
         "sourceMap": true,
         "declaration": true,
         "emitDeclarationOnly": true,
-        "noEmit": true,
+        "noEmit": false,
         "declarationMap": false,
         // Stricter Typechecking Options
         "noUncheckedIndexedAccess": true,
