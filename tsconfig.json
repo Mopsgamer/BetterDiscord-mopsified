@@ -1,0 +1,29 @@
+{
+    "files": [],
+    "references": [
+        {
+            "path": "./extension"
+        },
+        {
+            "path": "./packages/cli"
+        },
+        {
+            "path": "./packages/components"
+        },
+        {
+            "path": "./packages/core"
+        },
+        {
+            "path": "./packages/find"
+        },
+        {
+            "path": "./packages/found"
+        },
+        {
+            "path": "./packages/injection"
+        },
+        {
+            "path": "./packages/themes"
+        },
+    ]
+}

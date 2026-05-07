@@ -1,17 +1,17 @@
 {
-    "name": "@betterdiscord.com/cli",
-    "version": "1.0.0",
-    "private": true,
-    "bin": "./dist/main.js",
-    "type": "module",
-    "main": "./dist/main.js",
-    "scripts": {
-        "lint": "bun oxlint --fix",
-        "fmt": "bun oxfmt",
-        "dist": "bun dts && bun publint --pack bun && bun build --target node --production src/main.ts --outfile=./dist/main.js -e '@betterdiscord.com/*'",
-        "dts": "bun tsgo -p ."
-    },
-    "dependencies": {
-        "@betterdiscord.com/injection": "workspace:*"
-    }
+	"name": "@betterdiscord.com/cli",
+	"version": "1.0.0",
+	"private": true,
+	"bin": "./dist/main.js",
+	"type": "module",
+	"main": "./dist/main.js",
+	"scripts": {
+		"lint": "bun oxlint --fix",
+		"fmt": "bun oxfmt",
+		"dist": "bun dts && bun publint --pack bun && bun build --target node --production src/main.ts --outfile=./dist/main.js -e '@betterdiscord.com/*'",
+		"dts": "bun tsgo -p ."
+	},
+	"dependencies": {
+		"@betterdiscord.com/injection": "workspace:*"
+	}
 }

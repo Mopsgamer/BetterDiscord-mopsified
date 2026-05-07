@@ -1,18 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
-export function getDiscordAsarPath(resourcesPath: string): string {
-	return path.join(resourcesPath, "app.asar");
-}
-
-export function getCoreSource(): string {
-	const coreDistPath = path.join(import.meta.dirname, "..", "dist", "renderer.js");
-	if (fs.existsSync(coreDistPath)) {
-		return fs.readFileSync(coreDistPath, "utf8");
-	}
-	return "";
-}
-
 export function getLoaderScript(coreSource: string): string {
 	return `
 (async () => {

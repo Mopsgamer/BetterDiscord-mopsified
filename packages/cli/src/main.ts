@@ -1,3 +1,4 @@
+#!/usr/bin/env node.
 import { getInstallations, inject, uninject } from "@betterdiscord.com/injection";
 import { styleText as c } from "node:util";
 

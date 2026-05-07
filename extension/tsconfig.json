@@ -12,10 +12,9 @@
             "node",
             "bun"
         ],
-        // For nodejs:
-        // "lib": ["esnext"],
-        // "types": ["node"],
-        // and npm install -D @types/node
+        "lib": [
+            "esnext"
+        ],
         // Other Outputs
         "sourceMap": false,
         "declaration": false,

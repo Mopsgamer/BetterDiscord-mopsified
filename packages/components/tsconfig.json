@@ -1,6 +1,11 @@
 {
+    "exclude": [
+        "./test",
+        "./dist"
+    ],
     // Visit https://aka.ms/tsconfig to read more about this file
     "compilerOptions": {
+        "composite": true,
         // File Layout
         "rootDir": "./src",
         "outDir": "./dist",
@@ -12,10 +17,9 @@
             "node",
             "bun"
         ],
-        // For nodejs:
-        // "lib": ["esnext"],
-        // "types": ["node"],
-        // and npm install -D @types/node
+        "lib": [
+            "esnext"
+        ],
         // Other Outputs
         "sourceMap": true,
         "declaration": true,

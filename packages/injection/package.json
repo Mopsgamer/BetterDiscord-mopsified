@@ -7,10 +7,7 @@
     "types": "./dist/index.d.ts",
     "scripts": {
         "get": "bun scripts/preload.ts",
-        "test:stable": "bun test ../../tests/injection.test.ts -- --channel stable",
-        "test:canary": "bun test ../../tests/injection.test.ts -- --channel canary",
-        "test:ptb": "bun test ../../tests/injection.test.ts -- --channel ptb",
-        "test:development": "bun test ../../tests/injection.test.ts -- --channel development",
+        "test": "bun test ../../tests/injection.test.ts",
         "lint": "bun oxlint --fix",
         "fmt": "bun oxfmt",
         "dist": "bun dts && bun publint --pack bun && bun build --target node --production src/index.ts --outfile=./dist/index.js -e '@electron/asar'",
