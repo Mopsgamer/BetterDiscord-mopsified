@@ -1,13 +1,14 @@
 {
-	"name": "@betterdiscord.com/themes",
-	"version": "1.0.0",
-	"private": true,
-	"type": "module",
-	"main": "./dist/index.js",
-	"scripts": {
-		"lint": "bun oxlint --fix",
-		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun build --production src/index.ts --outdir ./dist --outfile=./dist/index.js",
-		"dts": "bun tsgo -p ."
-	}
+    "name": "@betterdiscord.com/themes",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "lint": "bun oxlint --fix",
+        "fmt": "bun oxfmt",
+        "dist": "bun dts && bun build --production src/index.ts --outdir ./dist --outfile=./dist/index.js",
+        "dts": "bun tsgo -p ."
+    }
 }
