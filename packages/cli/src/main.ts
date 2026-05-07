@@ -24,7 +24,7 @@ async function main() {
 		return;
 	}
 
-	const installations = getInstallations(options);
+	const installations = await getInstallations(options);
 
 	if (command === "list") {
 		if (args.includes("--json")) {
