@@ -1,10 +1,5 @@
 {
-	"exclude": ["reference_inject.ts", "./scripts", "./test", "./dist"],
-	"references": [
-		{
-			"path": "./test"
-		}
-	],
+	"exclude": ["reference_inject.ts", "./scripts", "./tests", "./dist"],
 	// Visit https://aka.ms/tsconfig to read more about this file
 	"compilerOptions": {
 		"composite": true,

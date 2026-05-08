@@ -89,6 +89,7 @@
       "name": "@betterdiscord.com/injection",
       "version": "1.0.0",
       "dependencies": {
+        "@betterdiscord.com/core": "workspace:*",
         "@electron/asar": "^3.2.0",
       },
     },

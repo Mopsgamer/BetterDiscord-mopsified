@@ -5,9 +5,9 @@
 	"type": "module",
 	"main": "./dist/index.js",
 	"scripts": {
-		"lint": "bun oxlint --fix",
+		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun publint --pack bun && bun build --target node --production src/index.ts --outfile=./dist/index.js && bun build --target browser --production src/renderer.ts --outfile=./dist/renderer.js",
+		"dist": "bun dts && bun build --target node --production src/index.ts --outfile=./dist/index.js && bun build --target browser --production src/renderer.ts --outfile=./dist/renderer.js",
 		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {

@@ -1,47 +1,8 @@
 import * as themes from "@betterdiscord.com/themes";
-import { find, findNow } from "@betterdiscord.com/find";
-
-export class Mutex {
-	private locked = false;
-	private queue: (() => void)[] = [];
-
-	async lock(): Promise<void> {
-		if (this.locked) {
-			await new Promise<void>((resolve) => this.queue.push(resolve));
-		}
-		this.locked = true;
-	}
-
-	unlock(): void {
-		this.locked = false;
-		const next = this.queue.shift();
-		if (next) next();
-	}
-}
-
-export class Patcher {
-	private mutex = new Mutex();
-
-	findNow(filters: ((m: any) => boolean)[]) {
-		return findNow(filters);
-	}
-
-	async find(filters: ((m: any) => boolean)[]) {
-		await this.mutex.lock();
-		try {
-			return await find(filters);
-		} finally {
-			this.mutex.unlock();
-		}
-	}
-}
-
-export const patcher = new Patcher();
 
 export const bdModules = new Map<string, any>();
-bdModules.set("patcher", patcher);
 bdModules.set("themes", themes);
-bdModules.set("api", { patcher, themes });
+bdModules.set("api", { themes });
 
 export async function handleBdProtocol(url: string) {
 	const path = url.replace("bd:", "");

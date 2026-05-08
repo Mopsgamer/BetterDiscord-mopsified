@@ -3,17 +3,23 @@
 	"version": "1.0.0",
 	"private": false,
 	"type": "module",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
 	"scripts": {
-		"get": "bun scripts/preload.ts",
-		"test": "bun test ../../tests/injection.test.ts",
-		"lint": "bun oxlint --fix",
+		"cli": "bun ../../packages/cli/dist/main.js",
+		"get": "bun scripts/get.ts",
+		"test": "bun test",
+		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun publint --pack bun && bun build --target node --production src/index.ts --outfile=./dist/index.js -e '@electron/asar'",
+		"dist": "bun dts && bun build --target node --production src/index.ts --outfile=./dist/index.js -e '@electron/asar' -e '@betterdiscord.com/*'",
 		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {
+		"@betterdiscord.com/core": "workspace:*",
 		"@electron/asar": "^3.2.0"
 	}
 }

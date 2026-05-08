@@ -12,10 +12,10 @@
 		"dev": "bun compiler dev",
 		"compiler": "node ../node_modules/electron-webpack/out/cli.js",
 		"builder": "node ../node_modules/electron-builder/out/cli/cli.js",
-		"lint": "bun oxlint --fix",
+		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"stats": "webpack --json --profile --config webpack.renderer.js > dist/stats.json",
 		"analyze": "webpack-bundle-analyzer dist/stats.json",
-		"dist": "bun compiler && bun builder -p never"
+		"build": "bun compiler && bun builder -p never"
 	},
 	"dependencies": {
 		"source-map-support": "^0.5.16"

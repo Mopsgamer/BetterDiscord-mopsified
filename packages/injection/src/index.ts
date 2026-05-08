@@ -1,14 +1,15 @@
 import * as asar from "@electron/asar";
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import { getLoaderScript } from "@betterdiscord.com/core";
 import path from "node:path";
 import { styleText } from "node:util";
+import { tmpdir } from "node:os";
 
 export type DiscordRelease = "stable" | "canary" | "ptb" | "development";
 
 export interface InjectionOptions {
 	release?: boolean; // Use production asar
-	simple?: boolean; // Skip asar patching
 	flatpak?: boolean;
 	opt?: boolean;
 }
@@ -16,8 +17,11 @@ export interface InjectionOptions {
 export interface DiscordInstallation {
 	channel: DiscordRelease;
 	version: string;
-	resourcesPath: string;
-	corePath: string;
+	discordDir: string;
+	discordBaseDir: string;
+	asarPath: string;
+	asarBakPath: string;
+	exePath: string;
 	isInjected: boolean;
 }
 
@@ -44,14 +48,11 @@ export function getCoreSource(): string {
 	return "";
 }
 
-export function getDiscordAsarPath(inst: DiscordInstallation): string {
-	return path.join(inst.resourcesPath, "app.asar");
-}
+export const channels: DiscordRelease[] = ["stable", "canary", "ptb", "development"];
 
 export async function getInstallations(
 	options: InjectionOptions = {},
 ): Promise<DiscordInstallation[]> {
-	const channels: DiscordRelease[] = ["stable", "canary", "ptb", "development"];
 	const installations: DiscordInstallation[] = [];
 
 	for (const channel of channels) {
@@ -67,10 +68,7 @@ export async function getInstallations(
 			discordBaseDir = discordDir;
 		} else if (process.env.WSL_DISTRO_NAME) {
 			try {
-				const { $ } = await import("bun");
-				const appdata = (
-					await $`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()
-				).trim();
+				const appdata = execSync(`wslpath "${process.env.LOCALAPPDATA!}"`).toString("utf8").trim();
 				discordDir = path.join(appdata, nameNoSpace);
 				discordBaseDir = discordDir;
 			} catch {
@@ -113,11 +111,12 @@ export async function getInstallations(
 			}
 		}
 
-		if (!fs.existsSync(discordDir) && !fs.existsSync(discordBaseDir)) continue;
+		if (!fs.existsSync(discordDir) && !fs.existsSync(discordBaseDir)) {
+			continue;
+		}
 
 		const searchDirs = [discordDir, discordBaseDir].filter((d) => d && fs.existsSync(d));
 		let appDirs: string[] = [];
-		let selectedBase = "";
 
 		for (const dir of searchDirs) {
 			const found = fs.readdirSync(dir).filter((f) => {
@@ -126,20 +125,32 @@ export async function getInstallations(
 			});
 			if (found.length > 0) {
 				appDirs = found.sort();
-				selectedBase = dir;
 				break;
 			}
 		}
 
+		const asarBase = "app.asar";
+		const asarBakBase = "app.asar.bak";
+
 		if (appDirs.length === 0) {
 			if (process.platform === "darwin" && fs.existsSync(resourcesPath)) {
-				installations.push(createInstallation(channel, "unknown", resourcesPath, ""));
+				const asarPath = path.join(resourcesPath, asarBase);
+				const asarBakPath = path.join(resourcesPath, asarBakBase);
+				installations.push({
+					channel,
+					version: "",
+					discordDir,
+					discordBaseDir,
+					asarPath,
+					asarBakPath,
+					isInjected: await checkIsInjected(asarBakPath),
+					exePath: path.join(discordDir, "Discord"),
+				});
 			}
 			continue;
 		}
 
 		const latestVersion = appDirs[appDirs.length - 1]!;
-		const versionDir = path.join(selectedBase, latestVersion);
 
 		if (!resourcesPath) {
 			// On Linux, app.asar is usually in the base installation directory,
@@ -151,83 +162,42 @@ export async function getInstallations(
 			}
 		}
 
-		const corePath = getCorePath(versionDir);
-		installations.push(createInstallation(channel, latestVersion, resourcesPath, corePath));
+		installations.push({
+			channel,
+			version: latestVersion,
+			discordDir,
+			discordBaseDir,
+			asarPath: path.join(resourcesPath, asarBase),
+			asarBakPath: path.join(resourcesPath, asarBakBase),
+			isInjected: await checkIsInjected(path.join(resourcesPath, asarBakBase)),
+			exePath: path.join(
+				discordDir,
+				latestVersion,
+				"Discord" + (process.platform === "win32" ? ".exe" : ""),
+			),
+		});
 	}
 
 	return installations;
 }
 
-function getCorePath(versionDir: string): string {
-	const modulesPath = path.join(versionDir, "modules");
-	if (!fs.existsSync(modulesPath)) return "";
-
-	try {
-		const entries = fs.readdirSync(modulesPath);
-		const coreDir = entries.find((d) => d.startsWith("discord_desktop_core-"));
-		if (coreDir) return path.join(modulesPath, coreDir, "discord_desktop_core");
-	} catch {
-		return "";
-	}
-	return "";
+async function checkIsInjected(asarBakPath: string): Promise<boolean> {
+	return fs.existsSync(asarBakPath);
 }
 
-function createInstallation(
-	channel: DiscordRelease,
-	version: string,
-	resourcesPath: string,
-	corePath: string,
-): DiscordInstallation {
-	const inst = {
-		channel,
-		version,
-		resourcesPath,
-		corePath,
-		isInjected: false,
-	};
-	inst.isInjected = checkIsInjected(inst);
-	return inst;
-}
-
-function checkIsInjected(inst: DiscordInstallation): boolean {
-	const asarPath = getDiscordAsarPath(inst);
-	if (fs.existsSync(asarPath + ".bd.bak")) return true;
-
-	if (inst.corePath) {
-		const indexJs = path.join(inst.corePath, "index.js");
-		if (fs.existsSync(indexJs)) {
-			try {
-				const content = fs.readFileSync(indexJs, "utf8");
-				if (content.includes("betterdiscord")) return true;
-			} catch {}
-		}
-	}
-
-	return false;
-}
-
-export async function inject(
-	inst: DiscordInstallation,
-	options: InjectionOptions = {},
-): Promise<void> {
+export async function inject(inst: DiscordInstallation): Promise<void> {
 	console.log(c("bold", `Injecting into ${getDiscordBaseName(inst.channel)} (${inst.version})`));
-
-	if (!options.simple) {
-		await patchAsar(inst);
-	}
-
+	await patchAsar(inst);
 	console.log(c("green", "Injection successful. Please restart Discord."));
 }
 
 async function patchAsar(inst: DiscordInstallation): Promise<void> {
-	const asarPath = getDiscordAsarPath(inst);
-	const backupPath = asarPath + ".bd.bak";
-	const unpackPath = path.join(inst.resourcesPath, "app-unpacked-bd");
+	const unpackPath = path.join(tmpdir(), "app-unpacked-bd");
 
-	if (!fs.existsSync(asarPath)) return;
+	if (!fs.existsSync(inst.asarPath)) return;
 
 	try {
-		const content = fs.readFileSync(asarPath, "utf8");
+		const content = fs.readFileSync(inst.asarPath, "utf8");
 		if (content.includes('scheme: "bd"')) {
 			console.log(c("blue", "app.asar is already patched."));
 			return;
@@ -236,13 +206,17 @@ async function patchAsar(inst: DiscordInstallation): Promise<void> {
 
 	console.log(c("cyan", "Patching app.asar..."));
 
-	if (!fs.existsSync(backupPath)) {
-		fs.copyFileSync(asarPath, backupPath);
+	if (inst.asarBakPath && !fs.existsSync(inst.asarBakPath)) {
+		fs.copyFileSync(inst.asarPath, inst.asarBakPath);
 		console.log(c("green", "Created backup of app.asar"));
 	}
 
-	if (fs.existsSync(unpackPath)) fs.rmSync(unpackPath, { recursive: true, force: true });
-	asar.extractAll(asarPath, unpackPath);
+	asar.extractAll(inst.asarPath, unpackPath);
+	using _rmUnpackPath = {
+		[Symbol.dispose](): void {
+			fs.rm(unpackPath, { recursive: true, force: true }, () => {});
+		},
+	};
 
 	let targetFile = path.join(unpackPath, "bundle.js");
 	const pkgPath = path.join(unpackPath, "package.json");
@@ -276,20 +250,16 @@ async function patchAsar(inst: DiscordInstallation): Promise<void> {
 		fs.writeFileSync(targetFile, fileContent);
 	}
 
-	await asar.createPackage(unpackPath, asarPath);
-	fs.rmSync(unpackPath, { recursive: true, force: true });
+	await asar.createPackage(unpackPath, inst.asarPath);
 	console.log(c("green", "Successfully patched app.asar"));
 }
 
 export async function uninject(inst: DiscordInstallation): Promise<void> {
 	console.log(c("bold", `Uninjecting from ${getDiscordBaseName(inst.channel)}`));
 
-	const asarPath = getDiscordAsarPath(inst);
-	const backupPath = asarPath + ".bd.bak";
-
-	if (fs.existsSync(backupPath)) {
-		fs.copyFileSync(backupPath, asarPath);
-		fs.unlinkSync(backupPath);
+	if (inst.asarBakPath && fs.existsSync(inst.asarBakPath)) {
+		fs.copyFileSync(inst.asarBakPath, inst.asarPath);
+		fs.unlinkSync(inst.asarBakPath);
 		console.log(c("green", "Restored app.asar from backup"));
 	}
 

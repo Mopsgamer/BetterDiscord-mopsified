@@ -40,21 +40,22 @@ async function main() {
 		for (const inst of installations) {
 			const status = inst.isInjected ? c("green", "Injected") : c("gray", "Not Injected");
 			console.log(`- ${c("cyan", inst.channel)} (${inst.version}) [${status}]`);
+			console.log(`  ${c("cyan", inst.exePath)}`);
 		}
 		return;
 	}
 
-	const target = installations.find((i) => i.channel === channel);
-	if (!target) {
+	const inst = installations.find((i: any) => i.channel === channel);
+	if (!inst) {
 		console.error(c("red", `Error: Could not find Discord ${channel}`));
 		process.exit(1);
 	}
 
 	try {
 		if (command === "inject") {
-			await inject(target, options);
+			await inject(inst);
 		} else {
-			await uninject(target);
+			await uninject(inst);
 		}
 	} catch (err: any) {
 		console.error(c("red", `\nError: ${err.message}`));

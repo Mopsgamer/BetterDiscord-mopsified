@@ -5,10 +5,10 @@
 	"type": "module",
 	"main": "./dist/index.js",
 	"scripts": {
-		"lint": "bun oxlint --fix",
+		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun ts && bun build --target browser --production index.ts --outfile=./dist/index.js --external 'bd:*'",
-		"ts": "bun tsgo -p ."
+		"dist": "bun dts && bun build --target browser --production index.ts --outfile=./dist/index.js --external 'bd:*'",
+		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {
 		"@betterdiscord.com/core": "workspace:*"

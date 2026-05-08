@@ -6,9 +6,9 @@
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"scripts": {
-		"lint": "bun oxlint --fix",
+		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun publint --pack bun && bun build --production src/index.ts --outdir ./dist --outfile=./dist/index.js",
+		"dist": "bun dts && bun build --production src/index.ts --outdir ./dist --outfile=./dist/index.js",
 		"dts": "bun tsgo -p ."
 	}
 }

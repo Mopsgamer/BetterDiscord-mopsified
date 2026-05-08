@@ -6,9 +6,9 @@
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"scripts": {
-		"lint": "bun oxlint --fix",
+		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun publint --pack bun && bun build --production src/index.ts --outfile=./dist/index.js -e '@betterdiscord.com/*'",
+		"dist": "bun dts && bun build --production src/index.ts --outfile=./dist/index.js -e '@betterdiscord.com/*'",
 		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {
