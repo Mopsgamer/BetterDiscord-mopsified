@@ -7,7 +7,7 @@ import {
 	name,
 	uninject,
 } from "@betterdiscord.com/injection";
-import { styleText as c } from "node:util";
+import { type InspectColor, styleText as c } from "node:util";
 
 async function main() {
 	const args = process.argv.slice(2);
@@ -36,16 +36,25 @@ async function main() {
 			console.log(JSON.stringify(installations));
 			return;
 		}
-		console.log(c("bold", "Available Discord Installations:"));
+		console.log(c("bold", "Available Discord Installations:\n"));
+		const table: Record<"i" | "c" | "v" | "s", any>[] = [];
 		for (const inst of installations) {
-			const status = !inst.version
-				? c("gray", "Not available")
-				: (await checkIsInjected(inst))
-					? c("green", "Injected")
-					: c("red", "Not Injected");
-			console.log(`- ${c("cyan", inst.channel)} (${inst.version}) [${status}]`);
-			console.log(`  ${c("cyan", inst.exePath)}`);
+			const isInjected = !!inst.version && (await checkIsInjected(inst));
+			const color: InspectColor | readonly InspectColor[] = !inst.version
+				? ["gray"]
+				: isInjected
+					? ["green", "bold"]
+					: ["red", "bold"];
+			const status: string = !inst.version ? "not found" : isInjected ? "injected" : "not injected";
+			const icon: string = !inst.version ? "⁄" : isInjected ? "●" : "▲";
+			table.push({
+				i: c(color, icon),
+				c: c(["cyan", "bold"], inst.channel),
+				v: inst.version,
+				s: c(color, status),
+			});
 		}
+		console.log(generateTable(table));
 		return;
 	}
 
@@ -60,6 +69,33 @@ async function main() {
 	} else {
 		await uninject(inst);
 	}
+}
+
+function generateTable(data: any[]): string {
+	const keys = ["i", "c", "v", "s"];
+
+	const vLen = (str: string) => str.replace(/\u001b\[[0-9;]*m/g, "").length;
+
+	const widths = keys.map((key) => {
+		const columnValues = data.map((row) => vLen(String(row[key] || "")));
+		return Math.max(...columnValues);
+	});
+
+	let output = "";
+
+	for (const row of data) {
+		output +=
+			keys
+				.map((key, i) => {
+					const val = String(row[key] || "");
+					const visible = vLen(val);
+					// Pad with spaces based on visible length vs column width
+					return val + " ".repeat(widths[i]! - visible);
+				})
+				.join("  ") + "\n";
+	}
+
+	return output;
 }
 
 main();

@@ -14,6 +14,7 @@ export interface DiscordInstallation {
 	discordBaseDir: string;
 	asarPath: string;
 	asarBakPath: string;
+	updaterExePath: string;
 	exePath: string;
 }
 
@@ -98,7 +99,8 @@ export function newWindowsInstallation(
 		discordBaseDir: baseDir,
 		asarPath: dir + "\\resources\\app.asar",
 		asarBakPath: dir + "\\resources\\app.asar.bak",
-		exePath: baseDir + "\\" + nameSolid[channel] + ".exe",
+		exePath: dir + "\\" + nameSolid[channel] + ".exe",
+		updaterExePath: baseDir + "\\Updater.exe",
 	};
 }
 
@@ -129,7 +131,8 @@ export function newWSLInstallation(letter: string, channel: DiscordChannel): Dis
 		discordBaseDir: baseDir,
 		asarPath: dir + "/resources/app.asar",
 		asarBakPath: dir + "/resources/app.asar.bak",
-		exePath: baseDir + "/" + nameSolid[channel] + ".exe",
+		exePath: dir + "/" + nameSolid[channel] + ".exe",
+		updaterExePath: baseDir + "/Updater.exe",
 	};
 }
 export function getWSLInstallations(): DiscordInstallation[] {
@@ -157,6 +160,7 @@ export function newDiscordInstallation(
 		asarPath: dir + "/resources/app.asar",
 		asarBakPath: dir + "/resources/app.asar.bak",
 		exePath: dir + "/" + nameSolid[channel],
+		updaterExePath: baseDir + "/Updater.exe",
 	};
 }
 export function newDarwinInstallation(channel: DiscordChannel): DiscordInstallation {
