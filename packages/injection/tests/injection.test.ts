@@ -1,7 +1,7 @@
 import {
 	type DiscordInstallation,
 	type DiscordRelease,
-	channels,
+	getInstallations,
 	inject,
 	uninject,
 } from "../src/index.js";
@@ -37,14 +37,14 @@ function testChannel(channel: DiscordRelease, distributionDir: string) {
 		await asar.createPackage(distributionDir, asarPath);
 
 		mockInst = <DiscordInstallation>{
-			channel: channel as DiscordRelease,
+			meta: new Set(),
+			channel: channel,
 			version: "test",
 			asarPath,
 			asarBakPath: asarPath + ".bak",
 			discordBaseDir: "",
 			discordDir: "",
 			exePath: "",
-			isInjected: false,
 		};
 
 		using _ = {
@@ -77,7 +77,7 @@ function testChannel(channel: DiscordRelease, distributionDir: string) {
 }
 
 describe("Injection", () => {
-	for (const channel of channels) {
+	for (const channel of getInstallations("injectable").map(({ channel }) => channel)) {
 		const distributionDir = path.join(
 			import.meta.dirname,
 			"..",

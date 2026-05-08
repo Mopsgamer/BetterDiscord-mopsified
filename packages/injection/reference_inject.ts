@@ -7,6 +7,7 @@ import {styleText as c} from "node:util";
 import doSanityChecks from "./helpers/validate";
 import buildPackage from "./helpers/package";
 import copyFiles from "./helpers/copy";
+import { execSync } from "node:child_process";
 
 const args = process.argv.slice(2); // Slice to ignore 'bun' and 'inject.ts'
 if (args.includes("-h") || args.includes("--help")) {
@@ -115,7 +116,7 @@ async function getDiscordPaths(releaseName: string): Promise<Paths> {
         syncBaseDirAndDir = true;
     }
     else if (process.env.WSL_DISTRO_NAME) {
-        const appdata = (await bun.$`wslpath "$(cmd.exe /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r')"`.text()).trim();
+        const appdata = execSync(`wslpath "${process.env.LOCALAPPDATA!}"`).toString("utf8").trim();
         paths.discordDir = path.join(appdata, releaseName.replace(/ /g, ""));
         syncBaseDirAndDir = true;
     }

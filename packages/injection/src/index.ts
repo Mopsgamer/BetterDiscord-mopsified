@@ -1,267 +1,424 @@
 import * as asar from "@electron/asar";
+import { Transform, pipeline } from "node:stream";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
-import { getLoaderScript } from "@betterdiscord.com/core";
 import path from "node:path";
-import { styleText } from "node:util";
-import { tmpdir } from "node:os";
 
-export type DiscordRelease = "stable" | "canary" | "ptb" | "development";
-
-export interface InjectionOptions {
-	release?: boolean; // Use production asar
-	flatpak?: boolean;
-	opt?: boolean;
-}
+export type DiscordChannel = "stable" | "canary" | "ptb" | "development";
 
 export interface DiscordInstallation {
-	channel: DiscordRelease;
+	meta: Set<"flatpak" | "aur" | "deb">;
+	channel: DiscordChannel;
 	version: string;
 	discordDir: string;
 	discordBaseDir: string;
 	asarPath: string;
 	asarBakPath: string;
 	exePath: string;
-	isInjected: boolean;
 }
 
-const c = (color: any, text: string) => styleText(color, text);
+export const name = {
+	stable: "Discord",
+	canary: "Discord Canary",
+	ptb: "Discord PTB",
+	development: "Discord Development",
+} as const;
+export const nameSolid = {
+	stable: "Discord",
+	canary: "DiscordCanary",
+	ptb: "DiscordPTB",
+	development: "DiscordDevelopment",
+} as const;
+export const nameLowerSolid = {
+	stable: "discord",
+	canary: "discordcanary",
+	ptb: "discordptb",
+	development: "discorddevelopment",
+} as const;
+export const nameLowerSnake = {
+	stable: "discord",
+	canary: "discord-canary",
+	ptb: "discord-ptb",
+	development: "discord-development",
+} as const;
 
-function getDiscordBaseName(channel: DiscordRelease): string {
-	switch (channel) {
-		case "canary":
-			return "Discord Canary";
-		case "ptb":
-			return "Discord PTB";
-		case "development":
-			return "Discord Development";
-		default:
-			return "Discord";
+export const channels: DiscordChannel[] = ["stable", "canary", "ptb", "development"];
+
+export type InstalltionsFilter = "all" | "platform" | "injectable" | "injected";
+
+function filterInstalled(
+	insts: DiscordInstallation[],
+	filter: InstalltionsFilter,
+): DiscordInstallation[] {
+	switch (filter) {
+		case "all":
+			return insts;
+		case "platform":
+			return insts;
+		case "injectable":
+			return insts.filter(checkIsInjectableSync);
+		case "injected":
+			return insts.filter(checkIsInjected);
 	}
 }
 
-export function getCoreSource(): string {
-	const coreDistPath = path.join(import.meta.dirname, "..", "dist", "renderer.js");
-	if (fs.existsSync(coreDistPath)) {
-		return fs.readFileSync(coreDistPath, "utf8");
+export function getInstallations(filter: InstalltionsFilter): DiscordInstallation[] {
+	if (filter === "all") {
+		return [
+			getWindowsInstallations(),
+			getWSLInstallations(),
+			getDarwinInstallations(),
+			Object.values(getLinuxInstallations()).flat(1),
+		].flat(1);
 	}
-	return "";
+	if (process.platform === "win32") {
+		return filterInstalled(getWindowsInstallations(), filter);
+	}
+	if (process.env.WSL_DISTRO_NAME) {
+		return filterInstalled(getWSLInstallations(), filter);
+	}
+	if (process.platform === "darwin") {
+		return filterInstalled(getDarwinInstallations(), filter);
+	}
+	return filterInstalled(getLinuxInstallations(), filter);
 }
 
-export const channels: DiscordRelease[] = ["stable", "canary", "ptb", "development"];
+export function getWindowsLetters(): string[] {
+	const stdout = execSync("wmic logicaldisk get name");
+	return stdout
+		.toString()
+		.split("\r\r\n")
+		.filter((value) => /[A-Za-z]:/.test(value))
+		.map((value) => value.trim());
+}
 
-export async function getInstallations(
-	options: InjectionOptions = {},
-): Promise<DiscordInstallation[]> {
-	const installations: DiscordInstallation[] = [];
+export function newWindowsInstallation(
+	letter: string,
+	channel: DiscordChannel,
+): DiscordInstallation {
+	const baseDir =
+		letter + "\\Users\\" + process.env.USERNAME! + "\\AppData\\Local\\" + nameSolid[channel];
+	const version = getVersions(baseDir)[0] || "";
+	return {
+		meta: new Set(),
+		channel,
+		version: version,
+		discordDir: baseDir + "\\" + version,
+		discordBaseDir: baseDir,
+		asarPath: baseDir + "\\resources\\app.asar",
+		asarBakPath: baseDir + "\\resources\\app.asar.bak",
+		exePath: baseDir + "\\" + nameSolid[channel] + ".exe",
+	};
+}
 
-	for (const channel of channels) {
-		const baseName = getDiscordBaseName(channel);
-		const nameNoSpace = baseName.replace(/ /g, "");
+export function getWindowsInstallations(): DiscordInstallation[] {
+	const letters = getWindowsLetters();
+	return letters.flatMap((letter) => [
+		newWindowsInstallation(letter, "stable"),
+		newWindowsInstallation(letter, "canary"),
+		newWindowsInstallation(letter, "ptb"),
+		newWindowsInstallation(letter, "development"),
+	]);
+}
 
-		let discordDir = "";
-		let resourcesPath = "";
-		let discordBaseDir = "";
+export function getWSLLetters(): string[] {
+	return fs.readdirSync("/mnt").filter((f) => f !== "wsl" && f !== "wslg");
+}
 
-		if (process.platform === "win32") {
-			discordDir = path.join(process.env.LOCALAPPDATA!, nameNoSpace);
-			discordBaseDir = discordDir;
-		} else if (process.env.WSL_DISTRO_NAME) {
-			try {
-				const appdata = execSync(`wslpath "${process.env.LOCALAPPDATA!}"`).toString("utf8").trim();
-				discordDir = path.join(appdata, nameNoSpace);
-				discordBaseDir = discordDir;
-			} catch {
-				continue;
-			}
-		} else if (process.platform === "darwin") {
-			const configDir = path.join(process.env.HOME!, "Library", "Application Support");
-			discordDir = path.join(configDir, nameNoSpace.toLowerCase());
-			resourcesPath = `/Applications/${baseName}.app/Contents/Resources`;
-		} else {
-			// Linux
-			const nameLowerNoSpace = nameNoSpace.toLowerCase();
-			const nameLowerSnake = nameNoSpace.toLowerCase().replace(/ /g, "-");
-			if (options.flatpak) {
-				discordDir = path.join(
-					process.env.HOME!,
-					".var",
-					"app",
-					"com.discordapp.Discord",
-					"config",
-					nameLowerNoSpace,
-				);
-				discordBaseDir = `/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/${nameLowerSnake}`;
-			} else {
-				const configDir = process.env.XDG_CONFIG_HOME || path.join(process.env.HOME!, ".config");
-				discordDir = path.join(configDir, nameLowerNoSpace);
-				if (options.opt) {
-					discordBaseDir = path.join("/opt", nameLowerNoSpace);
-				} else {
-					const standardPath = `/usr/share/${nameLowerNoSpace}`;
-					const libPath = `/usr/lib64/${nameLowerNoSpace}`;
-					if (fs.existsSync(standardPath)) {
-						discordBaseDir = standardPath;
-					} else if (fs.existsSync(libPath)) {
-						discordBaseDir = libPath;
-					} else {
-						discordBaseDir = discordDir;
-					}
-				}
-			}
-		}
-
-		if (!fs.existsSync(discordDir) && !fs.existsSync(discordBaseDir)) {
-			continue;
-		}
-
-		const searchDirs = [discordDir, discordBaseDir].filter((d) => d && fs.existsSync(d));
-		let appDirs: string[] = [];
-
-		for (const dir of searchDirs) {
-			const found = fs.readdirSync(dir).filter((f) => {
-				const p = path.join(dir, f);
-				return fs.lstatSync(p).isDirectory() && (/^\d+\.\d+\.\d+$/.test(f) || f.startsWith("app-"));
-			});
-			if (found.length > 0) {
-				appDirs = found.sort();
-				break;
-			}
-		}
-
-		const asarBase = "app.asar";
-		const asarBakBase = "app.asar.bak";
-
-		if (appDirs.length === 0) {
-			if (process.platform === "darwin" && fs.existsSync(resourcesPath)) {
-				const asarPath = path.join(resourcesPath, asarBase);
-				const asarBakPath = path.join(resourcesPath, asarBakBase);
-				installations.push({
-					channel,
-					version: "",
-					discordDir,
-					discordBaseDir,
-					asarPath,
-					asarBakPath,
-					isInjected: await checkIsInjected(asarBakPath),
-					exePath: path.join(discordDir, "Discord"),
-				});
-			}
-			continue;
-		}
-
-		const latestVersion = appDirs[appDirs.length - 1]!;
-
-		if (!resourcesPath) {
-			// On Linux, app.asar is usually in the base installation directory,
-			// not the versioned user data directory.
-			resourcesPath = path.join(discordBaseDir, "resources");
-			if (!fs.existsSync(resourcesPath)) {
-				// Fallback to versioned base dir if it exists
-				resourcesPath = path.join(discordBaseDir, latestVersion, "resources");
-			}
-		}
-
-		installations.push({
-			channel,
-			version: latestVersion,
-			discordDir,
-			discordBaseDir,
-			asarPath: path.join(resourcesPath, asarBase),
-			asarBakPath: path.join(resourcesPath, asarBakBase),
-			isInjected: await checkIsInjected(path.join(resourcesPath, asarBakBase)),
-			exePath: path.join(
-				discordDir,
-				latestVersion,
-				"Discord" + (process.platform === "win32" ? ".exe" : ""),
+export function newWSLInstallation(letter: string, channel: DiscordChannel): DiscordInstallation {
+	const baseDir =
+		"/mnt/" + letter + "/Users/" + process.env.USERNAME + "/AppData/Local/" + nameSolid[channel];
+	const version = getVersions(baseDir)[0] || "";
+	return {
+		meta: new Set(),
+		channel,
+		version: version,
+		discordDir: baseDir + "/" + version,
+		discordBaseDir: baseDir,
+		asarPath: baseDir + "/resources/app.asar",
+		asarBakPath: baseDir + "/resources/app.asar.bak",
+		exePath: baseDir + "/" + nameSolid[channel] + ".exe",
+	};
+}
+export function getWSLInstallations(): DiscordInstallation[] {
+	const letters = getWSLLetters();
+	return letters.flatMap((letter) => [
+		newWSLInstallation(letter, "stable"),
+		newWSLInstallation(letter, "canary"),
+		newWSLInstallation(letter, "ptb"),
+		newWSLInstallation(letter, "development"),
+	]);
+}
+export function newDiscordInstallation(
+	channel: DiscordChannel,
+	options: { getBaseDir?: (() => string) | undefined; getDir: () => string },
+): DiscordInstallation {
+	const baseDir = (options.getBaseDir ?? options.getDir)();
+	const version = getVersions(baseDir)[0] || "";
+	const dir = options.getDir() + "/" + version;
+	return {
+		meta: new Set(),
+		channel,
+		version: version,
+		discordDir: dir,
+		discordBaseDir: baseDir,
+		asarPath: baseDir + "/resources/app.asar",
+		asarBakPath: baseDir + "/resources/app.asar.bak",
+		exePath: dir + "/" + nameSolid[channel],
+	};
+}
+export function newDarwinInstallation(channel: DiscordChannel): DiscordInstallation {
+	return newDiscordInstallation(channel, {
+		getDir: () => process.env.HOME! + "/Library/Application Support/" + nameLowerSolid[channel],
+		getBaseDir: () => "applications/" + name[channel] + ".app/contents",
+	});
+}
+export function getDarwinInstallations(): DiscordInstallation[] {
+	return [
+		newDarwinInstallation("stable"),
+		newDarwinInstallation("canary"),
+		newDarwinInstallation("ptb"),
+		newDarwinInstallation("development"),
+	];
+}
+export function newLinuxFlatpakInstallation(channel: DiscordChannel): DiscordInstallation {
+	const installation = newDiscordInstallation(channel, {
+		getDir: () =>
+			process.env.HOME! + "/.var/app/com.discordapp.Discord/config/" + nameLowerSolid.stable,
+		getBaseDir: () =>
+			"/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/" + nameLowerSnake.stable,
+	});
+	installation.meta.add("flatpak");
+	return installation;
+}
+export function getLinuxFlatpakInstallations(): DiscordInstallation[] {
+	return [newLinuxFlatpakInstallation("stable")];
+}
+function newLinuxInstallation(channel: DiscordChannel, isAurElseDeb: boolean): DiscordInstallation {
+	const installation = newDiscordInstallation(channel, {
+		getDir: () =>
+			path.join(
+				process.env.XDG_CONFIG_HOME || path.posix.join(process.env.HOME!, ".config"),
+				nameLowerSolid[channel],
 			),
-		});
-	}
-
-	return installations;
+		getBaseDir: isAurElseDeb ? () => path.join("/opt", nameLowerSolid[channel]) : undefined,
+	});
+	installation.meta.add(isAurElseDeb ? "aur" : "deb");
+	return installation;
+}
+export function getLinuxAURInstallations(): DiscordInstallation[] {
+	return [
+		newLinuxInstallation("stable", true), // pacman
+		newLinuxInstallation("canary", true), // yay
+	];
+}
+export function getLinuxDebInstallations(): DiscordInstallation[] {
+	return [
+		newLinuxInstallation("stable", false),
+		newLinuxInstallation("canary", false),
+		newLinuxInstallation("ptb", false),
+		newLinuxInstallation("development", false),
+	];
+}
+export function getLinuxInstallations(): DiscordInstallation[] {
+	return [
+		getLinuxFlatpakInstallations(),
+		getLinuxAURInstallations(),
+		getLinuxDebInstallations(),
+	].flat(1);
 }
 
-async function checkIsInjected(asarBakPath: string): Promise<boolean> {
-	return fs.existsSync(asarBakPath);
+function getVersions(dir: string): string[] {
+	try {
+		const versions = fs
+			.readdirSync(dir, { withFileTypes: true })
+			.filter((f) => f.isDirectory() && f.name.includes("."))
+			.sort()
+			.map((f) => f.name);
+		return versions;
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Checks if a Discord installation is out there.
+ */
+export function checkIsInjectableSync(inst: DiscordInstallation): boolean {
+	return fs.existsSync(inst.asarPath) && !checkIsInjected(inst);
+}
+
+/**
+ * Check if a file contains a string. Does not load entire file into memory.
+ */
+export function fileContainsString(
+	filePath: string,
+	searchString: string,
+	start?: number,
+): Promise<boolean> {
+	const { promise, resolve, reject } = Promise.withResolvers<boolean>();
+	const searchBuf = Buffer.from(searchString);
+	const targetLen = searchBuf.length;
+
+	// 4KB is the standard 'atomic' size of a disk block.
+	const stream = fs.createReadStream(filePath, { highWaterMark: 4 * 1024, start });
+
+	let state = 0;
+
+	stream.on("data", (chunk) => {
+		// chunk is a raw Buffer (1 byte per index)
+		for (let i = 0; i < chunk.length; i++) {
+			if (chunk[i] === searchBuf[state]) {
+				state++;
+				if (state === targetLen) {
+					stream.destroy();
+					resolve(true);
+					return;
+				}
+			} else {
+				// Simple backtrack: if mismatch, check if current byte starts a new match
+				state = Number(chunk[i] === searchBuf[0]);
+			}
+		}
+	});
+
+	stream.on("end", () => resolve(false));
+	stream.on("error", (err) => reject(err));
+
+	return promise;
+}
+
+export function checkIsInjected(inst: DiscordInstallation): Promise<boolean> {
+	// can be faster if you pass a correct start position.
+	// undefined is safe, but slower.
+	return fileContainsString(inst.asarPath, 'scheme: "bd"', undefined);
 }
 
 export async function inject(inst: DiscordInstallation): Promise<void> {
-	console.log(c("bold", `Injecting into ${getDiscordBaseName(inst.channel)} (${inst.version})`));
-	await patchAsar(inst);
-	console.log(c("green", "Injection successful. Please restart Discord."));
-}
-
-async function patchAsar(inst: DiscordInstallation): Promise<void> {
-	const unpackPath = path.join(tmpdir(), "app-unpacked-bd");
-
-	if (!fs.existsSync(inst.asarPath)) return;
-
-	try {
-		const content = fs.readFileSync(inst.asarPath, "utf8");
-		if (content.includes('scheme: "bd"')) {
-			console.log(c("blue", "app.asar is already patched."));
-			return;
-		}
-	} catch {}
-
-	console.log(c("cyan", "Patching app.asar..."));
-
-	if (inst.asarBakPath && !fs.existsSync(inst.asarBakPath)) {
-		fs.copyFileSync(inst.asarPath, inst.asarBakPath);
-		console.log(c("green", "Created backup of app.asar"));
+	if (!checkIsInjectableSync(inst)) {
+		throw new Error("Installation is not injectable");
 	}
-
-	asar.extractAll(inst.asarPath, unpackPath);
-	using _rmUnpackPath = {
+	const tempUnpackPath = path.join(inst.asarPath, "..", "app-unpacked-temp");
+	using tempUnpackRemover = {
 		[Symbol.dispose](): void {
-			fs.rm(unpackPath, { recursive: true, force: true }, () => {});
+			try {
+				fs.rmSync(tempUnpackPath, { force: true, recursive: true });
+			} catch {}
 		},
 	};
-
-	let targetFile = path.join(unpackPath, "bundle.js");
-	const pkgPath = path.join(unpackPath, "package.json");
-	if (fs.existsSync(pkgPath)) {
-		try {
-			const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-			if (pkg.main) targetFile = path.join(unpackPath, pkg.main);
-		} catch {}
-	}
-
-	if (fs.existsSync(targetFile)) {
-		let fileContent = fs.readFileSync(targetFile, "utf8");
-
-		// 1. Register bd: protocol
-		const protocolPatch =
-			'{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true}},';
-		fileContent = fileContent.replace(
-			/(protocol\.registerSchemesAsPrivileged\(\s*\[)/,
-			`$1${protocolPatch}`,
+	tempUnpackRemover[Symbol.dispose]();
+	{
+		// create backup
+		await new Promise<void>((r) =>
+			fs.copyFile(inst.asarPath, inst.asarBakPath, fs.constants.COPYFILE_EXCL, () => r()),
 		);
-
-		// 2. Inject BetterDiscord loader and protocol handler from Core
-		const loaderPatch = getLoaderScript(getCoreSource());
-
-		// Handle arrow function, regular function, and minified function calls for app.on("ready")
-		fileContent = fileContent.replace(
-			/(app\.on\("ready",\s*(?:async\s*)?(?:function\s*(?:\([^)]*\)|[a-zA-Z0-9_]+)?|(?:\([^)]*\)|[a-zA-Z0-9_]+)\s*=>)\s*{)/,
-			`$1${loaderPatch}`,
-		);
-
-		fs.writeFileSync(targetFile, fileContent);
+		asar.extractAll(inst.asarPath, tempUnpackPath);
 	}
+	let targetFile = path.join(tempUnpackPath, "app_bootstrap", "protocols.js");
+	if (!fs.existsSync(targetFile)) {
+		targetFile = path.join(tempUnpackPath, "bundle.js");
+		if (!fs.existsSync(targetFile)) {
+			throw new Error(`Cannot find resource file for ${inst.channel} at ${targetFile}`);
+		}
+	}
+	await patchFileManual(targetFile);
+	await asar.createPackage(tempUnpackPath, inst.asarPath);
+	if (inst.meta.has("flatpak")) {
+		execSync(`flatpak override --filesystem=host com.discordapp.Discord`);
+	}
+}
 
-	await asar.createPackage(unpackPath, inst.asarPath);
-	console.log(c("green", "Successfully patched app.asar"));
+function patchFileManual(targetFile: string): Promise<void> {
+	const { promise, resolve, reject } = Promise.withResolvers<void>();
+	const tempFile = `${targetFile}.tmp`;
+
+	// We look for these exact byte sequences
+	const tokens = [
+		Buffer.from("protocol.registerSchemesAsPrivileged"),
+		Buffer.from("scheme:"),
+		Buffer.from("DISCORD_CLIP_PROTOCOL"),
+	];
+	const injection = Buffer.from(
+		'{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true},},',
+	);
+
+	const inputStream = fs.createReadStream(targetFile, { highWaterMark: 4 * 1024 });
+	const outputStream = fs.createWriteStream(tempFile);
+
+	let tokenIndex = 0;
+	let charIndex = 0;
+	let buffer: number[] = [];
+
+	const patcher = new Transform({
+		transform(chunk: Buffer, _, callback) {
+			for (let i = 0; i < chunk.length; i++) {
+				const byte = chunk[i]!;
+				const currentToken = tokens[tokenIndex]!;
+
+				if (byte === currentToken[charIndex]) {
+					// Part of the current token matches
+					buffer.push(byte);
+					charIndex++;
+
+					if (charIndex === currentToken.length) {
+						if (tokenIndex === tokens.length - 1) {
+							// Found DISCORD_CLIP_PROTOCOL after scheme:
+							this.push(injection);
+							this.push(Buffer.from(buffer));
+							// Reset state
+							buffer = [];
+							tokenIndex = 0;
+							charIndex = 0;
+						} else {
+							// Found 'scheme:', now look for 'DISCORD_CLIP_PROTOCOL'
+							tokenIndex++;
+							charIndex = 0;
+						}
+					}
+				} else if (tokenIndex === 1 && (byte === 32 || byte === 10 || byte === 13 || byte === 9)) {
+					// We are between 'scheme:' and the constant; allow and buffer whitespace (Space, LF, CR, Tab)
+					buffer.push(byte);
+				} else {
+					// Mismatch logic: Flush and reset
+					if (buffer.length > 0) {
+						this.push(Buffer.from(buffer));
+						buffer = [];
+					}
+
+					// If the byte that broke the match is the start of 'scheme:', restart there
+					if (byte === tokens[0]![0]) {
+						buffer.push(byte);
+						tokenIndex = 0;
+						charIndex = 1;
+					} else {
+						this.push(Buffer.from([byte]));
+						tokenIndex = 0;
+						charIndex = 0;
+					}
+				}
+			}
+			callback();
+		},
+		flush(callback) {
+			if (buffer.length > 0) this.push(Buffer.from(buffer));
+			callback();
+		},
+	});
+
+	pipeline(inputStream, patcher, outputStream, (err) => {
+		if (err) {
+			if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+			reject(err);
+			return;
+		}
+		fs.renameSync(tempFile, targetFile);
+		resolve();
+	});
+
+	return promise;
 }
 
 export async function uninject(inst: DiscordInstallation): Promise<void> {
-	console.log(c("bold", `Uninjecting from ${getDiscordBaseName(inst.channel)}`));
-
-	if (inst.asarBakPath && fs.existsSync(inst.asarBakPath)) {
-		fs.copyFileSync(inst.asarBakPath, inst.asarPath);
-		fs.unlinkSync(inst.asarBakPath);
-		console.log(c("green", "Restored app.asar from backup"));
-	}
-
-	console.log(c("green", "Uninjection successful."));
+	if (!fs.existsSync(inst.asarBakPath)) return;
+	fs.renameSync(inst.asarBakPath, inst.asarPath);
 }
