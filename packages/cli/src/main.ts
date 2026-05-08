@@ -74,6 +74,7 @@ async function main() {
 function generateTable(data: any[]): string {
 	const keys = ["i", "c", "v", "s"];
 
+	// oxlint-disable-next-line no-control-regex
 	const vLen = (str: string) => str.replace(/\u001b\[[0-9;]*m/g, "").length;
 
 	const widths = keys.map((key) => {
