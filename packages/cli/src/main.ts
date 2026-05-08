@@ -31,18 +31,18 @@ async function main() {
 	}
 
 	if (command === "list" || command === "injected" || command === "injectable") {
-		const installations = getInstallations(
-			command === "injectable" ? "injectable" : command === "injected" ? "injected" : "platform",
-		);
+		const installations = getInstallations("platform");
 		if (args.includes("--json")) {
 			console.log(JSON.stringify(installations));
 			return;
 		}
 		console.log(c("bold", "Available Discord Installations:"));
 		for (const inst of installations) {
-			const status = (await checkIsInjected(inst))
-				? c("green", "Injected")
-				: c("gray", "Not Injected");
+			const status = !inst.version
+				? c("gray", "Not available")
+				: (await checkIsInjected(inst))
+					? c("green", "Injected")
+					: c("red", "Not Injected");
 			console.log(`- ${c("cyan", inst.channel)} (${inst.version}) [${status}]`);
 			console.log(`  ${c("cyan", inst.exePath)}`);
 		}
@@ -55,15 +55,10 @@ async function main() {
 		process.exit(1);
 	}
 
-	try {
-		if (command === "inject") {
-			await inject(inst);
-		} else {
-			await uninject(inst);
-		}
-	} catch (err: any) {
-		console.error(c("red", `\nError: ${err.message}`));
-		process.exit(1);
+	if (command === "inject") {
+		await inject(inst);
+	} else {
+		await uninject(inst);
 	}
 }
 

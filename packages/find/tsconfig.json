@@ -17,7 +17,7 @@
 		"declaration": true,
 		"emitDeclarationOnly": true,
 		"noEmit": false,
-		"declarationMap": false,
+		"declarationMap": true,
 		// Stricter Typechecking Options
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,

@@ -44,15 +44,13 @@ export const nameLowerSnake = {
 
 export const channels: DiscordChannel[] = ["stable", "canary", "ptb", "development"];
 
-export type InstalltionsFilter = "all" | "platform" | "injectable" | "injected";
+export type InstalltionsFilter = "platform" | "injectable" | "injected";
 
 function filterInstalled(
 	insts: DiscordInstallation[],
 	filter: InstalltionsFilter,
 ): DiscordInstallation[] {
 	switch (filter) {
-		case "all":
-			return insts;
 		case "platform":
 			return insts;
 		case "injectable":
@@ -63,14 +61,6 @@ function filterInstalled(
 }
 
 export function getInstallations(filter: InstalltionsFilter): DiscordInstallation[] {
-	if (filter === "all") {
-		return [
-			getWindowsInstallations(),
-			getWSLInstallations(),
-			getDarwinInstallations(),
-			Object.values(getLinuxInstallations()).flat(1),
-		].flat(1);
-	}
 	if (process.platform === "win32") {
 		return filterInstalled(getWindowsInstallations(), filter);
 	}
@@ -99,14 +89,15 @@ export function newWindowsInstallation(
 	const baseDir =
 		letter + "\\Users\\" + process.env.USERNAME! + "\\AppData\\Local\\" + nameSolid[channel];
 	const version = getVersions(baseDir)[0] || "";
+	const dir = baseDir + "\\" + version;
 	return {
 		meta: new Set(),
 		channel,
 		version: version,
-		discordDir: baseDir + "\\" + version,
+		discordDir: dir,
 		discordBaseDir: baseDir,
-		asarPath: baseDir + "\\resources\\app.asar",
-		asarBakPath: baseDir + "\\resources\\app.asar.bak",
+		asarPath: dir + "\\resources\\app.asar",
+		asarBakPath: dir + "\\resources\\app.asar.bak",
 		exePath: baseDir + "\\" + nameSolid[channel] + ".exe",
 	};
 }
@@ -129,14 +120,15 @@ export function newWSLInstallation(letter: string, channel: DiscordChannel): Dis
 	const baseDir =
 		"/mnt/" + letter + "/Users/" + process.env.USERNAME + "/AppData/Local/" + nameSolid[channel];
 	const version = getVersions(baseDir)[0] || "";
+	const dir = baseDir + "/" + version;
 	return {
 		meta: new Set(),
 		channel,
 		version: version,
-		discordDir: baseDir + "/" + version,
+		discordDir: dir,
 		discordBaseDir: baseDir,
-		asarPath: baseDir + "/resources/app.asar",
-		asarBakPath: baseDir + "/resources/app.asar.bak",
+		asarPath: dir + "/resources/app.asar",
+		asarBakPath: dir + "/resources/app.asar.bak",
 		exePath: baseDir + "/" + nameSolid[channel] + ".exe",
 	};
 }
@@ -162,8 +154,8 @@ export function newDiscordInstallation(
 		version: version,
 		discordDir: dir,
 		discordBaseDir: baseDir,
-		asarPath: baseDir + "/resources/app.asar",
-		asarBakPath: baseDir + "/resources/app.asar.bak",
+		asarPath: dir + "/resources/app.asar",
+		asarBakPath: dir + "/resources/app.asar.bak",
 		exePath: dir + "/" + nameSolid[channel],
 	};
 }
@@ -261,7 +253,7 @@ export function fileContainsString(
 	const targetLen = searchBuf.length;
 
 	// 4KB is the standard 'atomic' size of a disk block.
-	const stream = fs.createReadStream(filePath, { highWaterMark: 4 * 1024, start });
+	const stream = fs.createReadStream(filePath, { highWaterMark: 4096, start });
 
 	let state = 0;
 
@@ -324,7 +316,7 @@ export async function inject(inst: DiscordInstallation): Promise<void> {
 	await patchFileManual(targetFile);
 	await asar.createPackage(tempUnpackPath, inst.asarPath);
 	if (inst.meta.has("flatpak")) {
-		execSync(`flatpak override --filesystem=host com.discordapp.Discord`);
+		execSync(`flatpak override --filesystem=host com.discordapp.${nameSolid[inst.channel]}`);
 	}
 }
 

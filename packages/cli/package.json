@@ -8,7 +8,7 @@
 	"scripts": {
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun build --target node --production src/main.ts --outfile=./dist/main.js -e '@betterdiscord.com/*'",
+		"dist": "bun dts && bun build --target bun --production src/main.ts --outdir=./dist --outfile=./dist/main.js -e '@betterdiscord.com/*'",
 		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {
