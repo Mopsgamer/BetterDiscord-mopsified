@@ -1,5 +1,5 @@
 import App from "./App.svelte";
-import getStatic from "./getstatic";
+import getStatic from "./getstatic.js";
 
 const appElement = document.getElementById("app");
 const app = new App({

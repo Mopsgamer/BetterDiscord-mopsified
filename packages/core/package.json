@@ -5,18 +5,30 @@
 	"type": "module",
 	"exports": {
 		".": {
-			"import": "./dist/index.js",
-			"types": "./dist/index.d.ts"
+			"type": "./index.d.ts"
+		},
+		"./patch_asar": {
+			"types": "./dist/patchAsar.d.ts",
+			"import": "./dist/patchAsar.js"
+		},
+		"./api": {
+			"types": "./dist/api/index.d.ts",
+			"import": "./dist/api/index.js"
 		}
 	},
 	"scripts": {
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun build --target node --production src/index.ts --outfile=./dist/index.js && bun build --target browser --production src/renderer.ts --outfile=./dist/renderer.js",
+		"dist": "bun scripts/build.ts && bun dts && bun build --target node --production src/patchAsar.ts --outfile=./dist/patchAsar.js && bun build --target node --production src/api/index.ts --outfile=./dist/api/index.js",
 		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {
-		"@betterdiscord.com/find": "workspace:*",
-		"@betterdiscord.com/themes": "workspace:*"
+		"@betterdiscord.com/find": "workspace:*"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.29.0",
+		"@babel/preset-env": "^7.29.5",
+		"@babel/preset-typescript": "^7.28.5",
+		"@types/babel__core": "^7.20.5"
 	}
 }

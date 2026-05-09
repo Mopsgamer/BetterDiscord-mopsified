@@ -19,7 +19,7 @@ if (args.includes("-h") || args.includes("--help") || args.length === 0) {
 	process.exit(0);
 }
 
-const installations = await getInstallations();
+const installations = getInstallations("valid");
 
 async function unpack(channel: string) {
 	const TEMP_DIR = path.relative(

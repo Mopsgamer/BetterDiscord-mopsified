@@ -1,6 +1,10 @@
 {
 	"$schema": "node_modules/oxfmt/configuration_schema.json",
-	"ignorePatterns": ["vendors", "packages/injection/reference_inject.ts"],
+	"ignorePatterns": [
+		"vendors",
+		"packages/injection/reference_inject.ts",
+		"packages/injection/temp"
+	],
 	"useTabs": true,
 	"sortPackageJson": true
 }

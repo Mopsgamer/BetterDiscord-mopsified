@@ -47,7 +47,7 @@
         on:mouseleave={() => copyButtonVisible = false}
         class="text-display{value ? "" : " loading"}"
     >
-        <div bind:this={scroller} on:scroll={() => copyButtonVisible = false} class="display-inner" tabindex="0">
+        <div role="button" bind:this={scroller} on:scroll={() => copyButtonVisible = false} class="display-inner" tabindex="0">
             {value}
         </div>
         <div bind:this={copyInputContainer} class="copy-input" class:visible={copyButtonVisible}>

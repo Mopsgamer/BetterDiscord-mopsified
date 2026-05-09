@@ -1,5 +1,5 @@
-import { action } from "../../stores/installation";
-import { log } from "./log";
+import { action } from "../../stores/installation.js";
+import { log } from "./log.js";
 
 export default function doSanityCheck(config) {
 	const paths = Object.values(config);

@@ -1,14 +1,14 @@
-import { log, lognewline } from "./utils/log";
-import doSanityCheck from "./utils/sanity";
-import exists from "./utils/exists";
-import fail from "./utils/fail";
+import { log, lognewline } from "./utils/log.js";
+import doSanityCheck from "./utils/sanity.js";
+import exists from "./utils/exists.js";
+import fail from "./utils/fail.js";
 import { promises as fs } from "fs";
-import kill from "./utils/kill";
+import kill from "./utils/kill.js";
 import path from "path";
-import { progress } from "../stores/installation";
-import reset from "./utils/reset";
-import { showRestartNotice } from "./utils/notices";
-import succeed from "./utils/succeed";
+import { progress } from "../stores/installation.js";
+import reset from "./utils/reset.js";
+import { showRestartNotice } from "./utils/notices.js";
+import succeed from "./utils/succeed.js";
 
 const DELETE_SHIM_PROGRESS = 85;
 const RESTART_DISCORD_PROGRESS = 100;

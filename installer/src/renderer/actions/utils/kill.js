@@ -1,8 +1,8 @@
 import findProcess from "find-process";
 import kill from "tree-kill";
-import { log } from "./log";
+import { log } from "./log.js";
 import path from "path";
-import { progress } from "../../stores/installation";
+import { progress } from "../../stores/installation.js";
 import { shell } from "electron";
 
 const platforms = { stable: "Discord", ptb: "Discord PTB", canary: "Discord Canary" };

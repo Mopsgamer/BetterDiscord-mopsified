@@ -1,5 +1,5 @@
 import { quartInOut } from "svelte/easing";
-import { state } from "../stores/navigation";
+import { state } from "../stores/navigation.js";
 
 export default function page(
 	node,

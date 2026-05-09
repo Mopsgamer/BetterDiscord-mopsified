@@ -2,11 +2,14 @@
 	"name": "@betterdiscord.com/injection",
 	"version": "1.0.0",
 	"private": false,
+	"files": [
+		"dist/"
+	],
 	"type": "module",
 	"exports": {
 		".": {
-			"import": "./dist/index.js",
-			"types": "./dist/index.d.ts"
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
 		}
 	},
 	"scripts": {

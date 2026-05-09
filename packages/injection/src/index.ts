@@ -1,7 +1,7 @@
 import * as asar from "@electron/asar";
-import { Transform, pipeline } from "node:stream";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
+import patchAsar from "@betterdiscord.com/core/patch_asar";
 import path from "node:path";
 
 export type DiscordChannel = "stable" | "canary" | "ptb" | "development";
@@ -45,7 +45,7 @@ export const nameLowerSnake = {
 
 export const channels: DiscordChannel[] = ["stable", "canary", "ptb", "development"];
 
-export type InstalltionsFilter = "platform" | "injectable" | "injected";
+export type InstalltionsFilter = "platform" | "valid" | "injectable" | "injected";
 
 function filterInstalled(
 	insts: DiscordInstallation[],
@@ -54,6 +54,8 @@ function filterInstalled(
 	switch (filter) {
 		case "platform":
 			return insts;
+		case "valid":
+			return insts.filter(checkIsValidSync);
 		case "injectable":
 			return insts.filter(checkIsInjectableSync);
 		case "injected":
@@ -240,54 +242,19 @@ function getVersions(dir: string): string[] {
 /**
  * Checks if a Discord installation is out there.
  */
-export function checkIsInjectableSync(inst: DiscordInstallation): boolean {
-	return fs.existsSync(inst.asarPath) && !checkIsInjected(inst);
+export function checkIsValidSync(inst: DiscordInstallation): boolean {
+	return fs.existsSync(inst.asarPath);
 }
 
 /**
- * Check if a file contains a string. Does not load entire file into memory.
+ * Checks if a Discord installation is out there and not injected.
  */
-export function fileContainsString(
-	filePath: string,
-	searchString: string,
-	start?: number,
-): Promise<boolean> {
-	const { promise, resolve, reject } = Promise.withResolvers<boolean>();
-	const searchBuf = Buffer.from(searchString);
-	const targetLen = searchBuf.length;
-
-	// 4KB is the standard 'atomic' size of a disk block.
-	const stream = fs.createReadStream(filePath, { highWaterMark: 4096, start });
-
-	let state = 0;
-
-	stream.on("data", (chunk) => {
-		// chunk is a raw Buffer (1 byte per index)
-		for (let i = 0; i < chunk.length; i++) {
-			if (chunk[i] === searchBuf[state]) {
-				state++;
-				if (state === targetLen) {
-					stream.destroy();
-					resolve(true);
-					return;
-				}
-			} else {
-				// Simple backtrack: if mismatch, check if current byte starts a new match
-				state = Number(chunk[i] === searchBuf[0]);
-			}
-		}
-	});
-
-	stream.on("end", () => resolve(false));
-	stream.on("error", (err) => reject(err));
-
-	return promise;
+export function checkIsInjectableSync(inst: DiscordInstallation): boolean {
+	return checkIsValidSync(inst) && !checkIsInjected(inst);
 }
 
-export function checkIsInjected(inst: DiscordInstallation): Promise<boolean> {
-	// can be faster if you pass a correct start position.
-	// undefined is safe, but slower.
-	return fileContainsString(inst.asarPath, 'scheme: "bd"', undefined);
+export async function checkIsInjected(inst: DiscordInstallation): Promise<boolean> {
+	return (await fs.promises.readFile(inst.asarPath, "utf8")).includes('scheme: "bd"');
 }
 
 export async function inject(inst: DiscordInstallation): Promise<void> {
@@ -317,101 +284,11 @@ export async function inject(inst: DiscordInstallation): Promise<void> {
 			throw new Error(`Cannot find resource file for ${inst.channel} at ${targetFile}`);
 		}
 	}
-	await patchFileManual(targetFile);
+	await patchAsar(targetFile);
 	await asar.createPackage(tempUnpackPath, inst.asarPath);
 	if (inst.meta.has("flatpak")) {
 		execSync(`flatpak override --filesystem=host com.discordapp.${nameSolid[inst.channel]}`);
 	}
-}
-
-function patchFileManual(targetFile: string): Promise<void> {
-	const { promise, resolve, reject } = Promise.withResolvers<void>();
-	const tempFile = `${targetFile}.tmp`;
-
-	// We look for these exact byte sequences
-	const tokens = [
-		Buffer.from("protocol.registerSchemesAsPrivileged"),
-		Buffer.from("scheme:"),
-		Buffer.from("DISCORD_CLIP_PROTOCOL"),
-	];
-	const injection = Buffer.from(
-		'{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true},},',
-	);
-
-	const inputStream = fs.createReadStream(targetFile, { highWaterMark: 4 * 1024 });
-	const outputStream = fs.createWriteStream(tempFile);
-
-	let tokenIndex = 0;
-	let charIndex = 0;
-	let buffer: number[] = [];
-
-	const patcher = new Transform({
-		transform(chunk: Buffer, _, callback) {
-			for (let i = 0; i < chunk.length; i++) {
-				const byte = chunk[i]!;
-				const currentToken = tokens[tokenIndex]!;
-
-				if (byte === currentToken[charIndex]) {
-					// Part of the current token matches
-					buffer.push(byte);
-					charIndex++;
-
-					if (charIndex === currentToken.length) {
-						if (tokenIndex === tokens.length - 1) {
-							// Found DISCORD_CLIP_PROTOCOL after scheme:
-							this.push(injection);
-							this.push(Buffer.from(buffer));
-							// Reset state
-							buffer = [];
-							tokenIndex = 0;
-							charIndex = 0;
-						} else {
-							// Found 'scheme:', now look for 'DISCORD_CLIP_PROTOCOL'
-							tokenIndex++;
-							charIndex = 0;
-						}
-					}
-				} else if (tokenIndex === 1 && (byte === 32 || byte === 10 || byte === 13 || byte === 9)) {
-					// We are between 'scheme:' and the constant; allow and buffer whitespace (Space, LF, CR, Tab)
-					buffer.push(byte);
-				} else {
-					// Mismatch logic: Flush and reset
-					if (buffer.length > 0) {
-						this.push(Buffer.from(buffer));
-						buffer = [];
-					}
-
-					// If the byte that broke the match is the start of 'scheme:', restart there
-					if (byte === tokens[0]![0]) {
-						buffer.push(byte);
-						tokenIndex = 0;
-						charIndex = 1;
-					} else {
-						this.push(Buffer.from([byte]));
-						tokenIndex = 0;
-						charIndex = 0;
-					}
-				}
-			}
-			callback();
-		},
-		flush(callback) {
-			if (buffer.length > 0) this.push(Buffer.from(buffer));
-			callback();
-		},
-	});
-
-	pipeline(inputStream, patcher, outputStream, (err) => {
-		if (err) {
-			if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
-			reject(err);
-			return;
-		}
-		fs.renameSync(tempFile, targetFile);
-		resolve();
-	});
-
-	return promise;
 }
 
 export async function uninject(inst: DiscordInstallation): Promise<void> {

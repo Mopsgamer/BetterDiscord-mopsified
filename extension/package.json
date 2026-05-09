@@ -3,11 +3,13 @@
 	"version": "1.0.0",
 	"private": true,
 	"type": "module",
-	"main": "./dist/index.js",
+	"exports": {
+		".": "./dist/index.js"
+	},
 	"scripts": {
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun build --target browser --production index.ts --outfile=./dist/index.js --external 'bd:*'",
+		"dist": "bun dts && bun build --target browser --production ./src/index.ts --outfile=./dist/index.js --external 'bd:*'",
 		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {

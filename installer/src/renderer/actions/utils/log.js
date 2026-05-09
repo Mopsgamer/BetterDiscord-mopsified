@@ -1,4 +1,4 @@
-import logs from "../../stores/logs";
+import logs from "../../stores/logs.js";
 
 export function log(entry) {
 	logs.update((a) => {

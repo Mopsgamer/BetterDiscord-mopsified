@@ -21,9 +21,6 @@
 		},
 		{
 			"path": "./packages/injection"
-		},
-		{
-			"path": "./packages/themes"
 		}
 	]
 }

@@ -2,16 +2,19 @@
 	"name": "@betterdiscord.com/find",
 	"version": "1.0.0",
 	"private": false,
+	"files": [
+		"dist/"
+	],
 	"type": "module",
 	"main": "./dist/index.js",
 	"exports": {
 		".": {
-			"import": "./dist/index.js",
-			"types": "./dist/index.d.ts"
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
 		},
 		"./filters": {
-			"import": "./dist/filters.js",
-			"types": "./dist/filters.d.ts"
+			"types": "./dist/filters.d.ts",
+			"import": "./dist/filters.js"
 		}
 	},
 	"scripts": {

@@ -1,5 +1,5 @@
-import { locations } from "../actions/paths";
-import readwritable from "./types/readwritable";
+import { locations } from "../actions/paths.js";
+import readwritable from "./types/readwritable.js";
 import { writable } from "svelte/store";
 
 export const status = writable("");

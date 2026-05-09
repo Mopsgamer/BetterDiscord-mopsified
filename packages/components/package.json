@@ -3,7 +3,9 @@
 	"version": "1.0.0",
 	"private": false,
 	"type": "module",
-	"main": "./dist/index.js",
+	"exports": {
+		".": "./dist/index.js"
+	},
 	"scripts": {
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",

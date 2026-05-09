@@ -1,5 +1,5 @@
-import { progress, status } from "../../stores/installation";
-import logs from "../../stores/logs";
+import { progress, status } from "../../stores/installation.js";
+import logs from "../../stores/logs.js";
 
 export default async function reset() {
 	logs.set([]);

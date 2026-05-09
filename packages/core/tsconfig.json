@@ -1,7 +1,11 @@
 {
+	"include": ["./src", "index.d.ts"],
 	"exclude": ["./tests", "./dist"],
 	// Visit https://aka.ms/tsconfig to read more about this file
 	"compilerOptions": {
+		"paths": {
+			"*.string": ["./src/patches/string-definitions.d.ts"]
+		},
 		"composite": true,
 		// File Layout
 		"rootDir": "./src",

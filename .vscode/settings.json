@@ -1,5 +1,13 @@
 {
 	"editor.formatOnSave": true,
+	"files.associations": {
+		"*.str.ts": "plaintext",
+		"bundle.js": "plaintext"
+	},
+	"search.exclude": {
+		"**/*.str.ts": true,
+		"**/dist/**/*": true
+	},
 	"editor.defaultFormatter": "oxc.oxc-vscode",
 	"[javascript]": {
 		"editor.defaultFormatter": "oxc.oxc-vscode"

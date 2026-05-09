@@ -1,7 +1,7 @@
 import { BrowserWindow, app, shell } from "electron";
 import URL from "url";
 import path from "path";
-import updateInstaller from "./update_installer";
+import updateInstaller from "./update_installer.js";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 app.name = "BetterDiscord";

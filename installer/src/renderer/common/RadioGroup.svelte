@@ -6,6 +6,7 @@
 </script>
 
 <div
+    role="button"
     on:keydown={handleArrowKeys(container)}
     bind:this={container}
     tabindex="0"
