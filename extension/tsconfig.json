@@ -11,6 +11,9 @@
 		"types": ["node", "bun"],
 		"lib": ["esnext"],
 		"typeRoots": ["../node_modules/@types", "../packages"],
+		"paths": {
+			"bd:api": ["../packages/core/index.d.ts"]
+		},
 		// Other Outputs
 		"sourceMap": false,
 		"declaration": false,

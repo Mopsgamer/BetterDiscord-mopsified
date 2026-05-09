@@ -1,4 +1,4 @@
-import type {} from "bd:api";
+import { help } from "bd:api";
 /**
  * BetterDiscord Extension Entry Point
  */
