@@ -3,7 +3,8 @@
 	"ignorePatterns": [
 		"vendors",
 		"packages/injection/reference_inject.ts",
-		"packages/injection/temp"
+		"packages/injection/temp",
+		"**/*.str.ts"
 	],
 	"useTabs": true,
 	"sortPackageJson": true

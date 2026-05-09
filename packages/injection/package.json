@@ -13,7 +13,7 @@
 		}
 	},
 	"scripts": {
-		"cli": "bun ../../packages/cli/dist/main.js",
+		"cli": "bun --bun ../../packages/cli/dist/main.js",
 		"get": "bun scripts/get.ts",
 		"test": "bun test",
 		"lint": "bun oxlint --fix && bun publint --pack bun",

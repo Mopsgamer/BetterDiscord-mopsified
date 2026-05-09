@@ -1,6 +1,7 @@
 #!/usr/bin/env node.
 import {
 	type DiscordChannel,
+	type InstalltionsFilter,
 	checkIsInjected,
 	getInstallations,
 	inject,
@@ -12,63 +13,65 @@ import { type InspectColor, styleText as c } from "node:util";
 async function main() {
 	const args = process.argv.slice(2);
 
-	const commands = ["inject", "uninject", "injected", "injectable", "list"];
+	const commands = ["inject", "uninject", "injected", "all", "valid"];
 	const command = args.find((a) => commands.includes(a));
 
 	const channels = ["stable", "canary", "ptb", "development"];
-	const channel = (args.find((a) => channels.includes(a)) || "stable") as DiscordChannel;
+	const channel = args.find((a) => channels.includes(a)) as DiscordChannel | undefined;
 
 	if (!command) {
 		console.log(c("bold", "BetterDiscord CLI"));
 		console.log("\nUsage:");
-		console.log(`  bun run cli ${c("cyan", "inject")} [channel] [options]`);
+		console.log(`  bun run cli ${c("cyan", "inject")} [channel]`);
 		console.log(`  bun run cli ${c("cyan", "uninject")} [channel]`);
-		console.log(`  bun run cli ${c("magenta", "injected")} [--json]`);
-		console.log(`  bun run cli ${c("magenta", "injectable")} [--json]`);
-		console.log(`  bun run cli ${c("magenta", "list")} [--json]`);
+		console.log(`  bun run cli ${c("magenta", "inject")} [--json]`);
+		console.log(`  bun run cli ${c("magenta", "uninject")} [--json]`);
+		console.log(`  bun run cli ${c("magenta", "all")} [--json]`);
+		console.log(`  bun run cli ${c("magenta", "valid")} [--json]`);
 		console.log("\nChannels: stable, canary, ptb, development");
+		if (args[0]) {
+			console.error(c("red", `Unknown command '${args[0]}'`));
+			process.exit(1);
+		}
+		console.log();
 		return;
 	}
 
-	if (command === "list" || command === "injected" || command === "injectable") {
-		const installations = getInstallations("platform");
-		if (args.includes("--json")) {
-			console.log(JSON.stringify(installations));
-			return;
-		}
-		console.log(c("bold", "Available Discord Installations:\n"));
-		const table: Record<"i" | "c" | "v" | "s", any>[] = [];
-		for (const inst of installations) {
-			const isInjected = !!inst.version && (await checkIsInjected(inst));
-			const color: InspectColor | readonly InspectColor[] = !inst.version
-				? ["gray"]
-				: isInjected
-					? ["green", "bold"]
-					: ["red", "bold"];
-			const status: string = !inst.version ? "not found" : isInjected ? "injected" : "not injected";
-			const icon: string = !inst.version ? "⁄" : isInjected ? "●" : "▲";
-			table.push({
-				i: c(color, icon),
-				c: c(["cyan", "bold"], inst.channel),
-				v: inst.version,
-				s: c(color, status),
-			});
-		}
-		console.log(generateTable(table));
+	if (command === "all" || command === "valid") {
+		await list(command === "all" ? "platform" : "valid", args);
 		return;
-	}
-
-	const inst = getInstallations("injected").find((i: any) => i.channel === channel);
-	if (!inst) {
-		console.error(c("red", `Error: Could not find ${name[channel]}`));
-		process.exit(1);
 	}
 
 	if (command === "inject") {
+		if (!channel) {
+			await list("injectable", args);
+			process.exit(1);
+		}
+		const inst = getInstallations("injectable").find((i: any) => i.channel === channel);
+		if (!inst) {
+			console.error(c("red", `Error: Could not find ${name[channel]}`));
+			process.exit(1);
+		}
 		await inject(inst);
-	} else {
-		await uninject(inst);
+		return;
 	}
+
+	if (command === "uninject") {
+		if (!channel) {
+			await list("injected", args);
+			process.exit(1);
+		}
+		const inst = getInstallations("injected").find((i: any) => i.channel === channel);
+		if (!inst) {
+			console.error(c("red", `Error: Could not find ${name[channel]}`));
+			process.exit(1);
+		}
+		await uninject(inst);
+		return;
+	}
+
+	console.log("unreachable");
+	process.exit(1);
 }
 
 function generateTable(data: any[]): string {
@@ -97,6 +100,33 @@ function generateTable(data: any[]): string {
 	}
 
 	return output;
+}
+
+function list(filter: InstalltionsFilter, args: string[]): void {
+	const installations = getInstallations(filter);
+	if (args.includes("--json")) {
+		console.log(JSON.stringify(installations));
+		return;
+	}
+	console.log(c("bold", "Available Discord Installations:\n"));
+	const table: Record<"i" | "c" | "v" | "s", any>[] = [];
+	for (const inst of installations) {
+		const isInjected = !!inst.version && checkIsInjected(inst);
+		const color: InspectColor | readonly InspectColor[] = !inst.version
+			? ["gray"]
+			: isInjected
+				? ["green", "bold"]
+				: ["red", "bold"];
+		const status: string = !inst.version ? "not found" : isInjected ? "injected" : "not injected";
+		const icon: string = !inst.version ? "⁄" : isInjected ? "●" : "▲";
+		table.push({
+			i: c(color, icon),
+			c: c(["cyan", "bold"], inst.channel),
+			v: inst.version,
+			s: c(color, status),
+		});
+	}
+	console.log(generateTable(table));
 }
 
 main();

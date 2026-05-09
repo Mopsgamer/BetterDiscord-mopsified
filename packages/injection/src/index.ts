@@ -253,8 +253,15 @@ export function checkIsInjectableSync(inst: DiscordInstallation): boolean {
 	return checkIsValidSync(inst) && !checkIsInjected(inst);
 }
 
-export async function checkIsInjected(inst: DiscordInstallation): Promise<boolean> {
-	return (await fs.promises.readFile(inst.asarPath, "utf8")).includes('scheme: "bd"');
+export function checkIsInjected(inst: DiscordInstallation): boolean {
+	try {
+		return fs.readFileSync(inst.asarPath, "utf8").includes('scheme: "bd"');
+	} catch (err: any) {
+		if (err.code === "ENOENT") {
+			return false;
+		}
+		throw err;
+	}
 }
 
 export async function inject(inst: DiscordInstallation): Promise<void> {
