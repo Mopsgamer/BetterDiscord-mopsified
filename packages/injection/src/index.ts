@@ -308,27 +308,27 @@ export interface Injection {
 	// 1. Your specific typed listeners
 	addEventListener<K extends keyof InjectionEventMap>(
 		type: K,
-		listener: (this: Injection, ev: CustomEvent<InjectionEventMap[K]>) => any,
+		listener: (this: Injection, ev: CustomEvent<InjectionEventMap[K]>) => void,
 		options?: boolean | AddEventListenerOptions,
 	): void;
 
 	// 2. Fallback to the standard EventTarget signature to satisfy the compiler
 	addEventListener(
 		type: string,
-		listener: (this: Injection, ev: Event) => any,
+		listener: (this: Injection, ev: Event) => void,
 		options?: boolean | AddEventListenerOptions,
 	): void;
 
 	// Repeat for removeEventListener
 	removeEventListener<K extends keyof InjectionEventMap>(
 		type: K,
-		listener: (this: Injection, ev: CustomEvent<InjectionEventMap[K]>) => any,
+		listener: (this: Injection, ev: CustomEvent<InjectionEventMap[K]>) => void,
 		options?: boolean | EventListenerOptions,
 	): void;
 
 	removeEventListener(
 		type: string,
-		listener: (this: Injection, ev: Event) => any,
+		listener: (this: Injection, ev: Event) => void,
 		options?: boolean | EventListenerOptions,
 	): void;
 }
@@ -353,7 +353,7 @@ export function inject(
 	const injection = new Injection();
 	const { promise, resolve, reject } = Promise.withResolvers<void>();
 	injection.addEventListener("done", () => resolve());
-	injection.addEventListener("error", (ev) => reject(ev.detail.err));
+	injection.addEventListener("error", (ev: any) => reject(ev.detail.err));
 	(async function injectImpl(): Promise<void> {
 		const tempUnpackPath = path.resolve(inst.asarPath, "..", "app-unpacked-temp");
 		try {
