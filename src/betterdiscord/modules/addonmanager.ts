@@ -397,7 +397,7 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
         if (addon.partial || this.enablement[addon.id]) {
             return {
                 kind: "not-started",
-                error: new Addonerror({
+                error: new AddonError({
                     addonType: this.prefix,
                     addon,
                     message: t("Addons.couldNotEnable", {name: addon.id}),
@@ -427,7 +427,7 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
         if (addon.partial || !this.enablement[addon.id]) {
             return {
                 kind: "not-stopped",
-                error: new Addonerror({
+                error: new AddonError({
                     addonType: this.prefix,
                     addon,
                     message: t("Addons.couldNotDisable", {name: addon.id}),
