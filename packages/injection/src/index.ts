@@ -48,15 +48,10 @@ export const channels: DiscordChannel[] = ["stable", "canary", "ptb", "developme
 
 export type InstallationsFilter = "platform" | "valid" | "injectable" | "injected";
 
-let globalCheckIsInjected: (inst: DiscordInstallation) => boolean = () => false;
-
-export function registerIsInjectedCheck(check: (inst: DiscordInstallation) => boolean): void {
-	globalCheckIsInjected = check;
-}
-
 function filterInstalled(
 	insts: DiscordInstallation[],
 	filter: InstallationsFilter,
+	checkIsInjected: (inst: DiscordInstallation) => boolean,
 ): DiscordInstallation[] {
 	switch (filter) {
 		case "platform":
@@ -64,13 +59,16 @@ function filterInstalled(
 		case "valid":
 			return insts.filter(checkIsValidSync);
 		case "injectable":
-			return insts.filter(checkIsInjectableSync);
+			return insts.filter((inst) => checkIsValidSync(inst) && !checkIsInjected(inst));
 		case "injected":
-			return insts.filter(checkIsInjectedSync);
+			return insts.filter(checkIsInjected);
 	}
 }
 
-export function getInstallationsSync(filter: InstallationsFilter): DiscordInstallation[] {
+export function getInstallationsSync(
+	filter: InstallationsFilter,
+	checkIsInjected: (inst: DiscordInstallation) => boolean,
+): DiscordInstallation[] {
 	let insts: DiscordInstallation[];
 	if (process.platform === "win32") {
 		insts = getWindowsInstallationsSync();
@@ -81,7 +79,7 @@ export function getInstallationsSync(filter: InstallationsFilter): DiscordInstal
 	} else {
 		insts = getLinuxInstallationsSync();
 	}
-	return filterInstalled(insts, filter);
+	return filterInstalled(insts, filter, checkIsInjected);
 }
 
 export function getWindowsLettersSync(): string[] {
@@ -265,17 +263,6 @@ export function checkIsValidSync(inst: DiscordInstallation | string): boolean {
 	return fs.existsSync(asarPath);
 }
 
-/**
- * Checks if a Discord installation is out there and not injected.
- */
-export function checkIsInjectableSync(inst: DiscordInstallation): boolean {
-	return checkIsValidSync(inst) && !checkIsInjectedSync(inst);
-}
-
-export function checkIsInjectedSync(inst: DiscordInstallation): boolean {
-	return globalCheckIsInjected(inst);
-}
-
 interface InjectionEventMap {
 	create: { path: string };
 	remove: { path: string };
@@ -350,21 +337,22 @@ export interface Injection {
 	): void;
 }
 
-let globalPatcher: (targetFile: string, injection: Injection) => Promise<void> = async () => {};
-
-export function registerPatcher(patcher: (targetFile: string, injection: Injection) => Promise<void>): void {
-	globalPatcher = patcher;
-}
-
 /**
  * Asar is extracted synchronously anyway.
  */
-export function inject(inst: DiscordInstallation): {
+export function inject(
+	inst: DiscordInstallation,
+	patcher: (targetFile: string, injection: Injection) => Promise<void>,
+	checkIsInjected: (inst: DiscordInstallation) => boolean,
+): {
 	process: Injection;
 	promise: Promise<void>;
 } {
-	if (!checkIsInjectableSync(inst)) {
-		throw new Error("Installation is not injectable");
+	if (checkIsInjected(inst)) {
+		throw new Error("Installation is already injected");
+	}
+	if (!checkIsValidSync(inst)) {
+		throw new Error("Installation is not valid");
 	}
 	const injection = new Injection();
 	const { promise, resolve, reject } = Promise.withResolvers<void>();
@@ -398,7 +386,7 @@ export function inject(inst: DiscordInstallation): {
 				);
 				return;
 			}
-			await globalPatcher(targetFile, injection);
+			await patcher(targetFile, injection);
 			await asar.createPackage(tempUnpackPath, inst.asarPath);
 			if (inst.meta.has("flatpak")) {
 				await exec.__promisify__(
