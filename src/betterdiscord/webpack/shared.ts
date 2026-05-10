@@ -21,6 +21,28 @@ export const wrapFilter = (filter: Webpack.Filter): Webpack.Filter => Object.ass
     __originalFilter: filter
 });
 
+export const wrapDeclarationFilter = (filter: Webpack.ExportedOnlyFilter) => Object.assign(((value) => {
+    try {
+        return filter(value);
+    }
+    catch (error) {
+        if (!hasThrown.has(filter)) Logger.warn("WebpackModules~getModule", "Declaration filter threw an exception.", error, {filter});
+        hasThrown.add(filter);
+        return false;
+    }
+}) satisfies Webpack.ExportedOnlyFilter, {
+    __originalFilter: filter
+});
+
+export function getDeclaration(module: Webpack.Module<any>, filter: Webpack.ExportedOnlyFilter) {
+    const wrappedFilter = wrapDeclarationFilter(filter);
+
+    for (const name in module.declarations) {
+        if (!wrappedFilter(module.declarations[name])) continue;
+        return module.declarations[name];
+    }
+}
+
 const TypedArray = Object.getPrototypeOf(Uint8Array);
 export function shouldSkipModule(exports: any) {
     if (!(typeof exports === "object" || typeof exports === "function")) return true;

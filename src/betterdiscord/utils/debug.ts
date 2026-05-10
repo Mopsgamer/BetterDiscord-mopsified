@@ -49,7 +49,7 @@ export function getDiscordInfo(string = true) {
 export function getAddonCounts(manager: typeof PluginManager | typeof ThemeManager) {
     return {
         total: Object.keys(manager.cacheByName).length,
-        enabled: Object.keys(manager.enablement).length
+        enabled: Object.keys(manager.enablement).filter(id => manager.enablement[id]).length
     };
 }
 

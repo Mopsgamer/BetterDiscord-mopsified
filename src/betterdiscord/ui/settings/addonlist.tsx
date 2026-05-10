@@ -179,13 +179,13 @@ export default function AddonList({store}: {store: AddonManager;}) {
     const renderedCards = useMemo(() => {
         let sorted = Object.values(cacheByName).sort((a, b) => {
             const sortByEnabled = sort === "isEnabled";
-            const first = sortByEnabled ? addonState[a.id] : a[sort];
-            const second = sortByEnabled ? addonState[b.id] : b[sort];
+            const first = sortByEnabled ? addonState[a.id] : a[sort as keyof AddonAny];
+            const second = sortByEnabled ? addonState[b.id] : b[sort as keyof AddonAny];
             const stringSort = (str1: string, str2: string) => str1.toLocaleLowerCase().localeCompare(str2.toLocaleLowerCase());
             if (typeof (first) === "string" && typeof (second) === "string") return stringSort(first, second);
             if (typeof (first) === "boolean" && typeof (second) === "boolean") return (first === second) ? stringSort(a.name, b.name) : first ? -1 : 1;
-            if (first > second) return 1;
-            if (second > first) return -1;
+            if ((first as any) > (second as any)) return 1;
+            if ((second as any) > (first as any)) return -1;
             return 0;
         });
 
@@ -204,7 +204,7 @@ export default function AddonList({store}: {store: AddonManager;}) {
         return sorted.map(addon => {
             const hasSettings = (addon as Plugin).instance && typeof ((addon as Plugin).instance.getSettingsPanel) === "function";
             const getSettings = hasSettings && (addon as Plugin).instance.getSettingsPanel!.bind((addon as Plugin).instance);
-            return <ErrorBoundary id={addon.id} name="AddonCard">
+            return <ErrorBoundary key={addon.id} id={addon.id} name="AddonCard">
                 <AddonCard store={store} disabled={addon.partial} type={store.prefix as AddonType} editAddon={() => triggerEdit(addon)} deleteAddon={() => triggerDelete(addon)} key={addon.id} addon={addon} onChange={onChange} enabled={addonState[addon.id]} hasSettings={hasSettings} getSettingsPanel={getSettings ? getSettings : undefined} />
             </ErrorBoundary>;
         });
@@ -215,10 +215,10 @@ export default function AddonList({store}: {store: AddonManager;}) {
     const hasResults = renderedCards.length !== 0;
 
     return [
-        <AddonHeader count={renderedCards.length} searching={isSearching}>
+        <AddonHeader key="title" count={renderedCards.length} searching={isSearching}>
             <Search onChange={search} placeholder={`${t("Addons.search", {count: renderedCards.length, context: store.prefix})}...`} />
         </AddonHeader>,
-        <div className={"bd-controls bd-addon-controls"}>
+        <div key="controls" className={"bd-controls bd-addon-controls"}>
             <div className="bd-controls-basic">
                 {makeBasicButton(t("Addons.openFolder", {context: store.prefix}), <FolderIcon size="20px" />, openFolder.bind(null, store.addonFolder()), "folder")}
                 {makeBasicButton(t("Addons.enableAll"), <CheckIcon size="20px" />, confirmEnable(enableAll, store.prefix), "enable-all")}
@@ -241,9 +241,9 @@ export default function AddonList({store}: {store: AddonManager;}) {
                 </div>
             </div>
         </div>,
-        <StoreCard />,
-        !hasAddonsInstalled && <Blankslate type={store.prefix as AddonType} folder={store.addonFolder()} />,
-        isSearching && !hasResults && hasAddonsInstalled && <NoResults />,
+        <StoreCard key="storeCard" />,
+        !hasAddonsInstalled && <Blankslate key="blankslate" type={store.prefix as AddonType} folder={store.addonFolder()} />,
+        isSearching && !hasResults && hasAddonsInstalled && <NoResults key="noresults" />,
         hasAddonsInstalled && <div key="addonList" className={"bd-addon-list" + (view == "grid" ? " bd-grid-view" : "")}>{renderedCards}</div>
     ];
 }

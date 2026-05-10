@@ -32,6 +32,10 @@ async function attemptRecovery() {
             errorMessage: "Failed to pop all modals"
         },
         {
+            action: () => Dispatcher?.dispatch({type: "CONTEXT_MENU_CLOSE"}),
+            errorMessage: "Failed to close context menus"
+        },
+        {
             action: () => transitionTo?.("/channels/@me"),
             errorMessage: "Failed to route to main channel"
         },

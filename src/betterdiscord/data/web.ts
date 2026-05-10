@@ -1,4 +1,4 @@
-import type {AddonType} from "@modules/addonmanager";
+import type {AddonType} from "@modules/addon";
 
 const HOSTNAME = "betterdiscord.app";
 /**

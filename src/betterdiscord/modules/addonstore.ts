@@ -714,7 +714,6 @@ const addonStore = new class AddonStore {
     }
     /**
      * A react hook for {@link getState}
-     * @public
      * @returns {ReturnType<typeof this["getState"]>}
      */
     useState() {
@@ -736,7 +735,6 @@ const addonStore = new class AddonStore {
 
     /**
      * Add a listener to subscribe when the store changes
-     * @public
      * @param {() => void} listener
      * @returns {() => void}
      */

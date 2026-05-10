@@ -135,7 +135,7 @@ export interface DiscordPermissions {
     STREAM: 512n;
     USE_APPLICATION_COMMANDS: 2147483648n;
     USE_CLYDE_AI: 140737488355328n;
-    USE_EMBEDDED_ACTIVITIES: 549755813888n;
+    USE_EMBED_ACTIVITIES: 549755813888n;
     USE_EXTERNAL_APPS: 1125899906842624n;
     USE_EXTERNAL_EMOJIS: 262144n;
     USE_EXTERNAL_SOUNDS: 35184372088832n;
@@ -176,7 +176,7 @@ export type Rule = {
     match: ((s: string, o: {inline: boolean;}) => RegExpExecArray) & {regex: RegExp;};
     order: number;
     parse: (e: RegExpExecArray, t: ((s: string, o: object) => string), n: object) => {content: string;};
-    react?: (e: Record<string, any>, t: null | ((s: string, o: object) => string), n: object) => ReactElement;
+    react?: (e: Record<string, any>, t: null | ((s: string, o: object) => string), n: object) => any;
     requiredFirstCharacters?: string[];
 };
 
@@ -189,5 +189,5 @@ export interface SimpleMarkdown {
     parse: (s: string) => object;
     parserFor: (r: Rules) => (s: string, o?: {inline: boolean;}) => object;
     ruleOutput: (r: Rules, t: string) => object;
-    reactFor: (o: object) => (o2: object) => ReactElement;
+    reactFor: (o: object) => (o2: object) => any;
 }

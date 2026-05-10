@@ -141,7 +141,7 @@ const openDialog = (event: IpcMainInvokeEvent, options: Partial<DialogOptions> =
     if (!openFunction) return Promise.resolve({error: "Unkown Mode: " + mode});
 
     // @ts-expect-error cba to write separate types for these dialogs that are never used
-    return openFunction(...[
+    return (openFunction as any)(...[
         modal && BrowserWindow.fromWebContents(event.sender),
         {
             defaultPath,

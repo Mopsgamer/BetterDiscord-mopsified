@@ -1,6 +1,7 @@
 import type {Webpack} from "discord";
 import Logger from "@common/logger";
 import type {RawModule} from "../types/discord/webpack";
+import Patcher from "@modules/patcher";
 
 export let webpackRequire: Webpack.Require;
 
@@ -64,6 +65,49 @@ function listenToModules(modules: Record<PropertyKey, RawModule>) {
     }
 }
 
+const {promise, resolve} = Promise.withResolvers<void>();
+export const allModulesLoaded = promise;
+
+let loadingModules = 1;
+let moduleLoadTimeout: ReturnType<typeof setTimeout> | null = null;
+requestIdleCallback(onLoadEnd);
+
+function onLoadStart() {
+    loadingModules++;
+    if (moduleLoadTimeout) {
+        clearTimeout(moduleLoadTimeout);
+        moduleLoadTimeout = null;
+    }
+}
+
+function onLoadEnd() {
+    loadingModules--;
+    if (loadingModules > 0) return;
+
+    if (moduleLoadTimeout) clearTimeout(moduleLoadTimeout);
+    moduleLoadTimeout = setTimeout(() => {
+        resolve();
+        Patcher.unpatchAll("WebpackRequire");
+    }, 50);
+}
+
+function patchModuleLoading(require: Webpack.Require) {
+    Patcher.after("WebpackRequire", require, "e", (_, __, loadPromise) => {
+        onLoadStart();
+        loadPromise.finally(onLoadEnd);
+    });
+
+    Patcher.before("WebpackRequire", require, "l", (_, args) => {
+        onLoadStart();
+
+        const onLoad = args[1];
+        args[1] = function(this: any, event: Event) {
+            onLoadEnd();
+            onLoad.call(this, event);
+        };
+    });
+}
+
 function handlePush(chunk: Webpack.ModuleWithoutEffect | Webpack.ModuleWithEffect) {
     const [, modules] = chunk;
     listenToModules(modules);
@@ -77,6 +121,7 @@ window.webpackChunkdiscord_app.push([
         if ("b" in __webpack_require__) {
             webpackRequire = __webpack_require__;
             listenToModules(__webpack_require__.m);
+            patchModuleLoading(__webpack_require__);
         }
     }
 ]);

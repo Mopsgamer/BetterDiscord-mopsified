@@ -16,6 +16,8 @@ import Modals from "@ui/modals";
 import type {Plugin} from "./plugin";
 import type {AddonStateLoad, AddonStateLoaded, AddonStateStart, AddonStateStop} from "./addonstate";
 
+type PluginLoadPoint = "connection" | "idle";
+
 export default new class PluginManager extends AddonManager<Plugin> {
     observer: MutationObserver;
     name = "PluginManager";
@@ -38,6 +40,19 @@ export default new class PluginManager extends AddonManager<Plugin> {
         const errors = await super.initialize();
         this.setupFunctions();
         return errors;
+    }
+
+    async loadAddons(point: PluginLoadPoint) {
+        Logger.log("PluginManager", `Loading addons at point: ${point}`);
+
+        // Note: addonInfo is not present in the new system, we should use the cache or something similar.
+        // However, looking at the previous logic, it seems we might need to track runAt.
+        // For now, let's just handle it.
+        const allPlugins = Object.values(this.cacheByName);
+        for (const addon of allPlugins) {
+            if (addon.runAt !== point) continue;
+            await this.loadAddon(addon.filename);
+        }
     }
 
     /* Aliases */

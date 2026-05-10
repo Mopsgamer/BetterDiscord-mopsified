@@ -27,7 +27,7 @@ import ModalStack, {generateKey} from "./modals/stack";
 import {Filters, getMangled} from "@webpack";
 import type {ComponentType, ReactElement, ReactNode, RefObject} from "react";
 import type {Plugin} from "@modules/pluginmanager.js";
-import type {AddonState} from "@modules/addonmanager.js";
+import type {AddonState} from "@modules/addonstate.js";
 import type {Theme} from "@modules/thememanager.js";
 
 

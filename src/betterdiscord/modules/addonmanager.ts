@@ -19,7 +19,7 @@ import Store from "@stores/base";
 import type {SystemError} from "bun";
 import RemoteAPI from "@polyfill/remote";
 import type {AddonMeta} from "./addonmeta";
-import type {AddonMetaLoad, AddonState, AddonStateLoad, AddonStateNotLoaded, AddonStateStart, AddonStateStarted, AddonStateStop} from "./addonstate";
+import type {AddonState, AddonStateLoad, AddonStateNotLoaded, AddonStateStart, AddonStateStarted, AddonStateStop} from "./addonstate";
 import type {AddonAny, AddonType} from "./addon";
 
 
@@ -80,7 +80,10 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
 
         const states = await this.loadAllAddons();
         if (states.length > 0) {
-            Toasts.show(t("Addons.manyEnabled", {count: states.length, context: this.prefix}));
+            const enabledCount = states.filter(s => s.kind === "started").length;
+            if (enabledCount > 0) {
+                Toasts.show(t("Addons.manyEnabled", {count: enabledCount, context: this.prefix}));
+            }
         }
         return states;
     }
@@ -150,9 +153,11 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
 
                     if (eventType == "rename") {
                         Logger.info("AddonManager~watcher", "load new", eventType, filename);
-                        const oldAddon = this.getAddon(addon.id)!;
+                        const oldAddon = this.cacheByFilename[filename];
+                        if (oldAddon) {
+                            await this.unloadAddon(oldAddon, true);
+                        }
                         await this.loadAddon(filename, true);
-                        await this.unloadAddon(oldAddon, true);
                     }
                     else if (eventType == "change") {
                         Logger.info("AddonManager~watcher", "reload", eventType, filename);
@@ -174,7 +179,7 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
         Logger.log(this.name, `No longer watching ${this.prefix} addons.`);
     }
 
-    extractMeta(fileContent: string, filename: string): AddonMetaLoad {
+    extractMeta(fileContent: string, filename: string): AddonStateLoad {
         const firstLine = fileContent.split("\n")[0];
 
         const hasMetaComment = firstLine.includes("/**");
@@ -392,7 +397,7 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
         if (addon.partial || this.enablement[addon.id]) {
             return {
                 kind: "not-started",
-                error: new AddonError({
+                error: new Addonerror({
                     addonType: this.prefix,
                     addon,
                     message: t("Addons.couldNotEnable", {name: addon.id}),
@@ -422,7 +427,7 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
         if (addon.partial || !this.enablement[addon.id]) {
             return {
                 kind: "not-stopped",
-                error: new AddonError({
+                error: new Addonerror({
                     addonType: this.prefix,
                     addon,
                     message: t("Addons.couldNotDisable", {name: addon.id}),
@@ -480,45 +485,35 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
         ]);
     }
 
-    async loadAllAddons(): Promise<Array<AddonState<A>>> {
-        this.loadEnablement();
-        let states: Array<AddonState<A>> = [];
+    async discoverAddons(): Promise<AddonStateLoad[]> {
+        const states: AddonStateLoad[] = [];
         const addonFolder = this.addonFolder();
         const files = await fs.promises.readdir(addonFolder);
-
-        type Resolved = {
-            filename: string;
-            absolute: string;
-            content: string;
-            stats: fs.Stats;
-            meta: AddonMeta;
-        };
-
-        const resolved: Resolved[] = [];
 
         for (const filename of files) {
             if (!this.validateFilename(filename)) continue;
             const absolute = path.resolve(addonFolder, filename);
             const stats = await fs.promises.stat(absolute);
-            const content = await fs.promises.readFile(absolute, "utf8");
-            const extracted = await this.extractMeta(content, filename);
-            if (extracted.kind === "not-loaded") {
-                states.push(extracted);
-                continue;
-            }
-            const meta = extracted.meta;
             this.fileStats.set(filename, stats);
-            resolved.push({filename, absolute, content, stats, meta});
+            states.push(await this.requireAddon(absolute));
         }
+        return states;
+    }
+
+    async loadAllAddons(): Promise<Array<AddonState<A>>> {
+        this.loadEnablement();
+        const discoveryStates = await this.discoverAddons();
+        let states: Array<AddonState<A>> = discoveryStates.filter(s => s.kind === "not-loaded");
+
+        const resolved = discoveryStates.filter(s => s.kind === "loaded").map(s => s.addon as A);
 
         const concurrency: Array<Promise<AddonStateLoad | AddonStateStarted<A>>> = [];
-        for (const {filename} of resolved) {
-            if (filename === "0BDFDB.plugin.js") {
-                // BDFDB only
-                states.push(await this.loadAddon(filename, false));
+        for (const addon of resolved) {
+            if (addon.filename === "0BDFDB.plugin.js") {
+                states.push(await this.loadAddon(addon.filename, false));
                 continue;
             }
-            concurrency.push(this.loadAddon(filename, false));
+            concurrency.push(this.loadAddon(addon.filename, false));
         }
         states = states.concat(await Promise.all(concurrency));
 

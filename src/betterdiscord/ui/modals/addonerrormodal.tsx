@@ -65,7 +65,9 @@ function AddonError({err, index}: {err: AddonErrorType; index: number;}) {
             <div className="bd-addon-error-header-inner">
                 <Text tag="h3" size={Text.Sizes.SIZE_16} color={Text.Colors.HEADER_PRIMARY} strong={true}>{err.addon.name}</Text>
                 <div className="bd-addon-error-details">
-                    <InfoIcon className="bd-addon-error-details-icon" size="16px" />
+                    <span className="bd-addon-error-details-icon-wrapper">
+                        <InfoIcon className="bd-addon-error-details-icon" size="16px" />
+                    </span>
                     <Text color={Text.Colors.HEADER_SECONDARY} size={Text.Sizes.SIZE_12}>{err.message}</Text>
                 </div>
             </div>
@@ -119,13 +121,13 @@ export default function AddonErrorModal({transitionState, onClose, pluginErrors,
             <Flex direction={Flex.Direction.VERTICAL}>
                 <Text tag="h1" size={Text.Sizes.SIZE_14} color={Text.Colors.HEADER_PRIMARY} strong={true} style={{textTransform: "uppercase", marginBottom: "8px"}}>{t("Modals.addonErrors")}</Text>
                 <div className="bd-tab-bar">
-                    {tabs.map(tab => <div onClick={() => {switchToTab(tab.id);}} className={clsx("bd-tab-item", tab.id === selectedTab.id && "selected")}>{tab.name}</div>)}
+                    {tabs.map(tab => <div key={tab.id} onClick={() => {switchToTab(tab.id);}} className={clsx("bd-tab-item", tab.id === selectedTab.id && "selected")}>{tab.name}</div>)}
                 </div>
             </Flex>
         </Header>
         <Content className="bd-error-modal-content">
             <div className="bd-addon-errors">
-                {selectedTab.errors.map((error, index) => <AddonError index={index} err={error} />)}
+                {selectedTab.errors.map((error, index) => <AddonError key={index} index={index} err={error} />)}
             </div>
         </Content>
         <Footer className="bd-error-modal-footer">

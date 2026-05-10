@@ -31,7 +31,7 @@ class BrowserWindow extends electron.BrowserWindow {
         if (!options || !options.webPreferences || !options.webPreferences.preload || !options.title) {
             super(options);
             return;
-        };
+        }
 
         if (maybeHasOtherClientMod() && BetterDiscord.clientModCompatibility.shouldShow()) {
             // Not i18n but the i18n system doesn't exist here

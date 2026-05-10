@@ -14,7 +14,7 @@ import type {Addon} from "@modules/addonstore";
 const {useCallback, useMemo, useState, useEffect, useContext, createContext} = React;
 
 // TODO: let doggy fix these
-export const TagContext = createContext();
+export const TagContext = createContext<any>(null);
 
 function formatNumberWithSuffix(value: any) {
     value = Number(value);
@@ -30,14 +30,14 @@ function formatNumberWithSuffix(value: any) {
     return `${formattedValue}${suffixes[index]}`;
 }
 
-export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isEmbed: boolean;}) {
+export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isEmbed?: boolean;}) {
     const [isInstalled, setInstalled] = useState(() => addonStore.isInstalled());
     const [disabled, setDisabled] = useState(false);
     const [downloadCount, setDownloads] = useState(addonStore.downloads);
 
-    const [isTagEnabled, toggleTag] = useContext(TagContext);
+    const [isTagEnabled, toggleTag] = useContext(TagContext) as any;
 
-    const triggerDelete = useCallback(async (event) => {
+    const triggerDelete = useCallback(async (event: React.MouseEvent) => {
         setDisabled(true);
         try {
             await addonStore.delete(event.shiftKey);
@@ -49,7 +49,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isE
         }
     }, [addonStore]);
 
-    const installAddon = useCallback(async (event) => {
+    const installAddon = useCallback(async (event: React.MouseEvent) => {
         setDisabled(true);
 
         await addonStore.download(event.shiftKey);
@@ -145,7 +145,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isE
                                         mask="url(#svg-mask-squircle)"
                                     >
                                         <DiscordModules.Tooltip text={addonStore.author}>
-                                            {(props) => (
+                                            {(props: any) => (
                                                 <img
                                                     loading="lazy"
                                                     className="bd-addon-store-card-author-img"
@@ -174,6 +174,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isE
                 <div className="bd-addon-store-card-tags">
                     {addonStore.tags.map((tag) => (
                         <span
+                            key={tag}
                             className={clsx({"bd-addon-store-card-tag": true, "bd-addon-store-card-tag-selected": isTagEnabled(tag)})}
                             onClick={() => toggleTag(tag)}
                         >
@@ -194,7 +195,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isE
                 </div>
                 <div className="bd-addon-store-card-actions">
                     <DiscordModules.Tooltip text={t("Addons.website")}>
-                        {(props) => (
+                        {(props: any) => (
                             <Button
                                 {...props}
                                 size={Button.Sizes.ICON}
@@ -206,7 +207,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isE
                         )}
                     </DiscordModules.Tooltip>
                     <DiscordModules.Tooltip text={t("Addons.source")}>
-                        {(props) => (
+                        {(props: any) => (
                             <Button
                                 {...props}
                                 size={Button.Sizes.ICON}
@@ -219,7 +220,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isE
                     </DiscordModules.Tooltip>
                     {addonStore.type === "theme" && (
                         <DiscordModules.Tooltip text={t("Addons.preview")}>
-                            {(props) => (
+                            {(props: any) => (
                                 <Button
                                     {...props}
                                     size={Button.Sizes.ICON}
@@ -233,7 +234,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isE
                     )}
                     {addonStore.guild && (
                         <DiscordModules.Tooltip text={t("Addons.invite")}>
-                            {(props) => (
+                            {(props: any) => (
                                 <Button
                                     {...props}
                                     size={Button.Sizes.ICON}
@@ -248,7 +249,7 @@ export default function AddonCard({addonStore, isEmbed}: {addonStore: Addon, isE
                     <div className="bd-addon-store-card-spacer" />
                     {isInstalled ? (
                         <DiscordModules.Tooltip text={t("Addons.deleteAddon")}>
-                            {(props) => (
+                            {(props: any) => (
                                 <Button
                                     {...props}
                                     onClick={triggerDelete}

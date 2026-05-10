@@ -1,14 +1,14 @@
 import type {Webpack} from "discord";
 import {getModule} from "./searching";
 import {lazyListeners, webpackRequire} from "./require";
-import {shouldSkipModule, getDefaultKey, wrapFilter, makeException} from "./shared";
+import {shouldSkipModule, getDefaultKey, wrapFilter, makeException, getDeclaration} from "./shared";
 
 const ChunkIdRegex = /n\.e\("(\d+)"\)/g;
 const FinalModuleIdRegex = /n\.bind\(n,\s*(\d+)\s*\)/g;
 const CreatePromiseId = /createPromise:\s*\(\)\s*=>\s*([^}]+)\.then\(n\.bind\(n,\s*(\d+)\)\)/g;
 
 export function getLazy<T>(filter: Webpack.Filter, options: Webpack.LazyOptions = {}): Promise<T | undefined> {
-    const {signal: abortSignal, defaultExport = true, searchDefault = true, searchExports = false, raw = false, fatal = false} = options;
+    const {signal: abortSignal, defaultExport = true, searchDefault = true, searchExports = false, raw = false, fatal = false, declarationFilter} = options;
     if (!options.cacheId) options.cacheId = null;
 
     if (abortSignal?.aborted) {
@@ -28,7 +28,8 @@ export function getLazy<T>(filter: Webpack.Filter, options: Webpack.LazyOptions 
             if (shouldSkipModule(module.exports)) return;
 
             if (filter(module.exports, module, module.id)) {
-                resolve(raw ? module : module.exports);
+                if (declarationFilter) resolve(getDeclaration(module, declarationFilter));
+                else resolve(raw ? module : module.exports);
                 cancel();
                 return;
             }
@@ -48,12 +49,14 @@ export function getLazy<T>(filter: Webpack.Filter, options: Webpack.LazyOptions 
 
                 if (filter(exported, module, module.id)) {
                     if (!defaultExport && defaultKey === key) {
-                        resolve(raw ? module : module.exports);
+                        if (declarationFilter) resolve(getDeclaration(module, declarationFilter));
+                        else resolve(raw ? module : module.exports);
                         cancel();
                         return;
                     }
 
-                    resolve(raw ? module : exported);
+                    if (declarationFilter) resolve(getDeclaration(module, declarationFilter));
+                    else resolve(raw ? module : exported);
                     cancel();
                 }
             }

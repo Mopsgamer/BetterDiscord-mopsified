@@ -101,9 +101,9 @@ export const promises = {
         const data = content instanceof Uint8Array ? Buffer.from(content) : content;
         if (options?.originalFs) {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            return require("original-fs").promises.writeFile(path, data, options);
+            return (require("original-fs") as typeof fs).promises.writeFile(path, data, options as any);
         }
-        return fs.promises.writeFile(path, data, options);
+        return fs.promises.writeFile(path, data, options as any);
     },
 
     readDirectory: (path: string, options?: object) =>

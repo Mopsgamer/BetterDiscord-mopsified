@@ -102,7 +102,7 @@ export default function AddonCard({addon, enabled, type, disabled, onChange: par
 
     const onChange = useCallback(() => {
         if (parentChange) parentChange(addon as AddonAny);
-    }, [addon.id, parentChange]);
+    }, [addon, parentChange]);
 
     const showSettings = useCallback(() => {
         if (!hasSettings || !enabled) return;

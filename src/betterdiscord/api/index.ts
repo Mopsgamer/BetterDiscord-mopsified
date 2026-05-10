@@ -46,8 +46,8 @@ type ReactDOMType = typeof ReactDOMBaseType & typeof ReactDOMClientType;
 
 
 const bounded = new Map();
-const PluginAPI = new AddonAPI(PluginManager);
-const ThemeAPI = new AddonAPI(ThemeManager);
+const PluginAPI = new AddonAPI<Plugin>(PluginManager);
+const ThemeAPI = new AddonAPI<Theme>(ThemeManager);
 const PatcherAPI = new Patcher<false>();
 const DataAPI = new Data<false>();
 const DOMAPI = new DOM<false>();

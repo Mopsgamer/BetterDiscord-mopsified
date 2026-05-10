@@ -10,7 +10,7 @@ const {useState, useEffect} = React;
 export default function AddonEmbed({id, original}: {id: string; original: ReactNode;}) {
     const [addon, setAddon] = useState(() => AddonStore.getAddon(id));
     const [loading, setLoading] = useState(() => true);
-    const [tags, setTags] = useState({});
+    const [tags, setTags] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         setAddon(AddonStore.getAddon(id));
@@ -37,8 +37,8 @@ export default function AddonEmbed({id, original}: {id: string; original: ReactN
     return (
         <TagContext.Provider
             value={[
-                (tag) => tags[tag] === true,
-                (tag, state) => setTags(($tags) => ({...$tags, [tag]: state ?? !$tags[tag]}))
+                (tag: string) => tags[tag] === true,
+                (tag: string, state: boolean) => setTags(($tags) => ({...$tags, [tag]: state ?? !$tags[tag]}))
             ]}
         >
             <AddonCard addonStore={addon} isEmbed />

@@ -136,7 +136,7 @@ function(){
 */
 (${stringedModule.slice(0, func.end - 1)};
 {
-    arguments[0].declarations={${vars.map((node) => `\n\t\tget ${node.name}(){return ${node.name}},set ${node.name}(_${node.name}){${node.name}=_${node.name}}`).join(",")}${vars.length ? "\n\t" : ""}};
+    arguments[0].declarations = Object.seal({__proto__: null, ${vars.map((node) => `\n\t\tget ${node.name}(){return ${node.name}},set ${node.name}(_${node.name}){${node.name}=_${node.name}}`).join(",")}${vars.length ? "\n\t" : ""}});
 }
 ${stringedModule.slice(func.end - 1)}).apply(this, arguments)
 })()

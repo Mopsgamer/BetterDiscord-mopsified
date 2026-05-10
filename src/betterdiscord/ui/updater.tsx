@@ -40,7 +40,7 @@ function makeButton(tooltip: string, children: ReactNode, action: () => Promise<
     };
 
     return <DiscordModules.Tooltip color="primary" position="top" text={tooltip}>
-        {(props) => <Button {...props} aria-label={tooltip} className={`bd-update-button ${className}`} size={size} look={look} color={color} onClick={onClick}>{children}</Button>}
+        {(props: any) => <Button {...props} aria-label={tooltip} className={`bd-update-button ${className}`} size={size} look={look} color={color} onClick={onClick}>{children}</Button>}
     </DiscordModules.Tooltip>;
 }
 
@@ -87,8 +87,8 @@ export default function UpdaterPanel({coreUpdater, pluginUpdater, themeUpdater}:
     const checkAddons = useCallback(async (type: "plugins" | "themes") => {
         const updater = type === "plugins" ? pluginUpdater : themeUpdater;
         await updater.checkAll(false);
-        setUpdates({...updates, [type]: Array.from(updater.pending)});
-    }, [updates, pluginUpdater, themeUpdater]);
+        setUpdates(u => ({...u, [type]: Array.from(updater.pending)}));
+    }, [pluginUpdater, themeUpdater]);
 
     const update = useCallback(() => {
         checkAddons("plugins");
@@ -134,7 +134,12 @@ export default function UpdaterPanel({coreUpdater, pluginUpdater, themeUpdater}:
         const updater = type === "plugins" ? pluginUpdater : themeUpdater;
         await updater.updateAddon(filename);
         setUpdates(prev => {
-            prev[type].splice(prev[type].indexOf(filename), 1);
+            const index = prev[type].indexOf(filename);
+            if (index !== -1) {
+                const next = [...prev[type]];
+                next.splice(index, 1);
+                return {...prev, [type]: next};
+            }
             return prev;
         });
     }, [pluginUpdater, themeUpdater]);
@@ -150,12 +155,12 @@ export default function UpdaterPanel({coreUpdater, pluginUpdater, themeUpdater}:
 
     return [
         set(
-            <SettingsTitle text={t("Panels.updates")}>
+            <SettingsTitle key="title" text={t("Panels.updates")}>
                 {makeButton(t("Updater.checkForUpdates"), <RefreshCwIcon />, checkForUpdates, {className: "bd-update-check", stopAnimation: true})}
             </SettingsTitle>
         ),
-        <CoreUpdaterPanel remoteVersion={coreUpdater.remoteVersion} hasUpdate={hasCoreUpdate} update={updateCore} />,
-        <AddonUpdaterPanel type="plugins" pending={updates.plugins} update={updateAddon} updateAll={updateAllAddons} updater={pluginUpdater} />,
-        <AddonUpdaterPanel type="themes" pending={updates.themes} update={updateAddon} updateAll={updateAllAddons} updater={themeUpdater} />,
+        <CoreUpdaterPanel key="core" remoteVersion={coreUpdater.remoteVersion} hasUpdate={hasCoreUpdate} update={updateCore} />,
+        <AddonUpdaterPanel key="plugins" type="plugins" pending={updates.plugins} update={updateAddon} updateAll={updateAllAddons} updater={pluginUpdater} />,
+        <AddonUpdaterPanel key="themes" type="themes" pending={updates.themes} update={updateAddon} updateAll={updateAllAddons} updater={themeUpdater} />,
     ];
 }

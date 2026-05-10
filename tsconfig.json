@@ -71,7 +71,7 @@
       ],
       "@webpack": [
         "./src/betterdiscord/webpack"
-      ],
+      ]
     },
     "typeRoots": [
       "node_modules/@types",
@@ -82,5 +82,5 @@
     "src/**/*",
     "scripts/*",
     "tests/**/*"
-  ],
+  ]
 }

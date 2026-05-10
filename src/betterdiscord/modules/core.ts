@@ -86,11 +86,9 @@ export default new class Core {
         }
 
         Logger.log("Startup", "Loading Plugins");
-        // const pluginErrors = [];
         const pluginErrors = await PluginManager.initialize();
 
         Logger.log("Startup", "Loading Themes");
-        // const themeErrors = [];
         const themeErrors = await ThemeManager.initialize();
 
         Logger.log("Startup", "Initializing Updater");

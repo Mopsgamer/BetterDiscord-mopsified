@@ -1,4 +1,4 @@
-import type {AddonType} from "@modules/addonmanager";
+import type {AddonType} from "@modules/addon";
 
 export interface AddonErrorOptions<T extends Error> {
     addonType: AddonType;
