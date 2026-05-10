@@ -35,6 +35,9 @@ async function makeDirectories(...folders) {
 	}
 }
 
+/**
+ * @param {import("@betterdiscord.com/injection").DiscordInstallation[]} installations
+ */
 export default async function (installations) {
 	await reset();
 

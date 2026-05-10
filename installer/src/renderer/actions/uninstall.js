@@ -10,6 +10,9 @@ import { uninject } from "@betterdiscord.com/bd-injection";
 const UNINJECT_PROGRESS = 85;
 const RESTART_DISCORD_PROGRESS = 100;
 
+/**
+ * @param {import("@betterdiscord.com/injection").DiscordInstallation[]} installations
+ */
 export default async function (installations) {
 	await reset();
 
