@@ -213,7 +213,7 @@ export default class BetterDiscord {
                 };
             }
 
-            const match = access.match(/addons\/plugins\/(?<plugin>\w+.plugin.m?js)/) as PluginMatch | null;
+            const match = access.match(/addons\/plugins\/(?<plugin>[\w.-]+.plugin.m?js)/) as PluginMatch | null;
 
             if (match) {
                 const filename = match.groups.plugin;
