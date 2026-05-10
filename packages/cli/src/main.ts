@@ -2,8 +2,8 @@
 import {
 	type DiscordChannel,
 	type InstallationsFilter,
-	checkIsInjected,
-	getInstallations,
+	checkIsInjectedSync,
+	getInstallationsSync,
 	inject,
 	name,
 	uninject,
@@ -49,7 +49,7 @@ async function main() {
 			await list("injectable", args);
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallations("injectable").find((i: any) => i.channel === channel);
+		const inst = getInstallationsSync("injectable").find((i: any) => i.channel === channel);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -58,7 +58,7 @@ async function main() {
 			}
 			process.exit(1);
 		}
-		await inject(inst);
+		await inject(inst).promise;
 		if (isJson) {
 			console.log(JSON.stringify({ success: true, channel, action: "inject" }));
 		}
@@ -70,7 +70,7 @@ async function main() {
 			await list("injected", args);
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallations("injected").find((i: any) => i.channel === channel);
+		const inst = getInstallationsSync("injected").find((i: any) => i.channel === channel);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -119,7 +119,7 @@ function generateTable(data: any[]): string {
 }
 
 function list(filter: InstallationsFilter, args: string[]): void {
-	const installations = getInstallations(filter);
+	const installations = getInstallationsSync(filter);
 	if (args.includes("--json")) {
 		console.log(JSON.stringify(installations));
 		return;
@@ -127,7 +127,7 @@ function list(filter: InstallationsFilter, args: string[]): void {
 	console.log(c("bold", "Available Discord Installations:\n"));
 	const table: Record<"i" | "c" | "v" | "s", any>[] = [];
 	for (const inst of installations) {
-		const isInjected = !!inst.version && checkIsInjected(inst);
+		const isInjected = !!inst.version && checkIsInjectedSync(inst);
 		const color: InspectColor | readonly InspectColor[] = !inst.version
 			? ["gray"]
 			: isInjected

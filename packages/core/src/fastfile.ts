@@ -22,38 +22,37 @@ export async function readIndexOf(
 	startAt: number = 0,
 ): Promise<number> {
 	const table = computeData(data);
-	const stream = createReadStream(path, { highWaterMark: 64 * 1024, start: startAt });
+	const stream = createReadStream(path, {
+		highWaterMark: 64 * 1024,
+		start: startAt,
+	});
 
 	let globalIndex = 0;
 	let j = 0;
 
-	return new Promise((resolve, reject) => {
-		stream.on("data", (chunk: Buffer) => {
-			for (let i = 0; i < chunk.length; i++) {
-				const charCode = chunk[i];
-				const patternCode = data.charCodeAt(j);
+	for await (const chunk of stream) {
+		for (let i = 0; i < chunk.length; i++) {
+			const charCode = chunk[i];
 
-				while (j > 0 && charCode !== patternCode) {
-					j = table[j - 1]!;
-				}
-
-				if (charCode === data.charCodeAt(j)) {
-					j++;
-				}
-
-				if (j === data.length) {
-					const foundAt = globalIndex + i - (data.length - 1);
-					stream.destroy();
-					resolve(foundAt);
-					return;
-				}
+			while (j > 0 && charCode !== data.charCodeAt(j)) {
+				j = table[j - 1]!;
 			}
-			globalIndex += chunk.length;
-		});
 
-		stream.on("end", () => resolve(-1));
-		stream.on("error", reject);
-	});
+			if (charCode === data.charCodeAt(j)) {
+				j++;
+			}
+
+			if (j === data.length) {
+				const foundAt = globalIndex + i - (data.length - 1);
+				// The 'for await' loop handles closing the stream
+				// automatically when you return.
+				return foundAt;
+			}
+		}
+		globalIndex += chunk.length;
+	}
+
+	return -1;
 }
 
 export async function writeAt(path: string, data: string, position: number) {

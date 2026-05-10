@@ -5,7 +5,8 @@
 		"react-perf/jsx-no-jsx-as-prop": "warn",
 		"react-perf/jsx-no-new-array-as-prop": "warn",
 		"react-perf/jsx-no-new-function-as-prop": "warn",
-		"react-perf/jsx-no-new-object-as-prop": "warn"
+		"react-perf/jsx-no-new-object-as-prop": "warn",
+		"typescript/no-unsafe-declaration-merging": "off"
 	},
 	"ignorePatterns": ["**/dist", "vendors/**", "packages/injection/reference_inject.ts"],
 	"overrides": [

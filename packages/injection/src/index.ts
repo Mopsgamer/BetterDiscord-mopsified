@@ -1,5 +1,6 @@
 import * as asar from "@electron/asar";
-import { execSync } from "node:child_process";
+import { exec, execSync } from "node:child_process";
+import type { EventListenerOrEventListenerObject } from "bun";
 import fs from "node:fs";
 import patchAsar from "@betterdiscord.com/core/patch_asar";
 import path from "node:path";
@@ -59,24 +60,24 @@ function filterInstalled(
 		case "injectable":
 			return insts.filter(checkIsInjectableSync);
 		case "injected":
-			return insts.filter(checkIsInjected);
+			return insts.filter(checkIsInjectedSync);
 	}
 }
 
-export function getInstallations(filter: InstallationsFilter): DiscordInstallation[] {
+export function getInstallationsSync(filter: InstallationsFilter): DiscordInstallation[] {
 	if (process.platform === "win32") {
-		return filterInstalled(getWindowsInstallations(), filter);
+		return filterInstalled(getWindowsInstallationsSync(), filter);
 	}
 	if (process.env.WSL_DISTRO_NAME) {
-		return filterInstalled(getWSLInstallations(), filter);
+		return filterInstalled(getWSLInstallationsSync(), filter);
 	}
 	if (process.platform === "darwin") {
-		return filterInstalled(getDarwinInstallations(), filter);
+		return filterInstalled(getDarwinInstallationsSync(), filter);
 	}
-	return filterInstalled(getLinuxInstallations(), filter);
+	return filterInstalled(getLinuxInstallationsSync(), filter);
 }
 
-export function getWindowsLetters(): string[] {
+export function getWindowsLettersSync(): string[] {
 	const stdout = execSync("wmic logicaldisk get name");
 	return stdout
 		.toString()
@@ -85,13 +86,13 @@ export function getWindowsLetters(): string[] {
 		.map((value) => value.trim());
 }
 
-export function newWindowsInstallation(
+export function newWindowsInstallationSync(
 	letter: string,
 	channel: DiscordChannel,
 ): DiscordInstallation {
 	const baseDir =
 		letter + "\\Users\\" + process.env.USERNAME! + "\\AppData\\Local\\" + nameSolid[channel];
-	const version = getVersions(baseDir)[0] || "";
+	const version = getVersionsSync(baseDir)[0] || "";
 	const dir = baseDir + "\\" + version;
 	return {
 		meta: new Set(),
@@ -106,24 +107,27 @@ export function newWindowsInstallation(
 	};
 }
 
-export function getWindowsInstallations(): DiscordInstallation[] {
-	const letters = getWindowsLetters();
+export function getWindowsInstallationsSync(): DiscordInstallation[] {
+	const letters = getWindowsLettersSync();
 	return letters.flatMap((letter) => [
-		newWindowsInstallation(letter, "stable"),
-		newWindowsInstallation(letter, "canary"),
-		newWindowsInstallation(letter, "ptb"),
-		newWindowsInstallation(letter, "development"),
+		newWindowsInstallationSync(letter, "stable"),
+		newWindowsInstallationSync(letter, "canary"),
+		newWindowsInstallationSync(letter, "ptb"),
+		newWindowsInstallationSync(letter, "development"),
 	]);
 }
 
-export function getWSLLetters(): string[] {
+export function getWSLLettersSync(): string[] {
 	return fs.readdirSync("/mnt").filter((f) => f !== "wsl" && f !== "wslg");
 }
 
-export function newWSLInstallation(letter: string, channel: DiscordChannel): DiscordInstallation {
+export function newWSLInstallationSync(
+	letter: string,
+	channel: DiscordChannel,
+): DiscordInstallation {
 	const baseDir =
 		"/mnt/" + letter + "/Users/" + process.env.USERNAME + "/AppData/Local/" + nameSolid[channel];
-	const version = getVersions(baseDir)[0] || "";
+	const version = getVersionsSync(baseDir)[0] || "";
 	const dir = baseDir + "/" + version;
 	return {
 		meta: new Set(),
@@ -137,21 +141,21 @@ export function newWSLInstallation(letter: string, channel: DiscordChannel): Dis
 		updaterExePath: baseDir + "/Updater.exe",
 	};
 }
-export function getWSLInstallations(): DiscordInstallation[] {
-	const letters = getWSLLetters();
+export function getWSLInstallationsSync(): DiscordInstallation[] {
+	const letters = getWSLLettersSync();
 	return letters.flatMap((letter) => [
-		newWSLInstallation(letter, "stable"),
-		newWSLInstallation(letter, "canary"),
-		newWSLInstallation(letter, "ptb"),
-		newWSLInstallation(letter, "development"),
+		newWSLInstallationSync(letter, "stable"),
+		newWSLInstallationSync(letter, "canary"),
+		newWSLInstallationSync(letter, "ptb"),
+		newWSLInstallationSync(letter, "development"),
 	]);
 }
-export function newDiscordInstallation(
+export function newDiscordInstallationSync(
 	channel: DiscordChannel,
 	options: { getBaseDir?: (() => string) | undefined; getDir: () => string },
 ): DiscordInstallation {
 	const baseDir = (options.getBaseDir ?? options.getDir)();
-	const version = getVersions(baseDir)[0] || "";
+	const version = getVersionsSync(baseDir)[0] || "";
 	const dir = options.getDir() + "/" + version;
 	return {
 		meta: new Set(),
@@ -165,22 +169,22 @@ export function newDiscordInstallation(
 		updaterExePath: baseDir + "/Updater.exe",
 	};
 }
-export function newDarwinInstallation(channel: DiscordChannel): DiscordInstallation {
-	return newDiscordInstallation(channel, {
+export function newDarwinInstallationSync(channel: DiscordChannel): DiscordInstallation {
+	return newDiscordInstallationSync(channel, {
 		getDir: () => process.env.HOME! + "/Library/Application Support/" + nameLowerSolid[channel],
 		getBaseDir: () => "applications/" + name[channel] + ".app/contents",
 	});
 }
-export function getDarwinInstallations(): DiscordInstallation[] {
+export function getDarwinInstallationsSync(): DiscordInstallation[] {
 	return [
-		newDarwinInstallation("stable"),
-		newDarwinInstallation("canary"),
-		newDarwinInstallation("ptb"),
-		newDarwinInstallation("development"),
+		newDarwinInstallationSync("stable"),
+		newDarwinInstallationSync("canary"),
+		newDarwinInstallationSync("ptb"),
+		newDarwinInstallationSync("development"),
 	];
 }
-export function newLinuxFlatpakInstallation(channel: DiscordChannel): DiscordInstallation {
-	const installation = newDiscordInstallation(channel, {
+export function newLinuxFlatpakInstallationSync(channel: DiscordChannel): DiscordInstallation {
+	const installation = newDiscordInstallationSync(channel, {
 		getDir: () =>
 			process.env.HOME! + "/.var/app/com.discordapp.Discord/config/" + nameLowerSolid.stable,
 		getBaseDir: () =>
@@ -189,11 +193,14 @@ export function newLinuxFlatpakInstallation(channel: DiscordChannel): DiscordIns
 	installation.meta.add("flatpak");
 	return installation;
 }
-export function getLinuxFlatpakInstallations(): DiscordInstallation[] {
-	return [newLinuxFlatpakInstallation("stable")];
+export function getLinuxFlatpakInstallationsSync(): DiscordInstallation[] {
+	return [newLinuxFlatpakInstallationSync("stable")];
 }
-function newLinuxInstallation(channel: DiscordChannel, isAurElseDeb: boolean): DiscordInstallation {
-	const installation = newDiscordInstallation(channel, {
+function newLinuxInstallationSync(
+	channel: DiscordChannel,
+	isAurElseDeb: boolean,
+): DiscordInstallation {
+	const installation = newDiscordInstallationSync(channel, {
 		getDir: () =>
 			path.join(
 				process.env.XDG_CONFIG_HOME || path.posix.join(process.env.HOME!, ".config"),
@@ -204,29 +211,29 @@ function newLinuxInstallation(channel: DiscordChannel, isAurElseDeb: boolean): D
 	installation.meta.add(isAurElseDeb ? "aur" : "deb");
 	return installation;
 }
-export function getLinuxAURInstallations(): DiscordInstallation[] {
+export function getLinuxAURInstallationsSync(): DiscordInstallation[] {
 	return [
-		newLinuxInstallation("stable", true), // pacman
-		newLinuxInstallation("canary", true), // yay
+		newLinuxInstallationSync("stable", true), // pacman
+		newLinuxInstallationSync("canary", true), // yay
 	];
 }
-export function getLinuxDebInstallations(): DiscordInstallation[] {
+export function getLinuxDebInstallationsSync(): DiscordInstallation[] {
 	return [
-		newLinuxInstallation("stable", false),
-		newLinuxInstallation("canary", false),
-		newLinuxInstallation("ptb", false),
-		newLinuxInstallation("development", false),
+		newLinuxInstallationSync("stable", false),
+		newLinuxInstallationSync("canary", false),
+		newLinuxInstallationSync("ptb", false),
+		newLinuxInstallationSync("development", false),
 	];
 }
-export function getLinuxInstallations(): DiscordInstallation[] {
+export function getLinuxInstallationsSync(): DiscordInstallation[] {
 	return [
-		getLinuxFlatpakInstallations(),
-		getLinuxAURInstallations(),
-		getLinuxDebInstallations(),
+		getLinuxFlatpakInstallationsSync(),
+		getLinuxAURInstallationsSync(),
+		getLinuxDebInstallationsSync(),
 	].flat(1);
 }
 
-function getVersions(dir: string): string[] {
+function getVersionsSync(dir: string): string[] {
 	try {
 		const versions = fs
 			.readdirSync(dir, { withFileTypes: true })
@@ -250,10 +257,10 @@ export function checkIsValidSync(inst: DiscordInstallation): boolean {
  * Checks if a Discord installation is out there and not injected.
  */
 export function checkIsInjectableSync(inst: DiscordInstallation): boolean {
-	return checkIsValidSync(inst) && !checkIsInjected(inst);
+	return checkIsValidSync(inst) && !checkIsInjectedSync(inst);
 }
 
-export function checkIsInjected(inst: DiscordInstallation): boolean {
+export function checkIsInjectedSync(inst: DiscordInstallation): boolean {
 	try {
 		return fs.readFileSync(inst.asarPath, "utf8").includes('scheme: "bd"');
 	} catch (err: any) {
@@ -264,41 +271,145 @@ export function checkIsInjected(inst: DiscordInstallation): boolean {
 	}
 }
 
-export async function inject(inst: DiscordInstallation): Promise<void> {
-	if (!checkIsInjectableSync(inst)) {
-		throw new Error("Installation is not injectable");
+interface InjectionEventMap {
+	create: { path: string };
+	remove: { path: string };
+	copy: { source: string; destination: string };
+	extract: { source: string; destination: string };
+	patch: { path: string };
+	done: undefined;
+	error: { err: Error };
+}
+
+class Injection extends EventTarget {
+	private emit<K extends keyof InjectionEventMap>(type: K, detail?: InjectionEventMap[K]): void {
+		this.dispatchEvent(new CustomEvent(type, { detail }));
 	}
-	const tempUnpackPath = path.join(inst.asarPath, "..", "app-unpacked-temp");
-	using tempUnpackRemover = {
-		[Symbol.dispose](): void {
-			try {
-				fs.rmSync(tempUnpackPath, { force: true, recursive: true });
-			} catch {}
-		},
-	};
-	tempUnpackRemover[Symbol.dispose]();
-	{
-		// create backup
-		await new Promise<void>((r) =>
-			fs.copyFile(inst.asarPath, inst.asarBakPath, fs.constants.COPYFILE_EXCL, () => r()),
-		);
-		asar.extractAll(inst.asarPath, tempUnpackPath);
+
+	createPath(path: string): void {
+		this.emit("create", { path });
 	}
-	let targetFile = path.join(tempUnpackPath, "app_bootstrap", "protocols.js");
-	if (!fs.existsSync(targetFile)) {
-		targetFile = path.join(tempUnpackPath, "bundle.js");
-		if (!fs.existsSync(targetFile)) {
-			throw new Error(`Cannot find resource file for ${inst.channel} at ${targetFile}`);
-		}
+
+	removePath(path: string): void {
+		this.emit("remove", { path });
 	}
-	await patchAsar(targetFile);
-	await asar.createPackage(tempUnpackPath, inst.asarPath);
-	if (inst.meta.has("flatpak")) {
-		execSync(`flatpak override --filesystem=host com.discordapp.${nameSolid[inst.channel]}`);
+
+	copyPath(source: string, destination: string): void {
+		this.emit("copy", { source, destination });
+	}
+
+	extractPath(source: string, destination: string): void {
+		this.emit("extract", { source, destination });
+	}
+
+	patchPath(path: string): void {
+		this.emit("patch", { path });
+	}
+
+	done(): void {
+		this.emit("done");
+	}
+
+	error(err: Error): void {
+		this.emit("error", { err });
+		this.done();
 	}
 }
 
-export async function uninject(inst: DiscordInstallation): Promise<void> {
-	if (!fs.existsSync(inst.asarBakPath)) return;
-	fs.renameSync(inst.asarBakPath, inst.asarPath);
+interface Injection {
+	// 1. Your specific typed listeners
+	addEventListener<K extends keyof InjectionEventMap>(
+		type: K,
+		listener: (this: Injection, ev: CustomEvent<InjectionEventMap[K]>) => any,
+		options?: boolean | AddEventListenerOptions,
+	): void;
+
+	// 2. Fallback to the standard EventTarget signature to satisfy the compiler
+	addEventListener(
+		type: string,
+		listener: EventListenerOrEventListenerObject,
+		options?: boolean | AddEventListenerOptions,
+	): void;
+
+	// Repeat for removeEventListener
+	removeEventListener<K extends keyof InjectionEventMap>(
+		type: K,
+		listener: (this: Injection, ev: CustomEvent<InjectionEventMap[K]>) => any,
+		options?: boolean | EventListenerOptions,
+	): void;
+
+	removeEventListener(
+		type: string,
+		listener: EventListenerOrEventListenerObject,
+		options?: boolean | EventListenerOptions,
+	): void;
+}
+
+/**
+ * Asar is extracted synchronously anyway.
+ */
+export function inject(inst: DiscordInstallation): {
+	process: Injection;
+	promise: Promise<void>;
+} {
+	if (!checkIsInjectableSync(inst)) {
+		throw new Error("Installation is not injectable");
+	}
+	const injection = new Injection();
+	const { promise, resolve, reject } = Promise.withResolvers<void>();
+	injection.addEventListener("done", () => resolve());
+	injection.addEventListener("error", (ev) => reject(ev.detail.err));
+	(async function injectImpl(): Promise<void> {
+		try {
+			const tempUnpackPath = path.resolve(inst.asarPath, "..", "app-unpacked-temp");
+			using tempUnpackRemover = {
+				[Symbol.dispose](): void {
+					fs.rm(tempUnpackPath, { force: true, recursive: true }, () => {
+						injection.removePath(inst.asarPath);
+					});
+				},
+			};
+			tempUnpackRemover[Symbol.dispose]();
+			{
+				// create backup
+				await new Promise<void>((r) =>
+					fs.copyFile(inst.asarPath, inst.asarBakPath, fs.constants.COPYFILE_EXCL, (err) => {
+						if (!err) injection.copyPath(inst.asarPath, inst.asarBakPath);
+						r();
+					}),
+				);
+				injection.createPath(tempUnpackPath);
+				asar.extractAll(inst.asarPath, tempUnpackPath);
+				injection.extractPath(inst.asarPath, tempUnpackPath);
+			}
+			const targetFile = path.join(tempUnpackPath, "bundle.js");
+			if (!fs.existsSync(targetFile)) {
+				injection.error(
+					new Error(`Cannot find resource file for ${inst.channel} at ${targetFile}`),
+				);
+				return;
+			}
+			await patchAsar(targetFile);
+			await asar.createPackage(tempUnpackPath, inst.asarPath);
+			if (inst.meta.has("flatpak")) {
+				await exec.__promisify__(
+					`flatpak override --filesystem=host com.discordapp.${nameSolid[inst.channel]}`,
+				);
+				injection.done();
+			}
+		} catch (err: any) {
+			injection.error(err);
+		}
+	})();
+	return { process: injection, promise };
+}
+
+export function uninject(inst: DiscordInstallation): Promise<void> {
+	if (!fs.existsSync(inst.asarPath)) {
+		throw new Error("Installation not found");
+	}
+	if (!fs.existsSync(inst.asarBakPath)) {
+		throw new Error("Backup not found");
+	}
+	return fs.promises.rename(inst.asarBakPath, inst.asarPath);
 }
