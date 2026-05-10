@@ -1,4 +1,3 @@
-#!/usr/bin/env node.
 import {
 	type DiscordChannel,
 	type InstallationsFilter,
@@ -48,7 +47,7 @@ async function main() {
 			await list("injectable", args);
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallationsSync("injectable", checkIsInjectedSync).find((i: any) => i.channel === channel);
+		const inst = getInstallationsSync("injectable").find((i: any) => i.channel === channel);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -69,7 +68,7 @@ async function main() {
 			await list("injected", args);
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallationsSync("injected", checkIsInjectedSync).find((i: any) => i.channel === channel);
+		const inst = getInstallationsSync("injected").find((i: any) => i.channel === channel);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -118,7 +117,7 @@ function generateTable(data: any[]): string {
 }
 
 function list(filter: InstallationsFilter, args: string[]): void {
-	const installations = getInstallationsSync(filter, checkIsInjectedSync);
+	const installations = getInstallationsSync(filter);
 	if (args.includes("--json")) {
 		console.log(JSON.stringify(installations));
 		return;

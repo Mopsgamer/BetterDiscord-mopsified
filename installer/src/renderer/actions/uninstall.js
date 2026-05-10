@@ -22,10 +22,10 @@ export default async function (installations) {
 		log(`Uninjecting from ${inst.channel} (${inst.version})...`);
 		try {
 			await uninject(inst);
-			log(`✅ Successfully uninjected from ${inst.channel}`);
+			log(`\x1b[32m✅\x1b[0m Successfully uninjected from ${inst.channel}`);
 			progress.set(progress.value + progressPerLoop);
 		} catch (err) {
-			log(`❌ Failed to uninject from ${inst.channel}: ${err.message}`);
+			log(`\x1b[31m❌\x1b[0m Failed to uninject from ${inst.channel}: ${err.message}`);
 			return fail();
 		}
 	}
@@ -40,7 +40,7 @@ export default async function (installations) {
 	);
 
 	if (killErr) showRestartNotice();
-	else log("✅ Discord restarted");
+	else log(`\x1b[32m✅\x1b[0m Discord restarted`);
 
 	progress.set(RESTART_DISCORD_PROGRESS);
 	succeed();

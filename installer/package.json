@@ -9,6 +9,7 @@
 		"type": "git",
 		"url": "git+https://github.com/BetterDiscord/Installer.git"
 	},
+	"type": "module",
 	"scripts": {
 		"dev": "bun compiler dev",
 		"compiler": "NODE_OPTIONS=--no-deprecation node ../node_modules/electron-webpack/out/cli.js",

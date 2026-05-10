@@ -5,17 +5,14 @@
 	"type": "module",
 	"exports": {
 		".": {
-			"type": "./index.d.ts"
-		},
-		"./api": {
-			"types": "./dist/api/index.d.ts",
-			"import": "./dist/api/index.js"
+			"types": "./index.d.ts",
+			"import": "./dist/index.js"
 		}
 	},
 	"scripts": {
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun build --target node --production src/api/index.ts --outfile=./dist/api/index.js",
+		"dist": "bun dts && bun build --target node --production src/index.ts --outfile=./dist/index.js",
 		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {

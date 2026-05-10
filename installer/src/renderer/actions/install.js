@@ -21,15 +21,15 @@ const bdThemesFolder = path.join(bdFolder, "themes");
 async function makeDirectories(...folders) {
 	for (const folder of folders) {
 		if (fs.existsSync(folder)) {
-			log(`✅ Directory exists: ${folder}`);
+			log(`\x1b[32m✅\x1b[0m Directory exists: ${folder}`);
 			continue;
 		}
 		try {
 			fs.mkdirSync(folder, { recursive: true });
-			log(`✅ Directory created: ${folder}`);
+			log(`\x1b[32m✅\x1b[0m Directory created: ${folder}`);
 		} catch (err) {
-			log(`❌ Failed to create directory: ${folder}`);
-			log(`❌ ${err.message}`);
+			log(`\x1b[31m❌\x1b[0m Failed to create directory: ${folder}`);
+			log(`\x1b[31m❌\x1b[0m ${err.message}`);
 			return err;
 		}
 	}
@@ -53,15 +53,15 @@ export default async function (installations) {
 		try {
 			const { process: injectionProcess, promise } = inject(inst);
 
-			injectionProcess.addEventListener("copy", (ev) => log(`Copying: ${ev.detail.source} -> ${ev.detail.destination}`));
-			injectionProcess.addEventListener("extract", (ev) => log(`Extracting: ${ev.detail.source}`));
-			injectionProcess.addEventListener("patch", (ev) => log(`Patching: ${ev.detail.path}`));
+			injectionProcess.addEventListener("copy", (ev) => log(`\x1b[36mCopying:\x1b[0m ${ev.detail.source} -> ${ev.detail.destination}`));
+			injectionProcess.addEventListener("extract", (ev) => log(`\x1b[36mExtracting:\x1b[0m ${ev.detail.source}`));
+			injectionProcess.addEventListener("patch", (ev) => log(`\x1b[36mPatching:\x1b[0m ${ev.detail.path}`));
 
 			await promise;
-			log(`✅ Successfully injected into ${inst.channel}`);
+			log(`\x1b[32m✅\x1b[0m Successfully injected into ${inst.channel}`);
 			progress.set(progress.value + progressPerLoop);
 		} catch (err) {
-			log(`❌ Failed to inject into ${inst.channel}: ${err.message}`);
+			log(`\x1b[31m❌\x1b[0m Failed to inject into ${inst.channel}: ${err.message}`);
 			return fail();
 		}
 	}
@@ -76,7 +76,7 @@ export default async function (installations) {
 	);
 
 	if (killErr) showRestartNotice();
-	else log("✅ Discord restarted");
+	else log(`\x1b[32m✅\x1b[0m Discord restarted`);
 
 	progress.set(RESTART_DISCORD_PROGRESS);
 	succeed();
