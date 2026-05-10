@@ -251,10 +251,6 @@ function getVersionsSync(dir: string): string[] {
 	}
 }
 
-export function getDiscordAsarPath(inst: DiscordInstallation): string {
-	return inst.asarPath;
-}
-
 /**
  * Checks if a Discord installation is out there.
  */
@@ -357,7 +353,7 @@ export function inject(
 	const injection = new Injection();
 	const { promise, resolve, reject } = Promise.withResolvers<void>();
 	injection.addEventListener("done", () => resolve());
-	injection.addEventListener("error", (ev: any) => reject(ev.detail.err));
+	injection.addEventListener("error", (ev) => reject(ev.detail.err));
 	(async function injectImpl(): Promise<void> {
 		const tempUnpackPath = path.resolve(inst.asarPath, "..", "app-unpacked-temp");
 		try {
