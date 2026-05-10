@@ -12,6 +12,46 @@
     let copyButtonActive = false;
     let copyButtonVisible = false;
 
+    // ANSI parsing logic
+    function parseAnsi(text) {
+        if (!text) return [];
+        const parts = [];
+        const regex = /\x1b\[([0-9;]*)m/g;
+        let lastIndex = 0;
+        let match;
+        let currentColor = "";
+
+        while ((match = regex.exec(text)) !== null) {
+            const plainText = text.substring(lastIndex, match.index);
+            if (plainText) {
+                parts.push({ text: plainText, color: currentColor });
+            }
+
+            const code = match[1];
+            if (code === "0" || code === "") {
+                currentColor = "";
+            } else if (code === "31") {
+                currentColor = "red";
+            } else if (code === "32") {
+                currentColor = "green";
+            } else if (code === "36") {
+                currentColor = "cyan";
+            }
+            // Add more codes as needed
+
+            lastIndex = regex.lastIndex;
+        }
+
+        const remainingText = text.substring(lastIndex);
+        if (remainingText) {
+            parts.push({ text: remainingText, color: currentColor });
+        }
+
+        return parts;
+    }
+
+    $: parsedParts = parseAnsi(value);
+
     // Copy button
     function copyDisplayContents() {
         copyButtonActive = true;
@@ -25,7 +65,7 @@
         }, 500);
     }
 
-    function handleKeyboardCopyToggle() {
+    function handleKeyboardCopyToggle(event) {
         if (event.key === "Enter" || event.key === " ") copyDisplayContents();
     }
 
@@ -48,7 +88,9 @@
         class="text-display{value ? "" : " loading"}"
     >
         <div role="button" bind:this={scroller} on:scroll={() => copyButtonVisible = false} class="display-inner" tabindex="0">
-            {value}
+            {#each parsedParts as part}
+                <span class="color-{part.color}">{part.text}</span>
+            {/each}
         </div>
         <div bind:this={copyInputContainer} class="copy-input" class:visible={copyButtonVisible}>
             {#if copyButtonActive}
@@ -87,6 +129,10 @@
         padding: 12px;
         border-radius: inherit;
     }
+
+    .color-red { color: #ff5555; }
+    .color-green { color: #50fa7b; }
+    .color-cyan { color: #8be9fd; }
 
     .text-display.loading {
         display: flex;

@@ -253,11 +253,16 @@ function getVersionsSync(dir: string): string[] {
 	}
 }
 
+export function getDiscordAsarPath(inst: DiscordInstallation): string {
+	return inst.asarPath;
+}
+
 /**
  * Checks if a Discord installation is out there.
  */
-export function checkIsValidSync(inst: DiscordInstallation): boolean {
-	return fs.existsSync(inst.asarPath);
+export function checkIsValidSync(inst: DiscordInstallation | string): boolean {
+	const asarPath = typeof inst === "string" ? inst : inst.asarPath;
+	return fs.existsSync(asarPath);
 }
 
 /**

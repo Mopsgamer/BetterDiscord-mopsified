@@ -21,15 +21,15 @@ const bdThemesFolder = path.join(bdFolder, "themes");
 async function makeDirectories(...folders) {
 	for (const folder of folders) {
 		if (fs.existsSync(folder)) {
-			log(`\x1b[32m✅\x1b[0m Directory exists: ${folder}`);
+			log(`\x1b[32mDirectory exists:\x1b[0m ${folder}`);
 			continue;
 		}
 		try {
 			fs.mkdirSync(folder, { recursive: true });
-			log(`\x1b[32m✅\x1b[0m Directory created: ${folder}`);
+			log(`\x1b[32mDirectory created:\x1b[0m ${folder}`);
 		} catch (err) {
-			log(`\x1b[31m❌\x1b[0m Failed to create directory: ${folder}`);
-			log(`\x1b[31m❌\x1b[0m ${err.message}`);
+			log(`\x1b[31mFailed to create directory:\x1b[0m ${folder}`);
+			log(`\x1b[31m${err.message}\x1b[0m`);
 			return err;
 		}
 	}
@@ -58,10 +58,10 @@ export default async function (installations) {
 			injectionProcess.addEventListener("patch", (ev) => log(`\x1b[36mPatching:\x1b[0m ${ev.detail.path}`));
 
 			await promise;
-			log(`\x1b[32m✅\x1b[0m Successfully injected into ${inst.channel}`);
+			log(`\x1b[32mSuccessfully injected into ${inst.channel}\x1b[0m`);
 			progress.set(progress.value + progressPerLoop);
 		} catch (err) {
-			log(`\x1b[31m❌\x1b[0m Failed to inject into ${inst.channel}: ${err.message}`);
+			log(`\x1b[31mFailed to inject into ${inst.channel}: ${err.message}\x1b[0m`);
 			return fail();
 		}
 	}
@@ -76,7 +76,7 @@ export default async function (installations) {
 	);
 
 	if (killErr) showRestartNotice();
-	else log(`\x1b[32m✅\x1b[0m Discord restarted`);
+	else log(`\x1b[32mDiscord restarted\x1b[0m`);
 
 	progress.set(RESTART_DISCORD_PROGRESS);
 	succeed();

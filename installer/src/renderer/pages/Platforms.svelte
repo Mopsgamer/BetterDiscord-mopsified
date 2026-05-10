@@ -1,10 +1,12 @@
 <script>
     import { action, installations, selections, selectedInstallations } from "../stores/installation";
     import { canGoBack, canGoForward, nextPage } from "../stores/navigation";
+    import { getBrowsePath, platforms as platformLabels, validatePath } from "../actions/paths";
     import Multiselect from "../common/Multiselect.svelte";
     import PageHeader from "../common/PageHeader.svelte";
     import getStatic from "../getstatic";
     import page from "../transitions/page.js";
+    import { remote } from "electron";
 
     $: canGoForward.set($selectedInstallations.length > 0);
     canGoBack.set(true);
@@ -15,6 +17,24 @@
             s[index] = !s[index];
             return s;
         });
+    }
+
+    async function click(index) {
+        const inst = $installations[index];
+        const result = await remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
+            title: `Browsing to ${platformLabels[inst.channel]}`,
+            defaultPath: getBrowsePath(inst.channel),
+            properties: ["openDirectory", "treatPackageAsDirectory"]
+        });
+        if (result.canceled || !result.filePaths[0]) return;
+
+        const resourcesPath = validatePath(inst.channel, result.filePaths[0]);
+        if (resourcesPath) {
+            installations.update(list => {
+                list[index].asarPath = resourcesPath;
+                return list;
+            });
+        }
     }
 
     const groupNames = {
@@ -72,14 +92,18 @@
             {:else}
                 <Multiselect
                     on:change={() => change(item.index)}
-                    description={item.inst.asarPath}
+                    on:click={() => click(item.index)}
+                    description={item.inst.asarPath || "Not Found"}
                     value={item.index}
-                    checked={$selections[item.index]}
+                    checked={item.inst.asarPath && $selections[item.index]}
+                    disabled={!item.inst.asarPath}
                 >
                     <img src={getStatic(`images/${item.inst.channel}.png`)} slot="icon" alt="Platform Icon" />
-                    {item.inst.channel} ({item.inst.version})
+                    {item.inst.channel} ({item.inst.version || "???"})
                 </Multiselect>
             {/if}
+        {:else}
+            <div class="empty">No Discord installations found.</div>
         {/each}
     </div>
 </section>
@@ -103,5 +127,10 @@
         width: 20px;
         height: 20px;
         margin-right: 8px;
+    }
+    .empty {
+        text-align: center;
+        color: var(--text-muted);
+        margin-top: 50px;
     }
 </style>

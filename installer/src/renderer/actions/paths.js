@@ -1,19 +1,27 @@
 import { getInstallationsSync, checkIsValidSync } from "@betterdiscord.com/injection";
 import { checkIsInjectedSync } from "@betterdiscord.com/bd-injection";
+import { remote } from "electron";
+import path from "path";
 
 export const platforms = { stable: "Discord", ptb: "Discord PTB", canary: "Discord Canary" };
 
 export function getInstallations() {
-    return getInstallationsSync("platform", checkIsInjectedSync);
+    return getInstallationsSync("platform");
 }
 
 export const validatePath = function (channel, proposedPath) {
-    // For now, keeping legacy validation if manual path is provided,
-    // but ideally we should use something from injection.
-    // However, the task focuses on using the workspace's installations.
-    return proposedPath; // Simplification for now
+    if (checkIsValidSync(proposedPath)) {
+        return proposedPath;
+    }
+    return "";
 };
 
 export const getBrowsePath = function (channel) {
-    return ""; // Placeholder
+    if (process.platform === "win32")
+		return path.join(process.env.LOCALAPPDATA, platforms[channel].replace(" ", ""));
+	return path.join(
+		remote.app.getPath("userData"),
+		"..",
+		platforms[channel].toLowerCase().replace(" ", ""),
+	);
 };

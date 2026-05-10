@@ -9,7 +9,7 @@ import {
 import patchAsar from "./patchAsar.js";
 import fs from "node:fs";
 
-export function checkIsInjectedSync(inst: DiscordInstallation): boolean {
+function checkIsInjectedSync(inst: DiscordInstallation): boolean {
 	try {
 		return fs.readFileSync(inst.asarPath, "utf8").includes('scheme: "bd"');
 	} catch (err: any) {
