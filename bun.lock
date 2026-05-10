@@ -30,6 +30,9 @@
         "@betterdiscord.com/bd-injection": "workspace:*",
         "@betterdiscord.com/injection": "workspace:*",
         "source-map-support": "^0.5.16",
+        "xterm": "^5.3.0",
+        "xterm-addon-fit": "^0.8.0",
+        "xterm-addon-web-links": "^0.9.0",
       },
       "devDependencies": {
         "electron": "^13.6.9",
@@ -1976,6 +1979,12 @@
     "xmlbuilder": ["xmlbuilder@15.1.1", "", {}, "sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg=="],
 
     "xpipe": ["xpipe@1.0.8", "", {}, "sha512-E2RGg3fUCxHGdbrM7FMOqHNhiiDRW/tgbftCd/K6w1ce4386QZvkgIq77EBsHdAOmNfQjtmIKwXp67Dy18s8Dg=="],
+
+    "xterm": ["xterm@5.3.0", "", {}, "sha512-8QqjlekLUFTrU6x7xck1MsPzPA571K5zNqWm0M0oroYEWVOptZ0+ubQSkQ3uxIEhcIHRujJy6emDWX4A7qyFzg=="],
+
+    "xterm-addon-fit": ["xterm-addon-fit@0.8.0", "", { "peerDependencies": { "xterm": "^5.0.0" } }, "sha512-yj3Np7XlvxxhYF/EJ7p3KHaMt6OdwQ+HDu573Vx1lRXsVxOcnVJs51RgjZOouIZOczTsskaS+CpXspK81/DLqw=="],
+
+    "xterm-addon-web-links": ["xterm-addon-web-links@0.9.0", "", { "peerDependencies": { "xterm": "^5.0.0" } }, "sha512-LIzi4jBbPlrKMZF3ihoyqayWyTXAwGfu4yprz1aK2p71e9UKXN6RRzVONR0L+Zd+Ik5tPVI9bwp9e8fDTQh49Q=="],
 
     "y18n": ["y18n@5.0.8", "", {}, "sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA=="],
 
