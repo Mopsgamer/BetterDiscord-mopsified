@@ -10,6 +10,10 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
+		},
+		"./fastfile": {
+			"types": "./dist/fastfile.d.ts",
+			"import": "./dist/fastfile.js"
 		}
 	},
 	"scripts": {
@@ -18,7 +22,7 @@
 		"test": "bun test",
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
-		"dist": "bun dts && bun build --target node --production src/index.ts --outfile=./dist/index.js -e '@electron/asar' -e '@betterdiscord.com/*'",
+		"dist": "bun dts && bun build --target node --production src/index.ts --outfile=./dist/index.js -e '@electron/asar' -e '@betterdiscord.com/*' && bun build --target node --production src/fastfile.ts --outfile=./dist/fastfile.js",
 		"dts": "bun tsgo -p ."
 	},
 	"dependencies": {

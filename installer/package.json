@@ -9,7 +9,6 @@
 		"type": "git",
 		"url": "git+https://github.com/BetterDiscord/Installer.git"
 	},
-	"type": "module",
 	"scripts": {
 		"dev": "bun compiler dev",
 		"compiler": "NODE_OPTIONS=--no-deprecation node ../node_modules/electron-webpack/out/cli.js",
@@ -20,6 +19,8 @@
 		"build": "bun compiler && bun builder -p never"
 	},
 	"dependencies": {
+		"@betterdiscord.com/bd-injection": "workspace:*",
+		"@betterdiscord.com/injection": "workspace:*",
 		"source-map-support": "^0.5.16"
 	},
 	"devDependencies": {

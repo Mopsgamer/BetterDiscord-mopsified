@@ -1,50 +1,55 @@
 <script>
-    import {action, paths, platforms} from "../stores/installation";
-    import {canGoBack, canGoForward, nextPage} from "../stores/navigation";
-    import {getBrowsePath, platforms as platformLabels, validatePath} from "../actions/paths";
+    import { action, installations, selections, selectedInstallations } from "../stores/installation";
+    import { canGoBack, canGoForward, nextPage } from "../stores/navigation";
     import Multiselect from "../common/Multiselect.svelte";
     import PageHeader from "../common/PageHeader.svelte";
     import getStatic from "../getstatic";
     import page from "../transitions/page.js";
-    import {remote} from "electron";
 
-    if (Object.values($platforms).some(r => r)) canGoForward.set(true);
-    else canGoForward.set(false);
+    $: canGoForward.set($selectedInstallations.length > 0);
     canGoBack.set(true);
     nextPage.set(`/${$action}`);
 
-    function updateInstallButtonState() {
-        if (Object.values($platforms).some(r => r)) canGoForward.set(true);
-        else canGoForward.set(false);
-    }
-
-    function change({target}) {
-        platforms.update(s => {
-            s[target.value] = target.checked;
+    function change(index) {
+        selections.update(s => {
+            s[index] = !s[index];
             return s;
         });
-        updateInstallButtonState();
     }
 
-    async function click(event) {
-        const platform = event.detail;
-        const result = await remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
-            title: `Browsing to ${platformLabels[platform]}`,
-            defaultPath: getBrowsePath(platform),
-            properties: ["openDirectory", "treatPackageAsDirectory"]
-        });
-        if (result.canceled || !result.filePaths[0]) return;
+    const groupNames = {
+        flatpak: "Flatpak",
+        aur: "AUR",
+        deb: "Debian"
+    };
 
-        const resourcesPath = validatePath(platform, result.filePaths[0]);
-        paths.update(obj => {
-            obj[platform] = resourcesPath;
-            return obj;
+    const groupColors = {
+        flatpak: "orange",
+        aur: "cyan",
+        deb: "magenta"
+    };
+
+    function getGroup(inst) {
+        if (inst.meta.has("flatpak")) return "flatpak";
+        if (inst.meta.has("aur")) return "aur";
+        if (inst.meta.has("deb")) return "deb";
+        return null;
+    }
+
+    let groupedInstallations = [];
+    $: {
+        let currentGroup = null;
+        groupedInstallations = [];
+        $installations.forEach((inst, index) => {
+            const group = getGroup(inst);
+            if (group !== currentGroup) {
+                if (group) {
+                    groupedInstallations.push({ type: "header", group });
+                }
+                currentGroup = group;
+            }
+            groupedInstallations.push({ type: "item", inst, index });
         });
-        platforms.update(obj => {
-            obj[platform] = Boolean(resourcesPath);
-            return obj;
-        });
-        updateInstallButtonState();
     }
 </script>
 
@@ -57,17 +62,46 @@
         Choose Discord Versions
     </PageHeader>
 
-    {#each Object.entries(platformLabels) as [channel, label]}
-        <Multiselect
-            on:change={change}
-            on:click={click}
-            description={$paths[channel] || "Not Found"}
-            value={channel}
-            checked={$paths[channel] && $platforms[channel]}
-            disabled={!$paths[channel]}
-        >
-            <img src={getStatic(`images/${channel}.png`)} slot="icon" alt="Platform Icon" />
-            {label}
-        </Multiselect>
-    {/each}
+    <div class="scroller">
+        {#each groupedInstallations as item}
+            {#if item.type === "header"}
+                <div class="group-header" style="color: {groupColors[item.group]}">
+                    <img src={getStatic(`images/${item.group}.svg`)} alt={item.group} />
+                    <span>{groupNames[item.group]}</span>
+                </div>
+            {:else}
+                <Multiselect
+                    on:change={() => change(item.index)}
+                    description={item.inst.asarPath}
+                    value={item.index}
+                    checked={$selections[item.index]}
+                >
+                    <img src={getStatic(`images/${item.inst.channel}.png`)} slot="icon" alt="Platform Icon" />
+                    {item.inst.channel} ({item.inst.version})
+                </Multiselect>
+            {/if}
+        {/each}
+    </div>
 </section>
+
+<style>
+    .scroller {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+    .group-header {
+        display: flex;
+        align-items: center;
+        margin: 15px 0 10px 0;
+        font-weight: bold;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .group-header img {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+    }
+</style>

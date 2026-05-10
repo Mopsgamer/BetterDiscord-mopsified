@@ -1,15 +1,20 @@
-import { locations } from "../actions/paths.js";
+import { writable, derived } from "svelte/store";
 import readwritable from "./types/readwritable.js";
-import { writable } from "svelte/store";
+import { getInstallations } from "../actions/paths.js";
 
 export const status = writable("");
 export const hasAgreed = writable(false);
-export const platforms = writable({ stable: false, canary: false, ptb: false });
-export const paths = writable({
-	stable: locations.stable,
-	canary: locations.canary,
-	ptb: locations.ptb,
-});
+
+// List of all detected installations
+export const installations = writable(getInstallations());
+
+// Map of installation index to selection status
+export const selections = writable({});
+
+export const selectedInstallations = derived(
+    [installations, selections],
+    ([$installations, $selections]) => $installations.filter((_, i) => $selections[i])
+);
 
 export const progress = readwritable(0);
 export const action = readwritable("install");
