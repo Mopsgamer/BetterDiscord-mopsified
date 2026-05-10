@@ -45,11 +45,11 @@ export const nameLowerSnake = {
 
 export const channels: DiscordChannel[] = ["stable", "canary", "ptb", "development"];
 
-export type InstalltionsFilter = "platform" | "valid" | "injectable" | "injected";
+export type InstallationsFilter = "platform" | "valid" | "injectable" | "injected";
 
 function filterInstalled(
 	insts: DiscordInstallation[],
-	filter: InstalltionsFilter,
+	filter: InstallationsFilter,
 ): DiscordInstallation[] {
 	switch (filter) {
 		case "platform":
@@ -63,7 +63,7 @@ function filterInstalled(
 	}
 }
 
-export function getInstallations(filter: InstalltionsFilter): DiscordInstallation[] {
+export function getInstallations(filter: InstallationsFilter): DiscordInstallation[] {
 	if (process.platform === "win32") {
 		return filterInstalled(getWindowsInstallations(), filter);
 	}

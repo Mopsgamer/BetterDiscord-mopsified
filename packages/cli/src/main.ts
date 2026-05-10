@@ -1,7 +1,7 @@
 #!/usr/bin/env node.
 import {
 	type DiscordChannel,
-	type InstalltionsFilter,
+	type InstallationsFilter,
 	checkIsInjected,
 	getInstallations,
 	inject,
@@ -39,7 +39,7 @@ async function main() {
 	}
 
 	if (command === "all" || command === "valid" || command === "injected") {
-		const filter = command === "all" ? "platform" : (command as InstalltionsFilter);
+		const filter = command === "all" ? "platform" : (command as InstallationsFilter);
 		await list(filter, args);
 		return;
 	}
@@ -118,7 +118,7 @@ function generateTable(data: any[]): string {
 	return output;
 }
 
-function list(filter: InstalltionsFilter, args: string[]): void {
+function list(filter: InstallationsFilter, args: string[]): void {
 	const installations = getInstallations(filter);
 	if (args.includes("--json")) {
 		console.log(JSON.stringify(installations));
