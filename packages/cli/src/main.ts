@@ -15,6 +15,7 @@ async function main() {
 
 	const commands = ["inject", "uninject", "injected", "all", "valid"];
 	const command = args.find((a) => commands.includes(a));
+	const isJson = args.includes("--json");
 
 	const channels = ["stable", "canary", "ptb", "development"];
 	const channel = args.find((a) => channels.includes(a)) as DiscordChannel | undefined;
@@ -37,36 +38,51 @@ async function main() {
 		return;
 	}
 
-	if (command === "all" || command === "valid") {
-		await list(command === "all" ? "platform" : "valid", args);
+	if (command === "all" || command === "valid" || command === "injected") {
+		const filter = command === "all" ? "platform" : (command as InstalltionsFilter);
+		await list(filter, args);
 		return;
 	}
 
 	if (command === "inject") {
 		if (!channel) {
 			await list("injectable", args);
-			process.exit(1);
+			process.exit(isJson ? 0 : 1);
 		}
 		const inst = getInstallations("injectable").find((i: any) => i.channel === channel);
 		if (!inst) {
-			console.error(c("red", `Error: Could not find ${name[channel]}`));
+			if (isJson) {
+				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
+			} else {
+				console.error(c("red", `Error: Could not find ${name[channel]}`));
+			}
 			process.exit(1);
 		}
 		await inject(inst);
+		if (isJson) {
+			console.log(JSON.stringify({ success: true, channel, action: "inject" }));
+		}
 		return;
 	}
 
 	if (command === "uninject") {
 		if (!channel) {
 			await list("injected", args);
-			process.exit(1);
+			process.exit(isJson ? 0 : 1);
 		}
 		const inst = getInstallations("injected").find((i: any) => i.channel === channel);
 		if (!inst) {
-			console.error(c("red", `Error: Could not find ${name[channel]}`));
+			if (isJson) {
+				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
+			} else {
+				console.error(c("red", `Error: Could not find ${name[channel]}`));
+			}
 			process.exit(1);
 		}
 		await uninject(inst);
+		if (isJson) {
+			console.log(JSON.stringify({ success: true, channel, action: "uninject" }));
+		}
 		return;
 	}
 

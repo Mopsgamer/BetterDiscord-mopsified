@@ -16,7 +16,8 @@
 		},
 		// Other Outputs
 		"sourceMap": false,
-		"declaration": false,
+		"declaration": true,
+		"emitDeclarationOnly": true,
 		"noEmit": false,
 		"declarationMap": false,
 		// Stricter Typechecking Options
