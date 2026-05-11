@@ -357,7 +357,7 @@ export function inject(
 	(async function injectImpl(): Promise<void> {
 		const tempUnpackPath = path.resolve(inst.asarPath, "..", "app-unpacked-temp");
 		try {
-			using tempUnpackRemover = {
+			using _tempUnpackRemover = {
 				[Symbol.dispose](): void {
 					fs.rmSync(tempUnpackPath, { force: true, recursive: true });
 					injection.removePath(tempUnpackPath);

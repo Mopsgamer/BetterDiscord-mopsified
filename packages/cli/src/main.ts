@@ -5,9 +5,9 @@ import {
 	getInstallationsSync,
 	uninject,
 } from "@betterdiscord.com/injection";
-import { inject, checkIsInjectedSync } from "@betterdiscord.com/bd-injection";
-import { name } from "@betterdiscord.com/injection";
 import { type InspectColor, styleText as c } from "node:util";
+import { checkIsInjectedSync, inject } from "@betterdiscord.com/bd-injection";
+import { name } from "@betterdiscord.com/injection";
 
 async function main() {
 	const args = process.argv.slice(2);
@@ -48,7 +48,9 @@ async function main() {
 			await list("platform", args); // Just list everything injectable
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallationsSync("platform").find((i) => i.channel === channel);
+		const inst = getInstallationsSync("platform", checkIsInjectedSync).find(
+			(i) => i.channel === channel,
+		);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -69,7 +71,9 @@ async function main() {
 			await list("platform", args); // Just list everything injected
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallationsSync("platform").find((i) => i.channel === channel);
+		const inst = getInstallationsSync("platform", checkIsInjectedSync).find(
+			(i) => i.channel === channel,
+		);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -90,10 +94,10 @@ async function main() {
 }
 
 interface TableRow {
-    i: string;
-    c: string;
-    v: string;
-    s: string;
+	i: string;
+	c: string;
+	v: string;
+	s: string;
 }
 
 function generateTable(data: TableRow[]): string {
@@ -125,7 +129,7 @@ function generateTable(data: TableRow[]): string {
 }
 
 function list(filter: InstallationsFilter, args: string[]): void {
-	const installations = getInstallationsSync(filter);
+	const installations = getInstallationsSync(filter, checkIsInjectedSync);
 	if (args.includes("--json")) {
 		console.log(JSON.stringify(installations));
 		return;

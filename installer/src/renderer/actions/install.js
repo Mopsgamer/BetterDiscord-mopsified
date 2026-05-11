@@ -1,14 +1,14 @@
 import { log, lognewline } from "./utils/log.js";
 import fail from "./utils/fail.js";
+import fs from "fs";
+import { inject } from "@betterdiscord.com/bd-injection";
 import kill from "./utils/kill.js";
+import path from "path";
 import { progress } from "../stores/installation.js";
+import { remote } from "electron";
 import reset from "./utils/reset.js";
 import { showRestartNotice } from "./utils/notices.js";
 import succeed from "./utils/succeed.js";
-import { inject } from "@betterdiscord.com/bd-injection";
-import { remote } from "electron";
-import path from "path";
-import fs from "fs";
 
 const INJECT_PROGRESS = 90;
 const RESTART_DISCORD_PROGRESS = 100;
@@ -43,7 +43,7 @@ export default async function (installations) {
 
 	if (!installations || installations.length === 0) return fail();
 
-    lognewline("Creating required directories...");
+	lognewline("Creating required directories...");
 	const makeDirErr = await makeDirectories(bdFolder, bdDataFolder, bdThemesFolder, bdPluginsFolder);
 	if (makeDirErr) return fail();
 
@@ -56,9 +56,15 @@ export default async function (installations) {
 		try {
 			const { process: injectionProcess, promise } = inject(inst);
 
-			injectionProcess.addEventListener("copy", (ev) => log(`\x1b[36mCopying:\x1b[0m ${ev.detail.source} -> ${ev.detail.destination}`));
-			injectionProcess.addEventListener("extract", (ev) => log(`\x1b[36mExtracting:\x1b[0m ${ev.detail.source}`));
-			injectionProcess.addEventListener("patch", (ev) => log(`\x1b[36mPatching:\x1b[0m ${ev.detail.path}`));
+			injectionProcess.addEventListener("copy", (ev) =>
+				log(`\x1b[36mCopying:\x1b[0m ${ev.detail.source} -> ${ev.detail.destination}`),
+			);
+			injectionProcess.addEventListener("extract", (ev) =>
+				log(`\x1b[36mExtracting:\x1b[0m ${ev.detail.source}`),
+			);
+			injectionProcess.addEventListener("patch", (ev) =>
+				log(`\x1b[36mPatching:\x1b[0m ${ev.detail.path}`),
+			);
 
 			await promise;
 			log(`\x1b[32mSuccessfully injected into ${inst.channel}\x1b[0m`);
@@ -72,7 +78,7 @@ export default async function (installations) {
 	progress.set(INJECT_PROGRESS);
 
 	lognewline("Restarting Discord...");
-	const channels = installations.map(i => i.channel);
+	const channels = installations.map((i) => i.channel);
 	const killErr = await kill(
 		channels,
 		(RESTART_DISCORD_PROGRESS - progress.value) / channels.length,

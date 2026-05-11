@@ -1,5 +1,5 @@
 <script>
-    import {action, progress, status, selectedInstallations} from "../stores/installation";
+    import {action, progress, selectedInstallations, status} from "../stores/installation";
     import {canGoBack, canGoForward, nextPage} from "../stores/navigation";
     import PageHeader from "../common/PageHeader.svelte";
     import ProgressBar from "../common/ProgressBar.svelte";

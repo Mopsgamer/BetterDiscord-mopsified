@@ -12,8 +12,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun compiler dev",
-		"compiler": "NODE_OPTIONS=--no-deprecation node ../node_modules/electron-webpack/out/cli.js",
-		"builder": "NODE_OPTIONS=--no-deprecation node ../node_modules/electron-builder/out/cli/cli.js",
+		"compiler": "NODE_OPTIONS=\"--no-deprecation --experimental-require-module\" node ../node_modules/electron-webpack/out/cli.js",
+		"builder": "NODE_OPTIONS=\"--no-deprecation --experimental-require-module\" node ../node_modules/electron-builder/out/cli/cli.js",
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"stats": "webpack --json --profile --config webpack.renderer.js > dist/stats.json",
 		"analyze": "webpack-bundle-analyzer dist/stats.json",

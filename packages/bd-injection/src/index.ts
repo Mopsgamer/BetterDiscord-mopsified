@@ -1,11 +1,11 @@
 import {
-    inject as genericInject,
-    uninject as genericUninject,
-    checkIsValidSync,
-    type DiscordInstallation
+	type DiscordInstallation,
+	checkIsValidSync,
+	inject as genericInject,
+	uninject as genericUninject,
 } from "@betterdiscord.com/injection";
-import patchAsar from "./patchAsar.js";
 import fs from "node:fs";
+import patchAsar from "./patchAsar.js";
 
 export function checkIsInjectedSync(inst: DiscordInstallation): boolean {
 	try {
@@ -19,11 +19,11 @@ export function checkIsInjectedSync(inst: DiscordInstallation): boolean {
 }
 
 export function inject(inst: DiscordInstallation) {
-    return genericInject(inst, patchAsar, checkIsInjectedSync);
+	return genericInject(inst, patchAsar, checkIsInjectedSync);
 }
 
 export function uninject(inst: DiscordInstallation) {
-    return genericUninject(inst);
+	return genericUninject(inst);
 }
 
 export { checkIsValidSync };

@@ -10,9 +10,8 @@
 		"target": "esnext",
 		"types": ["node", "bun"],
 		"lib": ["esnext"],
-		"typeRoots": ["../node_modules/@types", "../packages"],
 		"paths": {
-			"bd:api": ["../packages/core/index.d.ts"]
+			"bd:api": ["../packages/core/dist/index.d.ts"]
 		},
 		// Other Outputs
 		"sourceMap": false,

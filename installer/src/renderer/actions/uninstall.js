@@ -36,7 +36,7 @@ export default async function (installations) {
 	progress.set(UNINJECT_PROGRESS);
 
 	lognewline("Restarting Discord...");
-	const channels = installations.map(i => i.channel);
+	const channels = installations.map((i) => i.channel);
 	const killErr = await kill(
 		channels,
 		(RESTART_DISCORD_PROGRESS - progress.value) / channels.length,

@@ -1,10 +1,10 @@
 <script>
-    import { onMount, onDestroy, afterUpdate } from "svelte";
-    import { Terminal } from "xterm";
-    import { FitAddon } from "xterm-addon-fit";
-    import { WebLinksAddon } from "xterm-addon-web-links";
     import "xterm/css/xterm.css";
+    import { afterUpdate, onDestroy, onMount } from "svelte";
+    import { FitAddon } from "xterm-addon-fit";
     import LoadingPage from "../pages/Loading.svelte";
+    import { Terminal } from "xterm";
+    import { WebLinksAddon } from "xterm-addon-web-links";
 
     export let value;
     export let element; // Not used as much now, but keeping for compatibility

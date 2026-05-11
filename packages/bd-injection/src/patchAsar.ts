@@ -1,4 +1,4 @@
-import { fastfile, type Injection } from "@betterdiscord.com/injection";
+import { type Injection, fastfile } from "@betterdiscord.com/injection";
 const { readIndexOf, writeAt } = fastfile;
 import protocolHandle from "./patches/protocol.str.js";
 

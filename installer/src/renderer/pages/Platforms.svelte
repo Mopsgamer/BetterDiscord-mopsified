@@ -1,5 +1,5 @@
 <script>
-    import { action, installations, selections, selectedInstallations } from "../stores/installation";
+    import { action, installations, selectedInstallations, selections } from "../stores/installation";
     import { canGoBack, canGoForward, nextPage } from "../stores/navigation";
     import { getBrowsePath, platforms as platformLabels, validatePath } from "../actions/paths";
     import Multiselect from "../common/Multiselect.svelte";

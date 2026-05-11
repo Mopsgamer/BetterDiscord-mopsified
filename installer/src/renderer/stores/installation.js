@@ -1,6 +1,6 @@
-import { writable, derived } from "svelte/store";
-import readwritable from "./types/readwritable.js";
+import { derived, writable } from "svelte/store";
 import { getInstallations } from "../actions/paths.js";
+import readwritable from "./types/readwritable.js";
 
 export const status = writable("");
 export const hasAgreed = writable(false);
@@ -12,8 +12,8 @@ export const installations = writable(getInstallations());
 export const selections = writable({});
 
 export const selectedInstallations = derived(
-    [installations, selections],
-    ([$installations, $selections]) => $installations.filter((_, i) => $selections[i])
+	[installations, selections],
+	([$installations, $selections]) => $installations.filter((_, i) => $selections[i]),
 );
 
 export const progress = readwritable(0);

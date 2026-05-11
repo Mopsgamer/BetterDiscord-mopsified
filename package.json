@@ -16,7 +16,7 @@
 	"scripts": {
 		"cli": "bun --bun ./packages/cli/dist/main.js",
 		"get": "bun ./packages/injection/scripts/get.ts",
-		"ui": "bun -e \"const fs=require('fs'), path=require('path'); const dist=path.join('installer', 'dist'); const exe=fs.readdirSync(dist).find(f => f.startsWith('BetterDiscord') && (f.endsWith('.exe') || f.endsWith('.AppImage') || !f.includes('.'))); if (exe) require('child_process').spawn(path.join(dist, exe), {detached:true, stdio:'ignore'}).unref(); else console.error('Binary not found in installer/dist')\"",
+		"ui": "bun ./scripts/ui.ts",
 		"lint": "bun oxlint --fix",
 		"fmt": "bun oxfmt",
 		"dist": "bun tsgo -p . && bun -F '*' dist",
