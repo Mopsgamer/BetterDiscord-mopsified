@@ -1,13 +1,12 @@
-#!/usr/bin/env node.
+#!/usr/bin/env node
 import {
 	type DiscordChannel,
 	type InstallationsFilter,
-	checkIsInjectedSync,
 	getInstallationsSync,
-	inject,
-	name,
 	uninject,
 } from "@betterdiscord.com/injection";
+import { inject, checkIsInjectedSync } from "@betterdiscord.com/bd-injection";
+import { name } from "@betterdiscord.com/injection";
 import { type InspectColor, styleText as c } from "node:util";
 
 async function main() {
@@ -46,10 +45,10 @@ async function main() {
 
 	if (command === "inject") {
 		if (!channel) {
-			await list("injectable", args);
+			await list("platform", args); // Just list everything injectable
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallationsSync("injectable").find((i: any) => i.channel === channel);
+		const inst = getInstallationsSync("platform").find((i) => i.channel === channel);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -67,10 +66,10 @@ async function main() {
 
 	if (command === "uninject") {
 		if (!channel) {
-			await list("injected", args);
+			await list("platform", args); // Just list everything injected
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallationsSync("injected").find((i: any) => i.channel === channel);
+		const inst = getInstallationsSync("platform").find((i) => i.channel === channel);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -90,8 +89,15 @@ async function main() {
 	process.exit(1);
 }
 
-function generateTable(data: any[]): string {
-	const keys = ["i", "c", "v", "s"];
+interface TableRow {
+    i: string;
+    c: string;
+    v: string;
+    s: string;
+}
+
+function generateTable(data: TableRow[]): string {
+	const keys: (keyof TableRow)[] = ["i", "c", "v", "s"];
 
 	// oxlint-disable-next-line no-control-regex
 	const vLen = (str: string) => str.replace(/\u001b\[[0-9;]*m/g, "").length;
@@ -125,7 +131,7 @@ function list(filter: InstallationsFilter, args: string[]): void {
 		return;
 	}
 	console.log(c("bold", "Available Discord Installations:\n"));
-	const table: Record<"i" | "c" | "v" | "s", any>[] = [];
+	const table: TableRow[] = [];
 	for (const inst of installations) {
 		const isInjected = !!inst.version && checkIsInjectedSync(inst);
 		const color: InspectColor | readonly InspectColor[] = !inst.version

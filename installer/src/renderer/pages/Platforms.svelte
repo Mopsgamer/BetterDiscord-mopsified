@@ -1,50 +1,75 @@
 <script>
-    import {action, paths, platforms} from "../stores/installation";
-    import {canGoBack, canGoForward, nextPage} from "../stores/navigation";
-    import {getBrowsePath, platforms as platformLabels, validatePath} from "../actions/paths";
+    import { action, installations, selections, selectedInstallations } from "../stores/installation";
+    import { canGoBack, canGoForward, nextPage } from "../stores/navigation";
+    import { getBrowsePath, platforms as platformLabels, validatePath } from "../actions/paths";
     import Multiselect from "../common/Multiselect.svelte";
     import PageHeader from "../common/PageHeader.svelte";
     import getStatic from "../getstatic";
     import page from "../transitions/page.js";
-    import {remote} from "electron";
+    import { remote } from "electron";
 
-    if (Object.values($platforms).some(r => r)) canGoForward.set(true);
-    else canGoForward.set(false);
+    $: canGoForward.set($selectedInstallations.length > 0);
     canGoBack.set(true);
     nextPage.set(`/${$action}`);
 
-    function updateInstallButtonState() {
-        if (Object.values($platforms).some(r => r)) canGoForward.set(true);
-        else canGoForward.set(false);
-    }
-
-    function change({target}) {
-        platforms.update(s => {
-            s[target.value] = target.checked;
+    function change(index) {
+        selections.update(s => {
+            s[index] = !s[index];
             return s;
         });
-        updateInstallButtonState();
     }
 
-    async function click(event) {
-        const platform = event.detail;
+    async function click(index) {
+        const inst = $installations[index];
         const result = await remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
-            title: `Browsing to ${platformLabels[platform]}`,
-            defaultPath: getBrowsePath(platform),
+            title: `Browsing to ${platformLabels[inst.channel]}`,
+            defaultPath: getBrowsePath(inst.channel),
             properties: ["openDirectory", "treatPackageAsDirectory"]
         });
         if (result.canceled || !result.filePaths[0]) return;
 
-        const resourcesPath = validatePath(platform, result.filePaths[0]);
-        paths.update(obj => {
-            obj[platform] = resourcesPath;
-            return obj;
+        const resourcesPath = validatePath(inst.channel, result.filePaths[0]);
+        if (resourcesPath) {
+            installations.update(list => {
+                list[index].asarPath = resourcesPath;
+                return list;
+            });
+        }
+    }
+
+    const groupNames = {
+        flatpak: "Flatpak",
+        aur: "AUR",
+        deb: "Debian"
+    };
+
+    const groupColors = {
+        flatpak: "orange",
+        aur: "cyan",
+        deb: "magenta"
+    };
+
+    function getGroup(inst) {
+        if (inst.meta.has("flatpak")) return "flatpak";
+        if (inst.meta.has("aur")) return "aur";
+        if (inst.meta.has("deb")) return "deb";
+        return null;
+    }
+
+    let groupedInstallations = [];
+    $: {
+        let currentGroup = null;
+        groupedInstallations = [];
+        $installations.forEach((inst, index) => {
+            const group = getGroup(inst);
+            if (group !== currentGroup) {
+                if (group) {
+                    groupedInstallations.push({ type: "header", group });
+                }
+                currentGroup = group;
+            }
+            groupedInstallations.push({ type: "item", inst, index });
         });
-        platforms.update(obj => {
-            obj[platform] = Boolean(resourcesPath);
-            return obj;
-        });
-        updateInstallButtonState();
     }
 </script>
 
@@ -57,17 +82,55 @@
         Choose Discord Versions
     </PageHeader>
 
-    {#each Object.entries(platformLabels) as [channel, label]}
-        <Multiselect
-            on:change={change}
-            on:click={click}
-            description={$paths[channel] || "Not Found"}
-            value={channel}
-            checked={$paths[channel] && $platforms[channel]}
-            disabled={!$paths[channel]}
-        >
-            <img src={getStatic(`images/${channel}.png`)} slot="icon" alt="Platform Icon" />
-            {label}
-        </Multiselect>
-    {/each}
+    <div class="scroller">
+        {#each groupedInstallations as item}
+            {#if item.type === "header"}
+                <div class="group-header" style="color: {groupColors[item.group]}">
+                    <img src={getStatic(`images/${item.group}.svg`)} alt={item.group} />
+                    <span>{groupNames[item.group]}</span>
+                </div>
+            {:else}
+                <Multiselect
+                    on:change={() => change(item.index)}
+                    on:click={() => click(item.index)}
+                    description={item.inst.asarPath || "Not Found"}
+                    value={item.index}
+                    checked={item.inst.asarPath && $selections[item.index]}
+                    disabled={!item.inst.asarPath}
+                >
+                    <img src={getStatic(`images/${item.inst.channel}.png`)} slot="icon" alt="Platform Icon" />
+                    {item.inst.channel} ({item.inst.version || "???"})
+                </Multiselect>
+            {/if}
+        {:else}
+            <div class="empty">No Discord installations found.</div>
+        {/each}
+    </div>
 </section>
+
+<style>
+    .scroller {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+    .group-header {
+        display: flex;
+        align-items: center;
+        margin: 15px 0 10px 0;
+        font-weight: bold;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .group-header img {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+    }
+    .empty {
+        text-align: center;
+        color: var(--text-muted);
+        margin-top: 50px;
+    }
+</style>

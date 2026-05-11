@@ -1,23 +1,17 @@
 import { log, lognewline } from "./utils/log.js";
-import doSanityCheck from "./utils/sanity.js";
-import exists from "./utils/exists.js";
 import fail from "./utils/fail.js";
-import { promises as fs } from "fs";
 import kill from "./utils/kill.js";
-import path from "path";
-import phin from "phin";
 import { progress } from "../stores/installation.js";
-import { remote } from "electron";
 import reset from "./utils/reset.js";
 import { showRestartNotice } from "./utils/notices.js";
 import succeed from "./utils/succeed.js";
+import { inject } from "@betterdiscord.com/bd-injection";
+import { remote } from "electron";
+import path from "path";
+import fs from "fs";
 
-const MAKE_DIR_PROGRESS = 30;
-const DOWNLOAD_PACKAGE_PROGRESS = 60;
-const INJECT_SHIM_PROGRESS = 90;
+const INJECT_PROGRESS = 90;
 const RESTART_DISCORD_PROGRESS = 100;
-
-const RELEASE_API = "https://api.github.com/repos/BetterDiscord/BetterDiscord/releases";
 
 const bdFolder = path.join(remote.app.getPath("appData"), "BetterDiscord");
 const bdDataFolder = path.join(bdFolder, "data");
@@ -25,163 +19,68 @@ const bdPluginsFolder = path.join(bdFolder, "plugins");
 const bdThemesFolder = path.join(bdFolder, "themes");
 
 async function makeDirectories(...folders) {
-	const progressPerLoop = (MAKE_DIR_PROGRESS - progress.value) / folders.length;
 	for (const folder of folders) {
-		if (await exists(folder)) {
-			log(`✅ Directory exists: ${folder}`);
-			progress.set(progress.value + progressPerLoop);
+		if (fs.existsSync(folder)) {
+			log(`\x1b[32mDirectory exists:\x1b[0m ${folder}`);
 			continue;
 		}
 		try {
-			await fs.mkdir(folder);
-			progress.set(progress.value + progressPerLoop);
-			log(`✅ Directory created: ${folder}`);
+			fs.mkdirSync(folder, { recursive: true });
+			log(`\x1b[32mDirectory created:\x1b[0m ${folder}`);
 		} catch (err) {
-			log(`❌ Failed to create directory: ${folder}`);
-			log(`❌ ${err.message}`);
+			log(`\x1b[31mFailed to create directory:\x1b[0m ${folder}`);
+			log(`\x1b[31m${err.message}\x1b[0m`);
 			return err;
 		}
 	}
 }
 
-const getJSON = phin.defaults({
-	method: "GET",
-	parse: "json",
-	followRedirects: true,
-	headers: { "User-Agent": "BetterDiscord/Installer" },
-});
-const downloadFile = phin.defaults({
-	method: "GET",
-	followRedirects: true,
-	headers: { "User-Agent": "BetterDiscord/Installer", Accept: "application/octet-stream" },
-});
-async function downloadAsar() {
-	try {
-		const response = await downloadFile("https://betterdiscord.app/Download/betterdiscord.asar");
-		const bdVersion = response.headers["x-bd-version"];
-		if (200 <= response.statusCode && response.statusCode < 300) {
-			log(`✅ Downloaded BetterDiscord version ${bdVersion} from the official website`);
-			return response.body;
-		}
-		throw new Error(`Status code did not indicate success: ${response.statusCode}`);
-	} catch (error) {
-		log(`❌ Failed to download package from the official website`);
-		log(`❌ ${error.message}`);
-		log(`Falling back to GitHub...`);
-	}
-	let assetUrl;
-	let bdVersion;
-	try {
-		const response = await getJSON(RELEASE_API);
-		const releases = response.body;
-		const asset =
-			releases &&
-			releases.length &&
-			releases[0].assets &&
-			releases[0].assets.find((a) => a.name.toLowerCase() === "betterdiscord.asar");
-		assetUrl = asset && asset.url;
-		bdVersion = asset && releases[0].tag_name;
-		if (!assetUrl) {
-			let errMessage = "Could not get the asset url";
-			if (!asset) errMessage = "Could not get asset object";
-			if (!releases) errMessage = "Could not get response body";
-			if (!response) errMessage = "Could not get any response";
-			throw new Error(errMessage);
-		}
-	} catch (error) {
-		log(`❌ Failed to get asset url from ${RELEASE_API}`);
-		log(`❌ ${error.message}`);
-		throw error;
-	}
-	try {
-		const response = await downloadFile(assetUrl);
-		if (200 <= response.statusCode && response.statusCode < 300) {
-			log(`✅ Downloaded BetterDiscord version ${bdVersion} from GitHub`);
-			return response.body;
-		}
-		throw new Error(`Status code did not indicate success: ${response.statusCode}`);
-	} catch (error) {
-		log(`❌ Failed to download package from ${assetUrl}`);
-		log(`❌ ${error.message}`);
-		throw error;
-	}
-}
-
-const asarPath = path.join(bdDataFolder, "betterdiscord.asar");
-async function installAsar(fileContent) {
-	try {
-		const originalFs = require("original-fs").promises; // because electron doesn't like writing asar files
-		await originalFs.writeFile(asarPath, fileContent);
-	} catch (error) {
-		log(`❌ Failed to write package to disk: ${asarPath}`);
-		log(`❌ ${error.message}`);
-		throw error;
-	}
-}
-
-async function downloadAndInstallAsar() {
-	try {
-		const fileContent = await downloadAsar();
-		await installAsar(fileContent);
-	} catch (error) {
-		return error;
-	}
-}
-
-async function injectShims(paths) {
-	const progressPerLoop = (INJECT_SHIM_PROGRESS - progress.value) / paths.length;
-	for (const discordPath of paths) {
-		log("Injecting into: " + discordPath);
-		try {
-			await fs.writeFile(
-				path.join(discordPath, "index.js"),
-				`require("${asarPath.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}");\nmodule.exports = require("./core.asar");`,
-			);
-			log("✅ Injection successful");
-			progress.set(progress.value + progressPerLoop);
-		} catch (err) {
-			log(`❌ Could not inject shims to ${discordPath}`);
-			log(`❌ ${err.message}`);
-			return err;
-		}
-	}
-}
-
-export default async function (config) {
+/**
+ * @param {import("@betterdiscord.com/injection").DiscordInstallation[]} installations
+ */
+export default async function (installations) {
 	await reset();
-	const sane = doSanityCheck(config);
-	if (!sane) return fail();
 
-	const channels = Object.keys(config);
-	const paths = Object.values(config);
+	if (!installations || installations.length === 0) return fail();
 
-	lognewline("Creating required directories...");
+    lognewline("Creating required directories...");
 	const makeDirErr = await makeDirectories(bdFolder, bdDataFolder, bdThemesFolder, bdPluginsFolder);
 	if (makeDirErr) return fail();
-	log("✅ Directories created");
-	progress.set(MAKE_DIR_PROGRESS);
 
-	lognewline("Downloading asar file");
-	const downloadErr = await downloadAndInstallAsar();
-	if (downloadErr) return fail();
-	log("✅ Package downloaded");
-	progress.set(DOWNLOAD_PACKAGE_PROGRESS);
+	lognewline("Injecting BetterDiscord...");
 
-	lognewline("Injecting shims...");
-	const injectErr = await injectShims(paths);
-	if (injectErr) return fail();
-	log("✅ Shims injected");
-	progress.set(INJECT_SHIM_PROGRESS);
+	const progressPerLoop = (INJECT_PROGRESS - progress.value) / installations.length;
+
+	for (const inst of installations) {
+		log(`Injecting into ${inst.channel} (${inst.version})...`);
+		try {
+			const { process: injectionProcess, promise } = inject(inst);
+
+			injectionProcess.addEventListener("copy", (ev) => log(`\x1b[36mCopying:\x1b[0m ${ev.detail.source} -> ${ev.detail.destination}`));
+			injectionProcess.addEventListener("extract", (ev) => log(`\x1b[36mExtracting:\x1b[0m ${ev.detail.source}`));
+			injectionProcess.addEventListener("patch", (ev) => log(`\x1b[36mPatching:\x1b[0m ${ev.detail.path}`));
+
+			await promise;
+			log(`\x1b[32mSuccessfully injected into ${inst.channel}\x1b[0m`);
+			progress.set(progress.value + progressPerLoop);
+		} catch (err) {
+			log(`\x1b[31mFailed to inject into ${inst.channel}: ${err.message}\x1b[0m`);
+			return fail();
+		}
+	}
+
+	progress.set(INJECT_PROGRESS);
 
 	lognewline("Restarting Discord...");
+	const channels = installations.map(i => i.channel);
 	const killErr = await kill(
 		channels,
 		(RESTART_DISCORD_PROGRESS - progress.value) / channels.length,
 	);
-	if (killErr)
-		showRestartNotice(); // No need to bail out and show failed
-	else log("✅ Discord restarted");
-	progress.set(RESTART_DISCORD_PROGRESS);
 
+	if (killErr) showRestartNotice();
+	else log(`\x1b[32mDiscord restarted\x1b[0m`);
+
+	progress.set(RESTART_DISCORD_PROGRESS);
 	succeed();
 }

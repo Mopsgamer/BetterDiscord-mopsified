@@ -1,7 +1,8 @@
-import { readIndexOf, writeAt } from "./fastfile.js";
+import { fastfile, type Injection } from "@betterdiscord.com/injection";
+const { readIndexOf, writeAt } = fastfile;
 import protocolHandle from "./patches/protocol.str.js";
 
-export default async function patchAsar(targetFile: string): Promise<void> {
+export default async function patchAsar(targetFile: string, injection?: Injection): Promise<void> {
 	let at = -1;
 	{
 		at = await readIndexOf(targetFile, "([{scheme:DISCORD_CLIP_PROTOCOL,");
@@ -12,6 +13,7 @@ export default async function patchAsar(targetFile: string): Promise<void> {
 			'{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true},},',
 			at + 2,
 		);
+		if (injection) injection.patchPath(targetFile);
 	}
 	{
 		at = await readIndexOf(targetFile, "electronNormalize.registerProtocol(");
@@ -26,5 +28,6 @@ export default async function patchAsar(targetFile: string): Promise<void> {
 		const whenReady = "whenReady();";
 		at = await readIndexOf(targetFile, whenReady, at + whenReady.length);
 		await writeAt(targetFile, protocolHandle, at);
+		if (injection) injection.patchPath(targetFile);
 	}
 }

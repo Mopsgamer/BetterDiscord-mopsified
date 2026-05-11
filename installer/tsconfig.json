@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "baseUrl": ".",
+        "paths": {
+            "@betterdiscord.com/injection": ["../packages/injection/src/index.ts"],
+            "@betterdiscord.com/bd-injection": ["../packages/bd-injection/src/index.ts"]
+        }
+    },
+    "include": ["src/**/*", "../packages/injection/src/**/*", "../packages/bd-injection/src/**/*"]
+}

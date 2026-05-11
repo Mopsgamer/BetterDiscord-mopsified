@@ -58,7 +58,7 @@ const virtualInliner = (inlinedContent: string): PluginObj => ({
 
 async function build() {
 	// Pointing to your new source file location
-	const apiPath = join(patchesDir, "../api/index.ts");
+	const apiPath = join(patchesDir, "../../../core/src/index.ts");
 	const protocolPath = join(patchesDir, "protocol.ts");
 	const outputPath = join(patchesDir, "protocol.str.ts");
 
