@@ -184,8 +184,7 @@ export default function AddonList({store}: {store: AddonManager;}) {
             const stringSort = (str1: string, str2: string) => str1.toLocaleLowerCase().localeCompare(str2.toLocaleLowerCase());
             if (typeof (first) === "string" && typeof (second) === "string") return stringSort(first, second);
             if (typeof (first) === "boolean" && typeof (second) === "boolean") return (first === second) ? stringSort(a.name, b.name) : first ? -1 : 1;
-            if ((first as any) > (second as any)) return 1;
-            if ((second as any) > (first as any)) return -1;
+            if (typeof (first) === "number" && typeof (second) === "number") return first - second;
             return 0;
         });
 

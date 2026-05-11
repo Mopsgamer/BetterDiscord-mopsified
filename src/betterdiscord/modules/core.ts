@@ -104,6 +104,9 @@ export default new class Core {
             themes: themeErrors.filter(stat => stat.kind.startsWith("not-")),
         });
 
+        Logger.log("Startup", "Loading Idle Plugins");
+        PluginManager.loadAddonsByPoint("idle");
+
         const previousVersion = JsonStore.get("misc", "version");
         if (Config.get("version") !== previousVersion) {
             Modals.showChangelogModal(Changelog);

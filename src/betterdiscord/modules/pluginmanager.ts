@@ -42,7 +42,7 @@ export default new class PluginManager extends AddonManager<Plugin> {
         return errors;
     }
 
-    async loadAddons(point: PluginLoadPoint) {
+    async loadAddonsByPoint(point: PluginLoadPoint) {
         Logger.log("PluginManager", `Loading addons at point: ${point}`);
 
         // Note: addonInfo is not present in the new system, we should use the cache or something similar.

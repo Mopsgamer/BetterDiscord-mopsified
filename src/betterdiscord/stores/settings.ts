@@ -76,7 +76,13 @@ export default new class SettingsManager extends Store {
         };
         if (options.manager) section.manager = options.manager;
         if (onClick) section.clickListener = onClick;
-        if (element) section.element = element instanceof (DiscordModules.React?.Component || Object) ? () => DiscordModules.React.createElement(element as any, {}) : typeof (element) == "function" ? element : () => element;
+        const isReactComponent = (target: any) => {
+            if (typeof target !== "function") return false;
+            if (target.prototype?.render) return true;
+            if (DiscordModules.React?.Component && target.prototype instanceof DiscordModules.React.Component) return true;
+            return false;
+        };
+        if (element) section.element = isReactComponent(element) ? () => DiscordModules.React.createElement(element as any, {}) : typeof (element) == "function" ? element : () => element;
         this.panels.push(section);
     }
 

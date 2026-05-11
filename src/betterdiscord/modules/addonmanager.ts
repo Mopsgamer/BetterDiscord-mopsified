@@ -11,6 +11,7 @@ import JsonStore, {type Files} from "@stores/json";
 import Toasts from "@stores/toasts";
 import React from "./react";
 import {t} from "@common/i18n";
+import parseJsDoc from "@common/utils/jsdoc";
 import ipc from "./ipc";
 
 import AddonEditor from "@ui/misc/addoneditor";
@@ -194,7 +195,7 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
                 }),
             };
         };
-        const metaInfo = this.parseJSDoc(fileContent);
+        const metaInfo = parseJsDoc(fileContent) as unknown as AddonMeta;
 
         /**
          * Okay we have a meta JSDoc, let's validate it
@@ -209,41 +210,6 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
             kind: "loaded",
             meta: metaInfo,
         };
-    }
-
-    parseJSDoc(fileContent: string): AddonMeta {
-        const block = fileContent.split("/**", 2)[1].split("*/", 1)[0];
-        const out: Record<string, string | string[]> = {};
-        let field = "";
-        let accum = "";
-        for (const line of block.split(splitRegex)) {
-            if (line.length === 0) continue;
-            if (line.charAt(0) === "@" && line.charAt(1) !== " ") {
-                if (!out[field]) {
-                    out[field] = accum.trim();
-                }
-                else {
-                    if (!Array.isArray(out[field])) out[field] = [out[field] as string];
-                    (out[field] as string[]).push(accum.trim());
-                }
-                const l = line.indexOf(" ");
-                field = line.substring(1, l);
-                accum = line.substring(l + 1);
-            }
-            else {
-                accum += " " + line.replace("\\n", "\n").replace(escapedAtRegex, "@");
-            }
-        }
-        if (!out[field]) {
-            out[field] = accum.trim();
-        }
-        else {
-            if (!Array.isArray(out[field])) out[field] = [out[field] as string];
-            (out[field] as string[]).push(accum.trim());
-        }
-        delete out[""];
-        out.format = "jsdoc";
-        return out as unknown as AddonMeta;
     }
 
     async requireAddon(filerel: string): Promise<AddonStateLoad> {
