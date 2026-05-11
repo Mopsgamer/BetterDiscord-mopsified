@@ -663,7 +663,8 @@ This changelog starts with the restructured 1.0.0 release that happened after co
 - Plugin startup errors should be more descriptive for developers.
 
 ### Fixed
-- Fixed several issues for Discord's internal changes.
+- Fixed an issue where custom css crashed Discord.
+- Fixed an issue where `waitForModule` returned a boolean instead of a module.
 
 ## 1.6.2
 
