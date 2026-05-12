@@ -466,22 +466,28 @@ export default abstract class AddonManager<A extends AddonAny = AddonAny> extend
         return states;
     }
 
+    async loadAddons(addons: A[], shouldToast = false): Promise<Array<AddonState<A>>> {
+        const states: Array<AddonState<A>> = [];
+        const concurrency: Array<Promise<AddonStateLoad | AddonStateStarted<A>>> = [];
+        for (const addon of addons) {
+            if (addon.filename === "0BDFDB.plugin.js") {
+                states.push(await this.loadAddon(addon.filename, shouldToast));
+                continue;
+            }
+            concurrency.push(this.loadAddon(addon.filename, shouldToast));
+        }
+        return states.concat(await Promise.all(concurrency));
+    }
+
     async loadAllAddons(): Promise<Array<AddonState<A>>> {
         this.loadEnablement();
         const discoveryStates = await this.discoverAddons();
         let states: Array<AddonState<A>> = discoveryStates.filter(s => s.kind === "not-loaded");
 
         const resolved = discoveryStates.filter(s => s.kind === "loaded").map(s => s.addon as A);
+        const toLoad = resolved.filter(addon => !addon.runAt || addon.runAt === "connection");
 
-        const concurrency: Array<Promise<AddonStateLoad | AddonStateStarted<A>>> = [];
-        for (const addon of resolved) {
-            if (addon.filename === "0BDFDB.plugin.js") {
-                states.push(await this.loadAddon(addon.filename, false));
-                continue;
-            }
-            concurrency.push(this.loadAddon(addon.filename, false));
-        }
-        states = states.concat(await Promise.all(concurrency));
+        states = states.concat(await this.loadAddons(toLoad, false));
 
         this.saveState();
         this.watchAddons();

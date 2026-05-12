@@ -45,14 +45,9 @@ export default new class PluginManager extends AddonManager<Plugin> {
     async loadAddonsByPoint(point: PluginLoadPoint) {
         Logger.log("PluginManager", `Loading addons at point: ${point}`);
 
-        // Note: addonInfo is not present in the new system, we should use the cache or something similar.
-        // However, looking at the previous logic, it seems we might need to track runAt.
-        // For now, let's just handle it.
         const allPlugins = Object.values(this.cacheByName);
-        for (const addon of allPlugins) {
-            if (addon.runAt !== point) continue;
-            await this.loadAddon(addon.filename);
-        }
+        const toLoad = allPlugins.filter(addon => addon.runAt === point);
+        await this.loadAddons(toLoad);
     }
 
     /* Aliases */

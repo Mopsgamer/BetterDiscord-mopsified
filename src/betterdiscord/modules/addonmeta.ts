@@ -41,4 +41,8 @@ export interface AddonMeta {
      * Link to the source on GitHub of the addon.
      */
     source?: string;
+    /**
+     * When the addon should be loaded.
+     */
+    runAt?: "connection" | "idle";
 }
