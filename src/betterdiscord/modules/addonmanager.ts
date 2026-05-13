@@ -11,7 +11,7 @@ import JsonStore, {type Files} from "@stores/json";
 import Toasts from "@stores/toasts";
 import React from "./react";
 import {t} from "@common/i18n";
-import parseJsDoc from "@common/utils/jsdoc";
+import {parseJsDoc} from "@common/utils";
 import ipc from "./ipc";
 
 import AddonEditor from "@ui/misc/addoneditor";
