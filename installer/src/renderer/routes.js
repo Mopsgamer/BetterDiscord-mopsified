@@ -5,10 +5,10 @@ import PerformActionPage from "./pages/PerformAction.svelte";
 import PlatformsPage from "./pages/Platforms.svelte";
 
 export default {
-	"/": LicensePage,
-	"/actions": ActionsPage,
-	"/setup/:action": PlatformsPage,
-	"/install": PerformActionPage,
-	"/uninstall": PerformActionPage,
-	"*": LoadingPage,
+  "/": LicensePage,
+  "/actions": ActionsPage,
+  "/setup/:action": PlatformsPage,
+  "/install": PerformActionPage,
+  "/uninstall": PerformActionPage,
+  "*": LoadingPage,
 };

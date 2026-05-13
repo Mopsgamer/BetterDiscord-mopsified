@@ -1,12 +1,12 @@
 <script>
     import pkg from "../../../package.json";
     import quit from "../actions/quit";
-    const {remote} = require("electron");
+    const {ipcRenderer} = require("electron");
 
     export let macButtons;
 
     function minimize() {
-        remote.BrowserWindow.getFocusedWindow().minimize();
+        ipcRenderer.send("minimize-window");
     }
 
 </script>

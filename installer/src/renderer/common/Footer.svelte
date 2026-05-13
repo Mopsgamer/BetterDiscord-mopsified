@@ -1,5 +1,5 @@
 <script>
-    const {remote} = require("electron");
+    const {ipcRenderer} = require("electron");
 
     import Button from "./Button.svelte";
     import ButtonGroup from "./ButtonGroup.svelte";
@@ -12,7 +12,7 @@
     async function goToNext() {
         state.direction = 1;
         if ($nextPage) push($nextPage);
-        else remote.app.exit();
+        else ipcRenderer.send("exit-app");
     }
 
     function goBack() {
