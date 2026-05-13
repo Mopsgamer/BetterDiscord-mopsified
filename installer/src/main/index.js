@@ -1,7 +1,6 @@
 import { BrowserWindow, app, shell } from "electron";
 import URL from "url";
 import path from "path";
-import updateInstaller from "./update_installer.js";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 app.name = "BetterDiscord";
@@ -73,5 +72,4 @@ app.on("activate", () => {
 // create main BrowserWindow when electron is ready
 app.on("ready", async () => {
 	mainWindow = createMainWindow();
-	if (!process.env.BD_SKIP_UPDATECHECK) updateInstaller();
 });
