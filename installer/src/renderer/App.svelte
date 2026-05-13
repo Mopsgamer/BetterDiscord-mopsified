@@ -1,6 +1,4 @@
 <script>
-    import "focus-visible";
-
     // import Page from "./containers/Page.svelte";
     import Footer from "./common/Footer.svelte";
     import Router from "svelte-spa-router";

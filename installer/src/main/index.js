@@ -21,7 +21,6 @@ function createMainWindow() {
 		webPreferences: {
 			nodeIntegration: true,
 			contextIsolation: false,
-			enableRemoteModule: true,
 		},
 	});
 
@@ -29,17 +28,14 @@ function createMainWindow() {
 		window.webContents.openDevTools({ mode: "detach" });
 	}
 
-	if (isDevelopment) {
-		window.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`);
-	} else {
-		window.loadURL(
-			URL.format({
-				pathname: path.join(__dirname, "index.html"),
-				protocol: "file",
-				slashes: true,
-			}),
-		);
-	}
+	const indexPath = path.join(import.meta.dirname, "..", "renderer", "index.html");
+	window.loadURL(
+		URL.format({
+			pathname: indexPath,
+			protocol: "file",
+			slashes: true,
+		}),
+	);
 
 	window.on("closed", () => {
 		mainWindow = null;
@@ -53,8 +49,8 @@ function createMainWindow() {
 	});
 
 	// force <a> tags to open in browser
-
-	window.webContents.on("new-window", (e, url) => {
+	window.webContents.on("will-navigate", (e, url) => {
+		if (url.startsWith("file://")) return;
 		e.preventDefault();
 		shell.openExternal(url);
 	});

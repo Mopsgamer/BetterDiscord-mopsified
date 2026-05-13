@@ -1,14 +1,9 @@
 import { dialog, shell } from "electron";
-import phin from "phin";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
 const semverGreaterThan = require("semver/functions/gt");
 const { version } = require("../../package.json");
-
-const getJSON = phin.defaults({
-	method: "GET",
-	parse: "json",
-	headers: { "User-Agent": "BetterDiscord Installer" },
-	followRedirects: true,
-});
 
 /* eslint-disable no-console */
 export default async function () {
@@ -16,8 +11,11 @@ export default async function () {
 	console.info(`Better Discord Installer ${version}`);
 
 	try {
-		const response = await getJSON(downloadUrl);
-		const latestRelease = response.body[0];
+		const response = await fetch(downloadUrl, {
+			headers: { "User-Agent": "BetterDiscord Installer" },
+		});
+		const releases = await response.json();
+		const latestRelease = releases[0];
 		const latestVersion = latestRelease.tag_name;
 
 		if (semverGreaterThan(latestVersion, version)) {

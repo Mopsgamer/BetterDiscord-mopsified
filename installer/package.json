@@ -11,13 +11,10 @@
 	},
 	"type": "module",
 	"scripts": {
-		"dev": "bun compiler dev",
-		"compiler": "NODE_OPTIONS=\"--no-deprecation --experimental-require-module\" node ../node_modules/electron-webpack/out/cli.js",
-		"builder": "NODE_OPTIONS=\"--no-deprecation --experimental-require-module\" node ../node_modules/electron-builder/out/cli/cli.js",
-		"lint": "bun oxlint --fix && bun publint --pack bun",
-		"stats": "webpack --json --profile --config webpack.renderer.js > dist/stats.json",
-		"analyze": "webpack-bundle-analyzer dist/stats.json",
-		"build": "bun compiler && bun builder -p never"
+		"dev": "bun scripts/build.ts && electron dist/main/index.js",
+		"build": "bun scripts/build.ts --production",
+		"dist": "bun run build && electron-builder -p never",
+		"lint": "bun oxlint --fix && bun publint --pack bun"
 	},
 	"dependencies": {
 		"@betterdiscord.com/bd-injection": "workspace:*",
@@ -28,24 +25,18 @@
 		"xterm-addon-web-links": "^0.9.0"
 	},
 	"devDependencies": {
-		"electron": "^13.6.9",
+		"bun-plugin-svelte": "^0.0.6",
+		"electron": "^42.0.1",
 		"electron-builder": "^26.8.1",
-		"electron-webpack": "^2.8.2",
 		"find-process": "https://github.com/BetterDiscord/find-process",
-		"focus-visible": "^5.2.0",
-		"phin": "^3.7.0",
-		"rimraf": "^3.0.2",
 		"semver": "^7.3.8",
-		"svelte": "^3.38.2",
-		"svelte-loader": "^3.1.7",
+		"svelte": "^5.55.5",
 		"svelte-spa-router": "^3.1.0",
-		"tree-kill": "^1.2.2",
-		"webpack": "~5.76.0",
-		"webpack-bundle-analyzer": "^4.4.0"
+		"tree-kill": "^1.2.2"
 	},
 	"build": {
 		"appId": "app.betterdiscord.installer",
-		"electronVersion": "13.6.9",
+		"electronVersion": "42.0.1",
 		"npmRebuild": false,
 		"nodeGypRebuild": false,
 		"buildDependenciesFromSource": false,
@@ -87,15 +78,6 @@
 					"x64"
 				]
 			}
-		}
-	},
-	"electronWebpack": {
-		"staticSourceDirectory": "assets",
-		"renderer": {
-			"webpackConfig": "webpack.renderer.js"
-		},
-		"main": {
-			"webpackConfig": "webpack.main.js"
 		}
 	},
 	"productName": "BetterDiscord Installer"
