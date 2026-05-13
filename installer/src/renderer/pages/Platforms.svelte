@@ -6,7 +6,7 @@
     import PageHeader from "../common/PageHeader.svelte";
     import getStatic from "../getstatic";
     import page from "../transitions/page.js";
-    import { remote } from "electron";
+    const {remote} = require("electron");
 
     $: canGoForward.set($selectedInstallations.length > 0);
     canGoBack.set(true);

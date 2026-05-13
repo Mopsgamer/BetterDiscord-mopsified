@@ -1,4 +1,5 @@
-import { remote } from "electron";
+const { remote } = require("electron");
+
 export default async function () {
 	const confirmation = await remote.dialog.showMessageBox(remote.BrowserWindow.getFocusedWindow(), {
 		type: "question",

@@ -3,7 +3,7 @@ import kill from "tree-kill";
 import { log } from "./log.js";
 import path from "path";
 import { progress } from "../../stores/installation.js";
-import { shell } from "electron";
+const { shell } = require("electron");
 
 const platforms = { stable: "Discord", ptb: "Discord PTB", canary: "Discord Canary" };
 export default async function killProcesses(channels, progressPerLoop, shouldRestart = true) {

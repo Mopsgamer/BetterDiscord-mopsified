@@ -1,11 +1,11 @@
 // Exists due to https://github.com/electron-userland/electron-builder/issues/4299
 // Tempfix adapted from: https://gist.github.com/harshitsilly/a1bd5a405f93966aad20358ae6c4cec5
 
-import { readFileSync, writeFileSync } from "fs";
-import { safeDump, safeLoad } from "js-yaml";
-import { appBuilderPath } from "app-builder-bin";
-import { execSync } from "child_process";
-import packageInfo from "../package.json" with { type: "json" };
+const { readFileSync, writeFileSync } = require("fs");
+const { safeDump, safeLoad } = require("js-yaml");
+const { appBuilderPath } = require("app-builder-bin");
+const { execSync } = require("child_process");
+const packageInfo = require("../package.json");
 
 const APP_NAME = packageInfo.build.productName;
 const APP_VERSION = process.argv[2] ? process.argv[2] : packageInfo.version;

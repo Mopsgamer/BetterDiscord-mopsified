@@ -1,7 +1,7 @@
-import { type BunPlugin, build } from "bun";
+import { SveltePlugin } from "bun-plugin-svelte";
+import { build } from "bun";
 import fs from "fs/promises";
 import path from "path";
-import sveltePlugin from "bun-plugin-svelte";
 
 const isProd = process.argv.includes("--production");
 
@@ -31,67 +31,23 @@ async function copyAssets() {
 	await copyRecursive(assetsDir, distAssetsDir);
 }
 
-async function createIndexHtml() {
-	const html = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>BetterDiscord Installer</title>
-</head>
-<body>
-    <div id="app"></div>
-    <script type="module" src="index.js"></script>
-</body>
-</html>`;
-	await fs.writeFile("dist/renderer/index.html", html);
-}
-
 async function runBuild() {
 	process.chdir(path.join(import.meta.dirname, ".."));
 	await clean();
-
-	const aliases = {
-		"@betterdiscord.com/injection": path.resolve("../packages/injection/src/index.ts"),
-		"@betterdiscord.com/bd-injection": path.resolve("../packages/bd-injection/src/index.ts"),
-		"@betterdiscord.com/core": path.resolve("../packages/core/src/index.ts"),
-	};
-
-	console.log("Building main process...");
-	const mainResult = await build({
-		entrypoints: ["src/main/index.js"],
-		outdir: "dist/main",
-		target: "node",
-		format: "esm",
-		minify: isProd,
-		naming: "[dir]/[name].[ext]",
-		alias: aliases,
-		define: {
-			"process.env.NODE_ENV": JSON.stringify(isProd ? "production" : "development"),
-		},
-		external: ["electron"],
-	});
-
-	if (!mainResult.success) {
-		console.error("Main build failed");
-		for (const log of mainResult.logs) console.error(log);
-		process.exit(1);
-	}
 
 	console.log("Building renderer process...");
 	const rendererResult = await build({
 		entrypoints: ["src/renderer/index.js"],
 		outdir: "dist/renderer",
 		target: "node",
-		format: "esm",
+		format: "cjs",
 		minify: isProd,
 		naming: "[dir]/[name].[ext]",
-		alias: aliases,
-		plugins: [sveltePlugin as BunPlugin],
+		plugins: [SveltePlugin()],
 		define: {
 			"process.env.NODE_ENV": JSON.stringify(isProd ? "production" : "development"),
 		},
-		external: ["electron"],
+		external: ["electron", "node:*"],
 	});
 
 	if (!rendererResult.success) {
@@ -101,7 +57,7 @@ async function runBuild() {
 	}
 
 	await copyAssets();
-	await createIndexHtml();
+	await fs.copyFile("src/renderer/index.html", "dist/renderer/index.html");
 	console.log("Build complete!");
 }
 

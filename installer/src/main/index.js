@@ -1,14 +1,13 @@
-import { BrowserWindow, app, shell } from "electron";
-import URL from "url";
-import path from "path";
+const { BrowserWindow, app, shell, ipcMain } = require("electron");
+const URL = require("url");
+const path = require("path");
 
 const isDevelopment = process.env.NODE_ENV !== "production";
-app.name = "BetterDiscord";
 
 let mainWindow; // global reference to mainWindow (necessary to prevent window from being garbage collected)
 
 function createMainWindow() {
-	const window = new BrowserWindow({
+	const mainwindow = new BrowserWindow({
 		title: "BetterDiscord Installer",
 		frame: false,
 		width: 550,
@@ -24,37 +23,30 @@ function createMainWindow() {
 	});
 
 	if (isDevelopment) {
-		window.webContents.openDevTools({ mode: "detach" });
+		mainwindow.webContents.openDevTools({ mode: "detach" });
 	}
 
-	const indexPath = path.join(import.meta.dirname, "..", "renderer", "index.html");
-	window.loadURL(
-		URL.format({
-			pathname: indexPath,
-			protocol: "file",
-			slashes: true,
-		}),
-	);
+	mainwindow.loadURL(path.join(__dirname, "..", "..", "dist", "renderer", "index.html"));
 
-	window.on("closed", () => {
+	mainwindow.on("closed", () => {
 		mainWindow = null;
 	});
 
-	window.webContents.on("devtools-opened", () => {
-		window.focus();
+	mainwindow.webContents.on("devtools-opened", () => {
+		mainwindow.focus();
 		setImmediate(() => {
-			window.focus();
+			mainwindow.focus();
 		});
 	});
 
 	// force <a> tags to open in browser
-	window.webContents.on("will-navigate", (e, url) => {
+	mainwindow.webContents.on("will-navigate", (e, url) => {
 		if (url.startsWith("file://")) return;
 		e.preventDefault();
 		shell.openExternal(url);
 	});
 
-	return window;
+	return mainwindow;
 }
 
 // quit application when all windows are closed
@@ -72,4 +64,9 @@ app.on("activate", () => {
 // create main BrowserWindow when electron is ready
 app.on("ready", async () => {
 	mainWindow = createMainWindow();
+	app.setName("BetterDiscord Installer");
+});
+
+ipcMain.handle("get-app-data-path", () => {
+	return app.getPath("appData");
 });

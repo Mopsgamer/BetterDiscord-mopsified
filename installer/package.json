@@ -2,7 +2,6 @@
 	"name": "betterdiscord-installer",
 	"version": "1.3.0",
 	"private": true,
-	"main": "dist/main/index.js",
 	"description": "A simple standalone program which automates the installation, removal and maintenance of BetterDiscord.",
 	"license": "MIT",
 	"author": "BetterDiscord",
@@ -10,9 +9,10 @@
 		"type": "git",
 		"url": "git+https://github.com/BetterDiscord/Installer.git"
 	},
-	"type": "module",
+	"type": "commonjs",
+	"main": "src/main/index.js",
 	"scripts": {
-		"dev": "bun scripts/build.ts && electron dist/main/index.js",
+		"dev": "bun scripts/build.ts && electron src/main/index.js",
 		"build": "bun scripts/build.ts --production",
 		"dist": "bun run build && electron-builder -p never",
 		"lint": "bun oxlint --fix && bun publint --pack bun"
@@ -32,13 +32,13 @@
 		"find-process": "https://github.com/BetterDiscord/find-process",
 		"semver": "^7.3.8",
 		"svelte": "^5.55.5",
-		"svelte-spa-router": "^3.1.0",
+		"svelte-spa-router": "^3.3.0",
 		"tree-kill": "^1.2.2"
 	},
 	"build": {
 		"appId": "app.betterdiscord.installer",
 		"files": [
-			"dist/main/",
+			"src/main/",
 			"dist/renderer/"
 		],
 		"electronVersion": "42.0.1",

@@ -1,7 +1,7 @@
 <script>
     import pkg from "../../../package.json";
     import quit from "../actions/quit";
-    import {remote} from "electron";
+    const {remote} = require("electron");
 
     export let macButtons;
 

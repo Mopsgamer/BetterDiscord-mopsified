@@ -1,14 +1,14 @@
 import { log, lognewline } from "./utils/log.js";
 import fail from "./utils/fail.js";
-import fs from "fs";
 import { inject } from "@betterdiscord.com/bd-injection";
 import kill from "./utils/kill.js";
-import path from "path";
 import { progress } from "../stores/installation.js";
-import { remote } from "electron";
 import reset from "./utils/reset.js";
 import { showRestartNotice } from "./utils/notices.js";
 import succeed from "./utils/succeed.js";
+const fs = require("fs");
+const path = require("path");
+const { remote } = require("electron");
 
 const INJECT_PROGRESS = 90;
 const RESTART_DISCORD_PROGRESS = 100;

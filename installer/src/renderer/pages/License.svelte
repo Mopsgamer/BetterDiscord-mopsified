@@ -3,11 +3,11 @@
     import Checkbox from "../common/Checkbox.svelte";
     import PageHeader from "../common/PageHeader.svelte";
     import TextDisplay from "../common/TextDisplay.svelte";
-    import fs from "fs";
     import {hasAgreed} from "../stores/installation";
     import {onMount} from "svelte";
     import page from "../transitions/page.js";
-    import path from "path";
+    const fs = require("fs");
+    const path = require("path");
 
     onMount(() => {
         hasLoaded.set(true); // Use this to avoid initial transition caused by router

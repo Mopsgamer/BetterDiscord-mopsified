@@ -1,5 +1,5 @@
 <script>
-    const electron = require("electron");
+    const {remote} = require("electron");
 
     import Button from "./Button.svelte";
     import ButtonGroup from "./ButtonGroup.svelte";
@@ -12,7 +12,7 @@
     async function goToNext() {
         state.direction = 1;
         if ($nextPage) push($nextPage);
-        else electron.remote.app.exit();
+        else remote.app.exit();
     }
 
     function goBack() {
