@@ -29,7 +29,9 @@
 		"@types/bun": "latest",
 		"@types/node": "latest",
 		"@typescript/native-preview": "latest",
-		"electron": "latest",
+		"bun-plugin-svelte": "^0.0.6",
+		"electron": "^42.0.1",
+		"electron-builder": "^26.8.1",
 		"oxfmt": "latest",
 		"oxlint": "latest",
 		"publint": "latest"
