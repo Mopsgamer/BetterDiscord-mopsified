@@ -37,7 +37,7 @@ async function runBuild() {
 
 	console.log("Building renderer process...");
 	const rendererResult = await build({
-		entrypoints: ["src/renderer/index.js"],
+		entrypoints: ["src/renderer/index.js", "src/renderer/fallback.js"],
 		outdir: "dist/renderer",
 		target: "node",
 		format: "cjs",

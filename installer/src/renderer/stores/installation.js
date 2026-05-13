@@ -12,9 +12,8 @@ export const installations = writable(getInstallations());
 export const selections = writable({});
 
 export const selectedInstallations = derived(
-  [installations, selections],
-  ([$installations, $selections]) =>
-    $installations.filter((_, i) => $selections[i]),
+	[installations, selections],
+	([$installations, $selections]) => $installations.filter((_, i) => $selections[i]),
 );
 
 export const progress = readwritable(0);

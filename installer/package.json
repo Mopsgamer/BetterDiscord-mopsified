@@ -12,10 +12,11 @@
 	"type": "commonjs",
 	"main": "src/main/index.js",
 	"scripts": {
+		"fmt": "bun oxfmt",
+		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"dev": "bun scripts/build.ts && electron src/main/index.js",
 		"build": "bun scripts/build.ts --production",
-		"dist": "bun run build && electron-builder -p never",
-		"lint": "bun oxlint --fix && bun publint --pack bun"
+		"dist": "bun run build && electron-builder -p never"
 	},
 	"dependencies": {
 		"@betterdiscord.com/bd-injection": "workspace:*",
@@ -32,6 +33,7 @@
 		"find-process": "https://github.com/BetterDiscord/find-process",
 		"semver": "^7.3.8",
 		"svelte": "^5.55.5",
+		"svelte-check": "^4.4.8",
 		"svelte-spa-router": "^3.3.0",
 		"tree-kill": "^1.2.2"
 	},

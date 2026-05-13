@@ -1,25 +1,21 @@
 import App from "./App.svelte";
 import getStatic from "./getstatic.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-	const appElement = document.getElementById("app");
-	const app = new App({
-		target: appElement,
-	});
+const appElement = document.getElementById("app");
+new App({ target: appElement });
 
-	// Setup this in a var because otherwise it won't work in prod
-	appElement.style.setProperty(
-		"--background",
-		`url('${getStatic("images/background.png").replace(/\\/g, "\\\\")}')`,
-	);
+// Setup this in a var because otherwise it won't work in prod
+appElement.style.setProperty(
+	"--background",
+	`url('${getStatic("images/background.png").replace(/\\/g, "\\\\")}')`,
+);
 
-	window.refresh = () => (window.location.href = `http://${window.location.host}/`);
+window.refresh = () => (window.location.href = `http://${window.location.host}/`);
 
-	// Disable user zooming
+// Disable user zooming
 
-	window.addEventListener("keydown", (e) => {
-		if ((e.code === "Minus" || e.code === "Equal") && (e.ctrlKey || e.metaKey)) {
-			e.preventDefault();
-		}
-	});
+window.addEventListener("keydown", (e) => {
+	if ((e.code === "Minus" || e.code === "Equal") && (e.ctrlKey || e.metaKey)) {
+		e.preventDefault();
+	}
 });
