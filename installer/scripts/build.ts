@@ -43,7 +43,7 @@ async function runBuild() {
 		format: "cjs",
 		minify: isProd,
 		naming: "[dir]/[name].[ext]",
-		plugins: [SveltePlugin()],
+		plugins: [SveltePlugin({ forceSide: "client" })],
 		define: {
 			"process.env.NODE_ENV": JSON.stringify(isProd ? "production" : "development"),
 		},

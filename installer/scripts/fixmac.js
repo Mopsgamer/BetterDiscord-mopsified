@@ -11,8 +11,7 @@ const APP_NAME = packageInfo.build.productName;
 const APP_VERSION = process.argv[2] ? process.argv[2] : packageInfo.version;
 const APP_DIST_PATH = process.cwd() + "/dist";
 
-/* eslint-disable no-console */
-export default function (buildResult) {
+exports.default = function (buildResult) {
 	if (!buildResult.artifactPaths.some((p) => p.toLowerCase().endsWith("mac.zip")))
 		return console.log("No Mac build detected");
 	console.log("Zipping Started");
@@ -43,4 +42,4 @@ export default function (buildResult) {
 	} catch (e) {
 		console.log("Error in updating YAML file and configurations with blockmap.", e);
 	}
-}
+};
