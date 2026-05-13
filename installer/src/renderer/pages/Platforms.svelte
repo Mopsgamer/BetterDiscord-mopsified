@@ -6,7 +6,7 @@
     import PageHeader from "../common/PageHeader.svelte";
     import getStatic from "../getstatic";
     import page from "../transitions/page.js";
-    const {remote} = require("electron");
+    const {ipcRenderer} = require("electron");
 
     $: canGoForward.set($selectedInstallations.length > 0);
     canGoBack.set(true);
@@ -21,7 +21,7 @@
 
     async function click(index) {
         const inst = $installations[index];
-        const result = await remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
+        const result = await ipcRenderer.invoke("show-open-dialog", {
             title: `Browsing to ${platformLabels[inst.channel]}`,
             defaultPath: getBrowsePath(inst.channel),
             properties: ["openDirectory", "treatPackageAsDirectory"]
