@@ -18,6 +18,17 @@ export function checkIsInjectedSync(inst: DiscordInstallation): boolean {
 	}
 }
 
+export function checkIsInjectableSync(inst: DiscordInstallation): boolean {
+	try {
+		return !fs.readFileSync(inst.asarPath, "utf8").includes('scheme: "bd"');
+	} catch (err: any) {
+		if (err.code === "ENOENT") {
+			return false;
+		}
+		throw err;
+	}
+}
+
 export function inject(inst: DiscordInstallation) {
 	return genericInject(inst, patchAsar, checkIsInjectedSync);
 }

@@ -19,8 +19,10 @@
 		"gui": "bun --elide-lines 0 -F './installer' dev",
 		"lint": "bun oxlint --fix",
 		"fmt": "bun oxfmt",
-		"dist": "bun tsgo -p . && bun -F '*' dist",
-		"dts": "bun tsgo -p . && bun -F '*' dts"
+		"dist": "bun tsgo -p . && bun --elide-lines 0 -F '*' dist || echo 'Failed to build distribution, you could remove tsconfig.tsbuildinfo files'",
+		"dts": "bun tsgo -p . && bun --elide-lines 0 -F '*' dts",
+		"test": "bun test",
+		"i18n": "echo 'not implemented, we will write these from scratch probably' && exit 1"
 	},
 	"dependencies": {
 		"original-fs": "latest"

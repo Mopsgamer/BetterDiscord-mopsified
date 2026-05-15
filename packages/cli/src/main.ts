@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 import {
 	type DiscordChannel,
-	type InstallationsFilter,
+	checkIsValidSync,
 	getInstallationsSync,
 	uninject,
 } from "@betterdiscord.com/injection";
 import { type InspectColor, styleText as c } from "node:util";
-import { checkIsInjectedSync, inject } from "@betterdiscord.com/bd-injection";
+import {
+	checkIsInjectableSync,
+	checkIsInjectedSync,
+	inject,
+} from "@betterdiscord.com/bd-injection";
 import { name } from "@betterdiscord.com/injection";
 
 async function main() {
@@ -38,19 +42,17 @@ async function main() {
 	}
 
 	if (command === "all" || command === "valid" || command === "injected") {
-		const filter = command === "all" ? "platform" : (command as InstallationsFilter);
+		const filter = command;
 		await list(filter, args);
 		return;
 	}
 
 	if (command === "inject") {
 		if (!channel) {
-			await list("platform", args); // Just list everything injectable
+			await list("all", args); // Just list everything injectable
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallationsSync("platform", checkIsInjectedSync).find(
-			(i) => i.channel === channel,
-		);
+		const inst = getInstallationsSync().find((i) => i.channel === channel);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -68,12 +70,10 @@ async function main() {
 
 	if (command === "uninject") {
 		if (!channel) {
-			await list("platform", args); // Just list everything injected
+			await list("all", args); // Just list everything injected
 			process.exit(isJson ? 0 : 1);
 		}
-		const inst = getInstallationsSync("platform", checkIsInjectedSync).find(
-			(i) => i.channel === channel,
-		);
+		const inst = getInstallationsSync().find((i) => i.channel === channel);
 		if (!inst) {
 			if (isJson) {
 				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
@@ -128,8 +128,15 @@ function generateTable(data: TableRow[]): string {
 	return output;
 }
 
-function list(filter: InstallationsFilter, args: string[]): void {
-	const installations = getInstallationsSync(filter, checkIsInjectedSync);
+function list(filter: "all" | "valid" | "injectable" | "injected", args: string[]): void {
+	let installations = getInstallationsSync();
+	if (filter === "valid") {
+		installations = installations.filter((inst) => checkIsValidSync(inst));
+	} else if (filter === "injectable") {
+		installations = installations.filter((inst) => !checkIsInjectableSync(inst));
+	} else if (filter === "injected") {
+		installations = installations.filter((inst) => checkIsInjectedSync(inst));
+	}
 	if (args.includes("--json")) {
 		console.log(JSON.stringify(installations));
 		return;

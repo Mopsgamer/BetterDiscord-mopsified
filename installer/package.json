@@ -16,7 +16,7 @@
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"dev": "bun scripts/build.ts && electron src/main/index.js",
 		"build": "bun scripts/build.ts --production",
-		"dist": "bun run build && electron-builder -p never"
+		"compile": "bun run build && electron-builder -p never"
 	},
 	"dependencies": {
 		"@betterdiscord.com/bd-injection": "workspace:*",

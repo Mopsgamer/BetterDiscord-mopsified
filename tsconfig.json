@@ -2,12 +2,6 @@
 	"files": [],
 	"references": [
 		{
-			"path": "./extension"
-		},
-		{
-			"path": "./packages/cli"
-		},
-		{
 			"path": "./packages/components"
 		},
 		{
@@ -22,5 +16,12 @@
 		{
 			"path": "./packages/injection"
 		}
-	]
+	],
+	"compilerOptions": {
+		"noEmit": true,
+		"declaration": false,
+		"module": "nodenext",
+		"target": "esnext",
+		"types": ["node", "bun"]
+	}
 }

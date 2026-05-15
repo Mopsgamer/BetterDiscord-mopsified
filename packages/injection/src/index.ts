@@ -46,29 +46,15 @@ export const nameLowerSnake = {
 
 export const channels: DiscordChannel[] = ["stable", "canary", "ptb", "development"];
 
-export type InstallationsFilter = "platform" | "valid" | "injectable" | "injected";
-
-function filterInstalled(
-	insts: DiscordInstallation[],
-	filter: InstallationsFilter,
-	checkIsInjected: (inst: DiscordInstallation) => boolean,
-): DiscordInstallation[] {
-	switch (filter) {
-		case "platform":
-			return insts;
-		case "valid":
-			return insts.filter(checkIsValidSync);
-		case "injectable":
-			return insts.filter((inst) => checkIsValidSync(inst) && !checkIsInjected(inst));
-		case "injected":
-			return insts.filter(checkIsInjected);
-	}
+/**
+ * Checks if a Discord installation is out there.
+ */
+export function checkIsValidSync(inst: DiscordInstallation): boolean {
+	const asarPath = typeof inst === "string" ? inst : inst.asarPath;
+	return fs.existsSync(asarPath);
 }
 
-export function getInstallationsSync(
-	filter: InstallationsFilter,
-	checkIsInjected: (inst: DiscordInstallation) => boolean,
-): DiscordInstallation[] {
+export function getInstallationsSync(): DiscordInstallation[] {
 	let insts: DiscordInstallation[];
 	if (process.platform === "win32") {
 		insts = getWindowsInstallationsSync();
@@ -79,7 +65,7 @@ export function getInstallationsSync(
 	} else {
 		insts = getLinuxInstallationsSync();
 	}
-	return filterInstalled(insts, filter, checkIsInjected);
+	return insts;
 }
 
 export function getWindowsLettersSync(): string[] {
@@ -249,14 +235,6 @@ function getVersionsSync(dir: string): string[] {
 	} catch {
 		return [];
 	}
-}
-
-/**
- * Checks if a Discord installation is out there.
- */
-export function checkIsValidSync(inst: DiscordInstallation | string): boolean {
-	const asarPath = typeof inst === "string" ? inst : inst.asarPath;
-	return fs.existsSync(asarPath);
 }
 
 interface InjectionEventMap {

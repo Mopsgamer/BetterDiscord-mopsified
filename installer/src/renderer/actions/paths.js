@@ -7,7 +7,7 @@ export const platforms = {
 };
 
 export function getInstallations() {
-	return getInstallationsSync("platform");
+	return getInstallationsSync("all");
 }
 
 export const validatePath = function (channel, proposedPath) {
@@ -18,7 +18,7 @@ export const validatePath = function (channel, proposedPath) {
 };
 
 export const getBrowsePath = function (channel) {
-	const insts = getInstallationsSync("platform");
+	const insts = getInstallationsSync("all");
 	const inst = insts.find((i) => i.channel === channel);
 	return inst ? inst.discordBaseDir : "";
 };

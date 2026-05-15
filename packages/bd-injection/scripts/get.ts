@@ -1,47 +1,46 @@
 import * as asar from "@electron/asar";
+import {
+	type DiscordInstallation,
+	channels as allowedChannels,
+	checkIsValidSync,
+	getInstallationsSync,
+} from "@betterdiscord.com/injection";
 import { $ } from "bun";
 import { styleText as c } from "node:util";
-import { checkIsInjectedSync } from "@betterdiscord.com/bd-injection";
 import fs from "node:fs";
-import { getInstallationsSync } from "@betterdiscord.com/injection";
 import path from "node:path";
 
-const TEMP_DIR = (channel: string) =>
-	path.relative(process.cwd(), path.join(import.meta.dirname, "..", "temp", channel));
+const TEMP_DIR_ABS = path.join(import.meta.dirname, "..", "temp");
+const TEMP_DIR = path.relative(process.cwd(), TEMP_DIR_ABS);
 
 const args = process.argv.slice(2);
-const allowedChannels = ["stable", "canary", "ptb", "development"];
-const channels = args.includes("all")
-	? allowedChannels
-	: args.filter((a) => allowedChannels.includes(a));
 
 if (args.includes("-h") || args.includes("--help") || args.length === 0) {
-	console.log(c("bold", "Discord app.asar to-project extractor"));
+	console.log(c("bold", "Discord/app.asar extractor"));
 	console.log("\nUsage:");
 	console.log("  bun run get [channels...]");
 	const coloredChannels = allowedChannels
 		.map((channel) => {
-			if (!fs.existsSync(TEMP_DIR(channel))) {
+			if (!fs.existsSync(path.join(TEMP_DIR, channel))) {
 				return c("red", channel);
 			}
 			return c("yellow", channel);
 		})
 		.join(", ");
 	console.log(`\nChannels: ${coloredChannels}, all`);
+	console.log(`\nExtracts at: '${path.relative(path.join(process.cwd(), "../.."), TEMP_DIR_ABS)}'`);
 	process.exit(0);
 }
 
-const installations = getInstallationsSync("valid", checkIsInjectedSync);
-
-async function unpack(channel: string) {
-	const UNPACK_DIR = TEMP_DIR(channel);
+async function unpack(inst: DiscordInstallation) {
+	const { channel } = inst;
+	const UNPACK_DIR = path.join(TEMP_DIR, channel);
 
 	console.log(c("cyan", `[${channel}] `) + `Getting local Discord ${channel} for analysis...`);
 
 	try {
-		const inst = installations.find((i) => i.channel === channel);
-		if (!inst) {
-			throw new Error(`Could not find ${channel}.`);
+		if (!checkIsValidSync(inst)) {
+			throw new Error(`Not injectable${inst.meta ? `: (${[...inst.meta].join(", ")})` : ""}.`);
 		}
 		// If config doesn't exist, we run the binary once to let it create the structure
 		if (!fs.existsSync(inst.discordDir)) {
@@ -63,8 +62,12 @@ async function unpack(channel: string) {
 }
 
 async function run() {
-	for (const channel of channels) {
-		await unpack(channel);
+	const all = args.includes("all");
+	const installations = getInstallationsSync().filter(
+		(inst) => checkIsValidSync(inst) && (all || args.includes(inst.channel)),
+	);
+	for (const inst of installations) {
+		await unpack(inst);
 	}
 }
 
