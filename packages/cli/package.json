@@ -8,6 +8,7 @@
 		".": "./dist/main.js"
 	},
 	"scripts": {
+		"cli": "bun --bun ./dist/main.js",
 		"lint": "bun oxlint --fix && bun publint --pack bun",
 		"fmt": "bun oxfmt",
 		"dist": "bun dts && bun build --target bun --production src/main.ts --outdir=./dist --outfile=./dist/main.js -e '@betterdiscord.com/*'",
