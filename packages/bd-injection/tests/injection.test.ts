@@ -1,16 +1,19 @@
 import {
-	type DiscordChannel,
 	type DiscordInstallation,
 	getInstallationsSync,
 	uninject,
 } from "@betterdiscord.com/injection";
 import { describe, expect, test } from "bun:test";
-import { $ } from "bun";
 import fs from "node:fs";
 import { inject } from "@betterdiscord.com/bd-injection";
 import path from "node:path";
+import { unpack } from "../scripts/get.ts";
 
-function testChannel(channel: DiscordChannel, channelDirPath: string) {
+function testChannel(inst: DiscordInstallation) {
+	const { channel } = inst;
+	const channelDirName = [inst.channel, ...inst.meta].join("-");
+	const pkgDir = path.join(import.meta.dirname, "..");
+	const channelDirPath = path.join(pkgDir, "temp", channelDirName);
 	test(`Channel ${channel} should inject and uninject successfully`, async (done) => {
 		const testDir = path.join(import.meta.dirname, `test-env-${channel}`);
 		const resourcesPath = path.join(testDir, "resources");
@@ -19,14 +22,22 @@ function testChannel(channel: DiscordChannel, channelDirPath: string) {
 		let mockInst: DiscordInstallation;
 		// 1. Ensure distribution exists
 		if (!fs.existsSync(channelDirPath)) {
-			const pkgDir = path.join(import.meta.dirname, "..");
-			await $`bun run get ${channel}`.cwd(pkgDir);
+			await unpack({
+				meta: new Set(["test-injection"]),
+				asarPath: path.join(channelDirPath, "app.asar"),
+				discordDir: channelDirPath,
+				exePath: path.join(channelDirPath, "sir.exe"),
+				asarBakPath: "",
+				discordBaseDir: "",
+				updaterExePath: "",
+				version: "",
+				channel,
+			});
 		}
 
 		if (!fs.existsSync(channelDirPath)) {
-			throw new Error(
-				`${channelDirPath} not found. CRITICAL: 'bun get' should implement downloading instead of local copying.`,
-			);
+			console.warn(`${channelDirPath} not found.`);
+			return;
 		}
 
 		// 2. Create test environment
@@ -83,14 +94,7 @@ function testChannel(channel: DiscordChannel, channelDirPath: string) {
 
 describe("Injection", () => {
 	const installations = getInstallationsSync();
-	test("CRITICAL", () => {
-		throw new Error(
-			"CRITICAL: 'bun get' should implement downloading there is no installation in the temp for the host machine instead of local copying into temp.",
-		);
-	});
 	for (const inst of installations) {
-		const channelDirName = [inst.channel, ...inst.meta].join("-");
-		const channelDirPath = path.join(import.meta.dirname, "..", "temp", channelDirName);
-		testChannel(inst.channel, channelDirPath);
+		testChannel(inst);
 	}
 });

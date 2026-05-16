@@ -4,6 +4,7 @@ import {
 	channels as allowedChannels,
 	checkIsValidSync,
 	getInstallationsSync,
+	name,
 } from "@betterdiscord.com/injection";
 import { $ } from "bun";
 import { styleText as c } from "node:util";
@@ -11,36 +12,16 @@ import fs from "node:fs";
 import path from "node:path";
 
 const TEMP_DIR_ABS = path.join(import.meta.dirname, "..", "temp");
-const TEMP_DIR = path.relative(process.cwd(), TEMP_DIR_ABS);
 
-const args = process.argv.slice(2);
-
-if (args.includes("-h") || args.includes("--help") || args.length === 0) {
-	console.log(c("bold", "Discord/app.asar extractor"));
-	console.log("\nUsage:");
-	console.log("  bun run get [channels...]");
-	const coloredChannels = allowedChannels
-		.map((channel) => {
-			if (!fs.existsSync(path.join(TEMP_DIR, channel))) {
-				return c("red", channel);
-			}
-			return c("yellow", channel);
-		})
-		.join(", ");
-	console.log(`\nChannels: ${coloredChannels}, all`);
-	console.log(`\nExtracts at: '${path.relative(path.join(process.cwd(), "../.."), TEMP_DIR_ABS)}'`);
-	process.exit(0);
-}
-
-async function unpack(inst: DiscordInstallation) {
+export async function unpack(inst: DiscordInstallation) {
 	const { channel } = inst;
-	const UNPACK_DIR = path.join(TEMP_DIR, channel);
+	const UNPACK_DIR = path.join(TEMP_DIR_ABS, channel);
 
-	console.log(c("cyan", `[${channel}] `) + `Getting local Discord ${channel} for analysis...`);
+	console.log(c("cyan", `[${channel}] `) + `Getting local ${name[channel]} for analysis...`);
 
 	try {
 		if (!checkIsValidSync(inst)) {
-			throw new Error(`Not injectable${inst.meta ? `: (${[...inst.meta].join(", ")})` : ""}.`);
+			throw new Error(`Not injectable${inst.meta ? `: ${[...inst.meta].join(", ")}` : ""}.`);
 		}
 		// If config doesn't exist, we run the binary once to let it create the structure
 		if (!fs.existsSync(inst.discordDir)) {
@@ -62,6 +43,27 @@ async function unpack(inst: DiscordInstallation) {
 }
 
 async function run() {
+	const args = process.argv.slice(2);
+
+	if (args.includes("-h") || args.includes("--help") || args.length === 0) {
+		console.log(c("bold", "Discord/app.asar extractor"));
+		console.log("\nUsage:");
+		console.log("  bun get [channels...]");
+		const coloredChannels = allowedChannels
+			.map((channel) => {
+				if (!fs.existsSync(path.join(TEMP_DIR_ABS, channel))) {
+					return c("red", channel);
+				}
+				return c("yellow", channel);
+			})
+			.join(", ");
+		console.log(`\nChannels: ${coloredChannels}, all`);
+		console.log(
+			`\nExtracts at: '${path.relative(path.join(process.cwd(), "../.."), TEMP_DIR_ABS)}'`,
+		);
+		process.exit(0);
+	}
+
 	const all = args.includes("all");
 	const installations = getInstallationsSync().filter(
 		(inst) => checkIsValidSync(inst) && (all || args.includes(inst.channel)),
@@ -71,4 +73,4 @@ async function run() {
 	}
 }
 
-run();
+if (import.meta.main) run();

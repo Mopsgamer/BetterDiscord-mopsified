@@ -28,9 +28,11 @@
 		"original-fs": "latest"
 	},
 	"devDependencies": {
+		"@electron/asar": "latest",
 		"@types/bun": "latest",
 		"@types/node": "latest",
 		"@typescript/native-preview": "latest",
+		"@vencord/discord-types": "^1.0.1",
 		"bun-plugin-svelte": "latest",
 		"electron": "42.x",
 		"electron-builder": "26.x",

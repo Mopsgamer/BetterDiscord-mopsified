@@ -8,7 +8,7 @@ export * as fastfile from "./fastfile.js";
 export type DiscordChannel = "stable" | "canary" | "ptb" | "development";
 
 export interface DiscordInstallation {
-	meta: Set<"flatpak" | "aur" | "deb">;
+	meta: Set<"flatpak" | "aur" | "deb" | (string & {})>;
 	channel: DiscordChannel;
 	version: string;
 	discordDir: string;
@@ -361,6 +361,10 @@ export function inject(
 				return;
 			}
 			await patcher(targetFile, injection);
+			if (inst.asarBakPath) {
+				// backup
+				await fs.promises.copyFile(inst.asarPath, inst.asarBakPath);
+			}
 			await asar.createPackage(tempUnpackPath, inst.asarPath);
 			if (inst.meta.has("flatpak")) {
 				await exec.__promisify__(

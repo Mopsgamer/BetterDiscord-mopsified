@@ -2,20 +2,7 @@ import { expect, test } from "bun:test";
 import { find, findNow } from "../src/index.js";
 
 // Mock global window and webpack
-(globalThis as any).window = {
-	webpackChunkdiscord_app: {
-		push: ([_id, _mods, callback]: any) => {
-			callback({
-				c: {
-					mod1: { exports: { createElement: true, useLayoutEffect: true } },
-					mod2: { exports: { dispatch: true, subscribe: true } },
-				},
-			});
-		},
-		findIndex: () => -1,
-		splice: () => {},
-	},
-};
+(globalThis as any).webpackChunkdiscord_app = [];
 
 test("findNow should find modules instantly", () => {
 	const results = findNow([
