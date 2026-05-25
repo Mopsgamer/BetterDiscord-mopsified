@@ -46,7 +46,7 @@ export async function readIndexOf(
 				const foundAt = globalIndex + i - (data.length - 1);
 				// The 'for await' loop handles closing the stream
 				// automatically when you return.
-				return foundAt;
+				return foundAt + startAt;
 			}
 		}
 		globalIndex += chunk.length;

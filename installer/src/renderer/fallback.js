@@ -16,16 +16,16 @@ window.addEventListener("error", (e) => {
 
 	const fileRegex = /(file:\/\/\/[A-Z]:\/[^:)\s]+):(\d+):(\d+)/g;
 
-	const formattedStack = stack.replace(fileRegex, (match, url, line, col) => {
+	const formattedStack = stack.replace(fileRegex, (match, url, line, _col) => {
 		const winPath = url
 			.replace("file:///", "")
 			.replace(/\//g, "\\")
 			.replace(/^\\([A-Z]:)/, "$1");
 
-		return `<a href="#" 
-                   class="stack-link" 
-                   data-path="${winPath}" 
-                   data-line="${line}" 
+		return `<a href="#"
+                   class="stack-link"
+                   data-path="${winPath}"
+                   data-line="${line}"
                    style="color: #82aaff; text-decoration: underline;"
                 >${match}</a>`;
 	});

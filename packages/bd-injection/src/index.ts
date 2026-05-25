@@ -30,7 +30,8 @@ export function checkIsInjectableSync(inst: DiscordInstallation): boolean {
 }
 
 export function inject(inst: DiscordInstallation) {
-	return genericInject(inst, patchAsar, checkIsInjectedSync);
+	const r = genericInject(inst, patchAsar, checkIsInjectedSync);
+	return r;
 }
 
 export function uninject(inst: DiscordInstallation) {

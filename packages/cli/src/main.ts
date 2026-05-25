@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import {
 	type DiscordChannel,
+	type DiscordInstallation,
 	checkIsValidSync,
 	getInstallationsSync,
 	uninject,
@@ -12,11 +13,12 @@ import {
 	inject,
 } from "@betterdiscord.com/bd-injection";
 import { name } from "@betterdiscord.com/injection";
+import { spawnSync } from "bun";
 
 async function main() {
 	const args = process.argv.slice(2);
 
-	const commands = ["inject", "uninject", "injected", "all", "valid"];
+	const commands = ["dc", "inject", "uninject", "injected", "all", "valid"];
 	const command = args.find((a) => commands.includes(a));
 	const isJson = args.includes("--json");
 
@@ -26,6 +28,7 @@ async function main() {
 	if (!command) {
 		console.log(c("bold", "BetterDiscord CLI"));
 		console.log("\nUsage:");
+		console.log(`  bun run cli ${c("red", "dc")} [channel]`);
 		console.log(`  bun run cli ${c("cyan", "inject")} [channel]`);
 		console.log(`  bun run cli ${c("cyan", "uninject")} [channel]`);
 		console.log(`  bun run cli ${c("magenta", "inject")} [--json]`);
@@ -41,15 +44,9 @@ async function main() {
 		return;
 	}
 
-	if (command === "all" || command === "valid" || command === "injected") {
-		const filter = command;
-		await list(filter, args);
-		return;
-	}
-
-	if (command === "inject") {
+	async function getChannel(): Promise<{ channel: DiscordChannel; inst: DiscordInstallation }> {
 		if (!channel) {
-			await list("all", args); // Just list everything injectable
+			await list("all", args);
 			process.exit(isJson ? 0 : 1);
 		}
 		const inst = getInstallationsSync().find((i) => i.channel === channel);
@@ -61,6 +58,24 @@ async function main() {
 			}
 			process.exit(1);
 		}
+		return { channel, inst };
+	}
+
+	if (command === "dc") {
+		const { inst } = await getChannel();
+		console.log(inst.exePath);
+		spawnSync([inst.exePath]);
+		return;
+	}
+
+	if (command === "all" || command === "valid" || command === "injected") {
+		const filter = command;
+		await list(filter, args);
+		return;
+	}
+
+	if (command === "inject") {
+		const { inst } = await getChannel();
 		await inject(inst).promise;
 		if (isJson) {
 			console.log(JSON.stringify({ success: true, channel, action: "inject" }));
@@ -69,19 +84,7 @@ async function main() {
 	}
 
 	if (command === "uninject") {
-		if (!channel) {
-			await list("all", args); // Just list everything injected
-			process.exit(isJson ? 0 : 1);
-		}
-		const inst = getInstallationsSync().find((i) => i.channel === channel);
-		if (!inst) {
-			if (isJson) {
-				console.log(JSON.stringify({ error: `Could not find ${name[channel]}` }));
-			} else {
-				console.error(c("red", `Error: Could not find ${name[channel]}`));
-			}
-			process.exit(1);
-		}
+		const { inst } = await getChannel();
 		await uninject(inst);
 		if (isJson) {
 			console.log(JSON.stringify({ success: true, channel, action: "uninject" }));

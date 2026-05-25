@@ -10,24 +10,17 @@ export default async function patchAsar(targetFile: string, injection?: Injectio
 
 		await writeAt(
 			targetFile,
-			'{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true},},',
+			'{scheme: "bd", privileges: {standard: true, secure: true, supportFetchAPI: true}},',
 			at + 2,
 		);
 		if (injection) injection.patchPath(targetFile);
 	}
 	{
-		at = await readIndexOf(targetFile, "electronNormalize.registerProtocol(");
-		if (at === -1) throw new Error("Failed to find protocol registration point (registerProtocol)");
-
-		at = await readIndexOf(targetFile, "electronNormalize.whenAppReady", at - 100);
-		if (at === -1) throw new Error("Failed to find protocol registration point (whenReady)");
-
-		at = await readIndexOf(targetFile, "for", at);
-		if (at === -1) throw new Error("Failed to find protocol registration point (for)");
-
 		const whenReady = "whenReady();";
 		at = await readIndexOf(targetFile, whenReady, at + whenReady.length);
+		if (at === -1) throw new Error("Failed to find app ready point (whenReady)");
 		await writeAt(targetFile, protocolHandle, at);
+		console.log(at);
 		if (injection) injection.patchPath(targetFile);
 	}
 }

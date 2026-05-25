@@ -69,25 +69,23 @@ function testChannel(inst: DiscordInstallation) {
 		await inject(mockInst).promise;
 
 		// Verify backup exists
-		const bakPath = asarPath + ".bd.bak";
-		if (!fs.existsSync(bakPath)) {
-			throw new Error(`${bakPath} not found. Injector shoud create bak file.`);
+		if (!fs.existsSync(mockInst.asarBakPath)) {
+			throw new Error(`${mockInst.asarBakPath} not found. Injector shoud create bak file.`);
 		}
 
 		// Verify protocol and core injection
-		const content = fs.readFileSync(asarPath, "utf8");
+		const content = fs.readFileSync(mockInst.asarPath, "utf8");
 		expect(content).toContain('([{scheme: "bd"');
 		expect(content).toContain("},{scheme:DISCORD_CLIP_PROTOCOL");
 		expect(content).toContain("whenReady();let");
 		expect(content).toContain('protocol.handle("bd"');
-		expect(content).toContain("plugins.js");
-		expect(content).toContain("themes.js");
+		expect(content).toContain("BetterDiscord API");
 
 		// 2. Uninject
 		await uninject(mockInst);
 
 		// Verify backup is gone
-		expect(fs.existsSync(asarPath + ".bd.bak")).toBe(false);
+		expect(fs.existsSync(mockInst.asarBakPath)).toBe(false);
 		done();
 	});
 }
