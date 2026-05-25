@@ -2,9 +2,6 @@
 	"files": [],
 	"references": [
 		{
-			"path": "./packages/components"
-		},
-		{
 			"path": "./packages/core"
 		},
 		{
